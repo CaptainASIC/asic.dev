@@ -7,14 +7,15 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mkdir -p "$HOME/.claude/skills" "$HOME/.warp/workflows"
 
-# Every skill dir symlinks into ~/.claude/skills (repo stays source of truth)
-for skill in "$REPO"/skills/*/; do
+# Every plugin skill dir symlinks into ~/.claude/skills (dev mode: bare /names, live edits).
+# End users should prefer the plugin install instead — see README.
+for skill in "$REPO"/plugins/asic-tools/skills/*/; do
   name="$(basename "$skill")"
   ln -sfn "${skill%/}" "$HOME/.claude/skills/$name"
 done
 
 cp -f "$REPO/warp/agentdash.yaml" "$HOME/.warp/workflows/agentdash.yaml"
-chmod +x "$REPO/skills/agentdash/agentdash.py"
+chmod +x "$REPO/plugins/asic-tools/skills/agentdash/agentdash.py"
 
 echo "installed:"
 echo "  claude skills  -> ~/.claude/skills/{agentdash,draft-prp} (symlinks to repo)"

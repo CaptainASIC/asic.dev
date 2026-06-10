@@ -1,0 +1,18 @@
+{
+  "name": "asic-dev",
+  "description": "Captain ASIC's agent-harness tooling for Claude Code + Warp: config auditing and PRP generation.",
+  "owner": {
+    "name": "Captain ASIC",
+    "url": "https://github.com/CaptainASIC"
+  },
+  "plugins": [
+    {
+      "name": "asic-tools",
+      "source": "./plugins/asic-tools",
+      "description": "Agent-harness tooling: agentdash config auditor + draft-prp PRP generator",
+      "author": {
+        "name": "Captain ASIC"
+      }
+    }
+  ]
+}

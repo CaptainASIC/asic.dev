@@ -10,8 +10,11 @@ Deterministic scanner. Do not assemble the inventory yourself — run the script
 ## Run
 
 ```bash
-python3 ~/.claude/skills/agentdash/agentdash.py --no-color
+python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/agentdash/agentdash.py" --no-color
 ```
+
+(`CLAUDE_PLUGIN_ROOT` is set when installed as a plugin; the fallback covers the symlinked
+personal-skill dev install — both roots contain `skills/agentdash/`.)
 
 Flags:
 - `--project PATH` — inspect a different repo (default: cwd)

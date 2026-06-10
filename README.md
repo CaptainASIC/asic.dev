@@ -1,7 +1,7 @@
 # asic.dev
 
-Agent-harness tooling for Claude Code and Warp. Each tool ships as a Claude skill
-(symlinked, repo stays source of truth) with a Warp counterpart where one makes sense.
+Agent-harness tooling for Claude Code and Warp, shipped as a Claude Code plugin marketplace
+with Warp counterparts where they make sense.
 
 | Tool | What it does |
 |---|---|
@@ -10,13 +10,34 @@ Agent-harness tooling for Claude Code and Warp. Each tool ships as a Claude skil
 
 ## Install
 
+### As a plugin (recommended)
+
+In Claude Code:
+
+```
+/plugin marketplace add CaptainASIC/asic.dev
+/plugin install asic-tools@asic-dev
+```
+
+Skills are namespaced: `/asic-tools:agentdash`, `/asic-tools:draft-prp`. Plugin skills show
+up in the desktop app's customize page; filesystem personal skills currently do not
+([claude-code#66998](https://github.com/anthropics/claude-code/issues/66998)).
+
+### Dev mode (this repo checked out)
+
 ```bash
 ./install.sh
 ```
 
-Symlinks every `skills/*` dir into `~/.claude/skills/` and copies `warp/agentdash.yaml` to
-`~/.warp/workflows/` (Warp watches real files, so a copy — rerun install.sh after editing).
-`warp/draft-prp.md` is pasted into a Warp Drive prompt manually (Drive is cloud-stored).
+Symlinks each skill under `plugins/asic-tools/skills/` into `~/.claude/skills/` — bare
+`/agentdash` and `/draft-prp` names, and edits in the repo are live without reinstalling.
+Don't combine both installs: you'd get duplicate skill registrations.
+
+### Warp
+
+`install.sh` copies `warp/agentdash.yaml` to `~/.warp/workflows/` (Warp watches real files,
+so a copy — rerun after editing). `warp/draft-prp.md` is pasted into a Warp Drive prompt
+manually (Drive is cloud-stored).
 
 ---
 
@@ -73,7 +94,8 @@ In Warp: run the `agentdash` workflow.
 ### Maintenance
 
 Claude Code's config layout shifts between versions. All scanned locations live in one table:
-`known_paths()` in [agentdash.py](skills/agentdash/agentdash.py). Fix breakage there.
+`known_paths()` in [agentdash.py](plugins/asic-tools/skills/agentdash/agentdash.py). Fix
+breakage there.
 
 ---
 
@@ -109,8 +131,8 @@ memory updates are the *implementing* agent's job, spelled out in the PRP's §10
 In Claude Code: `/draft-prp`, or just say "turn this into a PRP" mid-conversation.
 In Warp: invoke the `draft-prp` Drive prompt (see [warp/draft-prp.md](warp/draft-prp.md)).
 
-Layout: [SKILL.md](skills/draft-prp/SKILL.md) is the workflow driver;
-[prp_template.md](skills/draft-prp/references/prp_template.md) and
-[style_guide.md](skills/draft-prp/references/style_guide.md) hold the section skeleton and
-the standing engineering rules (structure caps, stack defaults, DB naming, test minimums,
-git constraints) loaded only when drafting.
+Layout: [SKILL.md](plugins/asic-tools/skills/draft-prp/SKILL.md) is the workflow driver;
+[prp_template.md](plugins/asic-tools/skills/draft-prp/references/prp_template.md) and
+[style_guide.md](plugins/asic-tools/skills/draft-prp/references/style_guide.md) hold the
+section skeleton and the standing engineering rules (structure caps, stack defaults, DB
+naming, test minimums, git constraints) loaded only when drafting.
