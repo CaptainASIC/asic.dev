@@ -1,6 +1,6 @@
 ---
 name: agentdash — agent config dashboard
-command: python3 ~/.claude/skills/agentdash/agentdash.py {{flags}}
+command: python3 ~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/skills/agentdash/agentdash.py {{flags}}
 tags:
   - config
   - claude

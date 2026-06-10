@@ -7,6 +7,8 @@ with Warp counterparts where they make sense.
 |---|---|
 | [agentdash](#agentdash) | Audit visible and invisible agent config across global + project scope |
 | [draft-prp](#draft-prp) | Research-first generator for Product Requirements Prompts |
+| [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
+| [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
 
 ## Install
 
@@ -19,8 +21,9 @@ In Claude Code:
 /plugin install asic-tools@asic-dev
 ```
 
-Skills are namespaced: `/asic-tools:agentdash`, `/asic-tools:draft-prp`. Plugin skills show
-up in the desktop app's customize page; filesystem personal skills currently do not
+Skills are namespaced: `/asic-tools:agentdash`, `/asic-tools:draft-prp`,
+`/asic-tools:scaffold`, `/asic-tools:release`. Plugin skills show up in the desktop app's
+customize page; filesystem personal skills currently do not
 ([claude-code#66998](https://github.com/anthropics/claude-code/issues/66998)).
 
 ### Dev mode (this repo checked out)
@@ -62,9 +65,11 @@ see by listing directories:
 ### Usage
 
 ```bash
-python3 ~/.claude/skills/agentdash/agentdash.py              # table, current project
-python3 ~/.claude/skills/agentdash/agentdash.py --json       # machine-readable
-python3 ~/.claude/skills/agentdash/agentdash.py --project ~/Repositories/Airi
+# plugin install path (marketplace clone); dev-mode symlink path is ~/.claude/skills/agentdash/
+DASH=~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/skills/agentdash/agentdash.py
+python3 "$DASH"                              # table, current project
+python3 "$DASH" --json                       # machine-readable
+python3 "$DASH" --project ~/Repositories/Airi
 ```
 
 In Claude Code: ask "show my config dashboard" (triggers the `agentdash` skill).
@@ -136,3 +141,42 @@ Layout: [SKILL.md](plugins/asic-tools/skills/draft-prp/SKILL.md) is the workflow
 [style_guide.md](plugins/asic-tools/skills/draft-prp/references/style_guide.md) hold the
 section skeleton and the standing engineering rules (structure caps, stack defaults, DB
 naming, test minimums, git constraints) loaded only when drafting.
+
+---
+
+## scaffold
+
+Bootstraps a new Python project to a strict standard: uv + ruff (line-length 100) + mypy +
+pytest with coverage, Pydantic v2 settings (`get_settings()` singleton), structured
+exceptions and logging, vertical-slice layout, and project docs that drive the agent
+workflow from day one (`PLANNING.md`, `TASKS.md`, `CHANGELOG.md`, `CLAUDE.md`, `PRPs/`).
+
+The defining constraint: **the scaffold must run before it's reported done** — `uv sync`,
+`uv run pytest`, `uv run ruff check .`, `uv run mypy src/` all green, with generated tests
+demonstrating the expected/edge/failure pattern against real code. Four kinds: `api`
+(FastAPI), `agent` (canonical `agent.py`/`tools.py`/`prompts.py` split), `cli` (argparse +
+entry point), `library`. Git ends on `feature/initial-scaffold`, never main.
+
+In Claude Code: `/asic-tools:scaffold`. In Warp: the `scaffold` Drive prompt
+([warp/scaffold.md](warp/scaffold.md)). Templates:
+[file_templates.md](plugins/asic-tools/skills/scaffold/references/file_templates.md),
+[kind_variants.md](plugins/asic-tools/skills/scaffold/references/kind_variants.md).
+
+---
+
+## release
+
+Cuts a release without version drift: surveys every version location in the repo
+(pyproject, `__version__`, Claude plugin manifests, package.json, Xcode
+`MARKETING_VERSION`, README install snippets — see
+[version_locations.md](plugins/asic-tools/skills/release/references/version_locations.md)),
+recommends the SemVer bump from Conventional Commits since the last tag, writes a
+CHANGELOG entry that matches the file's existing style, and commits on `release/vX.Y.Z`.
+
+Deliberately stops there: pushing, merging, tagging, and the GitHub release are the
+user's actions — the skill emits the post-merge checklist and a ready-to-paste release
+body. It also re-greps the old version string after updating to catch locations the
+survey missed, and refuses to proceed if existing version locations already disagree.
+
+In Claude Code: `/asic-tools:release`. In Warp: the `release` Drive prompt
+([warp/release.md](warp/release.md)).
