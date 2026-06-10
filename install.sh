@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Install asic.dev tools: symlink Claude skills, copy Warp workflows.
-# Uninstall: rm ~/.claude/skills/{agentdash,draft-prp} ~/.warp/workflows/agentdash.yaml
+# Dev-mode install: symlink Claude skills, copy Warp workflows. End users: install the
+# plugin instead (see README). Uninstall: rm the ~/.claude/skills/<name> symlinks and
+# ~/.warp/workflows/agentdash.yaml.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,10 +18,10 @@ done
 cp -f "$REPO/warp/agentdash.yaml" "$HOME/.warp/workflows/agentdash.yaml"
 chmod +x "$REPO/plugins/asic-tools/skills/agentdash/agentdash.py"
 
-echo "installed:"
-echo "  claude skills  -> ~/.claude/skills/{agentdash,draft-prp} (symlinks to repo)"
+echo "installed (dev mode):"
+echo "  claude skills  -> ~/.claude/skills/* (symlinks to repo, one per plugin skill)"
 echo "  warp workflow  -> ~/.warp/workflows/agentdash.yaml (copy)"
 echo
-echo "manual step for Warp: paste warp/draft-prp.md into a Warp Drive prompt named"
-echo "'draft-prp' (Warp Drive is cloud-stored; no file install possible)."
-echo "run agentdash: python3 ~/.claude/skills/agentdash/agentdash.py"
+echo "manual step for Warp: paste each warp/*.md into a Warp Drive prompt of the same name"
+echo "(Warp Drive is cloud-stored; no file install possible)."
+echo "NOTE: dev symlinks duplicate the plugin install — use one or the other."
