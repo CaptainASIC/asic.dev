@@ -18,6 +18,20 @@ done
 cp -f "$REPO/warp/agentdash.yaml" "$HOME/.warp/workflows/agentdash.yaml"
 chmod +x "$REPO/plugins/asic-tools/skills/agentdash/agentdash.py"
 
+# Global engineering rules -> ~/.claude/CLAUDE.md (copy, not symlink: the desktop app is
+# known to skip symlinks in some loaders). Never clobber local edits silently.
+RULES_SRC="$REPO/rules/CLAUDE.global.md"
+RULES_DST="$HOME/.claude/CLAUDE.md"
+if [ ! -f "$RULES_DST" ]; then
+  cp "$RULES_SRC" "$RULES_DST"
+  echo "  global rules   -> ~/.claude/CLAUDE.md (installed)"
+elif cmp -s "$RULES_SRC" "$RULES_DST"; then
+  echo "  global rules   -> ~/.claude/CLAUDE.md (already current)"
+else
+  echo "  global rules   -> SKIPPED: ~/.claude/CLAUDE.md differs from rules/CLAUDE.global.md"
+  echo "                    diff them and reconcile manually (local edits are preserved)"
+fi
+
 echo "installed (dev mode):"
 echo "  claude skills  -> ~/.claude/skills/* (symlinks to repo, one per plugin skill)"
 echo "  warp workflow  -> ~/.warp/workflows/agentdash.yaml (copy)"
