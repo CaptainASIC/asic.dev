@@ -103,8 +103,15 @@ see by listing directories:
 DASH=~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/skills/agentdash/agentdash.py
 python3 "$DASH"                              # table, current project
 python3 "$DASH" --json                       # machine-readable
+python3 "$DASH" --html                       # themed HTML report, opens in browser
+python3 "$DASH" --html report.html --no-open # explicit path, no browser launch
 python3 "$DASH" --project ~/Repositories/Airi
 ```
+
+The HTML report (`html_report.py`, stdlib only like the scanner) is a single self-contained
+file: collapsible sections per scope, plugins folded to one block each with skill/agent chips,
+attention banners, a context-cost bar, and ASIC Light/Dark themes (follows the system scheme,
+toggle persisted in `localStorage`).
 
 In Claude Code: ask "show my config dashboard" (triggers the `agentdash` skill).
 In Warp: run the `agentdash` workflow.
