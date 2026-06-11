@@ -40,8 +40,16 @@ Don't combine both installs: you'd get duplicate skill registrations.
 ### Warp
 
 `install.sh` copies `warp/agentdash.yaml` to `~/.warp/workflows/` (Warp watches real files,
-so a copy — rerun after editing). `warp/draft-prp.md` is pasted into a Warp Drive prompt
-manually (Drive is cloud-stored).
+so a copy — rerun after editing). Each remaining `warp/*.md` is pasted into a Warp Drive
+prompt of the same name manually (Drive is cloud-stored).
+
+### Global rules
+
+[rules/CLAUDE.global.md](rules/CLAUDE.global.md) is the consolidated engineering rule set
+the skills assume (structure caps, uv-only, test trio, git constraints, naming standards).
+`install.sh` copies it to `~/.claude/CLAUDE.md` when absent and refuses to clobber local
+edits (reconcile manually if it reports a diff). The same file works as a Warp Drive
+global rule. A copy, not a symlink — the desktop app skips symlinks in some loaders.
 
 ---
 

@@ -4,6 +4,13 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [Unreleased]
+
+### Added
+- `rules/CLAUDE.global.md`: consolidated global engineering rules (single source for
+  `~/.claude/CLAUDE.md` and Warp Drive rules); install.sh installs it without clobbering
+  local edits.
+
 ## [0.3.0] - 2026-06-10
 
 ### Added
