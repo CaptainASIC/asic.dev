@@ -10,22 +10,39 @@ with Warp counterparts where they make sense.
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
+| [sync-rules](#global-rules) | Deploy the bundled global engineering rules to `~/.claude/CLAUDE.md` on any machine |
 
 ## Install
 
 ### As a plugin (recommended)
 
-In Claude Code:
+New machine, start to finish:
 
 ```
-/plugin marketplace add CaptainASIC/asic.dev
-/plugin install asic-tools@asic-dev
+/plugin marketplace add CaptainASIC/asic.dev      # 1. add the marketplace
+/plugin install asic-tools@asic-dev               # 2. install the plugin
+                                                  # 3. restart Claude Code (skills register at startup)
+/asic-tools:sync-rules                            # 4. optional: deploy the global engineering
+                                                  #    rules to ~/.claude/CLAUDE.md (diff-aware)
 ```
 
 Skills are namespaced: `/asic-tools:agentdash`, `/asic-tools:draft-prp`,
-`/asic-tools:scaffold`, `/asic-tools:release`. Plugin skills show up in the desktop app's
-customize page; filesystem personal skills currently do not
+`/asic-tools:prp-implement`, `/asic-tools:scaffold`, `/asic-tools:release`,
+`/asic-tools:sync-rules`. Plugin skills show up in the desktop app's customize page;
+filesystem personal skills currently do not
 ([claude-code#66998](https://github.com/anthropics/claude-code/issues/66998)).
+
+### Updating
+
+Plugin versions are pinned — merging new commits to this repo ships nothing until the
+plugin version bumps and you pull it:
+
+```
+claude plugin marketplace update asic-dev         # refresh the marketplace clone
+claude plugin update asic-tools@asic-dev          # pull the new plugin version
+                                                  # restart Claude Code
+/asic-tools:sync-rules                            # re-sync if the release changed the rules
+```
 
 ### Dev mode (this repo checked out)
 
@@ -45,11 +62,19 @@ prompt of the same name manually (Drive is cloud-stored).
 
 ### Global rules
 
-[rules/CLAUDE.global.md](rules/CLAUDE.global.md) is the consolidated engineering rule set
-the skills assume (structure caps, uv-only, test trio, git constraints, naming standards).
-`install.sh` copies it to `~/.claude/CLAUDE.md` when absent and refuses to clobber local
-edits (reconcile manually if it reports a diff). The same file works as a Warp Drive
-global rule. A copy, not a symlink — the desktop app skips symlinks in some loaders.
+[plugins/asic-tools/rules/CLAUDE.global.md](plugins/asic-tools/rules/CLAUDE.global.md) is
+the consolidated engineering rule set the skills assume (structure caps, uv-only, test
+trio, git constraints, naming standards, canonical code examples). It ships inside the
+plugin, so on any machine with the plugin installed:
+
+```
+/asic-tools:sync-rules
+```
+
+installs or updates `~/.claude/CLAUDE.md` — diff-aware, never silently clobbering local
+edits. Dev mode: `install.sh` does the same copy. The same file works as a Warp Drive
+global rule (paste once per Warp account). Always a copy, not a symlink — the desktop app
+skips symlinks in some loaders.
 
 ---
 

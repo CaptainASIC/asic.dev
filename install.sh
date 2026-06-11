@@ -20,7 +20,7 @@ chmod +x "$REPO/plugins/asic-tools/skills/agentdash/agentdash.py"
 
 # Global engineering rules -> ~/.claude/CLAUDE.md (copy, not symlink: the desktop app is
 # known to skip symlinks in some loaders). Never clobber local edits silently.
-RULES_SRC="$REPO/rules/CLAUDE.global.md"
+RULES_SRC="$REPO/plugins/asic-tools/rules/CLAUDE.global.md"
 RULES_DST="$HOME/.claude/CLAUDE.md"
 if [ ! -f "$RULES_DST" ]; then
   cp "$RULES_SRC" "$RULES_DST"
