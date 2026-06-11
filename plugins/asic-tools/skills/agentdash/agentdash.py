@@ -708,6 +708,9 @@ def summarize(entries: list[Entry], project: Path, color: bool) -> None:
             print(f"    {a['kind']} {a['name']!r} — {a['detail']} ({a['source']})")
     else:
         print(paint("  no broken, shadowed, or unregistered items", "32", color))
+    print(
+        paint("  tip: --html opens this as a collapsible themed report in the browser", "2", color)
+    )
 
 
 def to_json(entries: list[Entry], project: Path) -> str:
