@@ -16,17 +16,33 @@ with Warp counterparts where they make sense.
 
 ### As a plugin (recommended)
 
-In Claude Code:
+New machine, start to finish:
 
 ```
-/plugin marketplace add CaptainASIC/asic.dev
-/plugin install asic-tools@asic-dev
+/plugin marketplace add CaptainASIC/asic.dev      # 1. add the marketplace
+/plugin install asic-tools@asic-dev               # 2. install the plugin
+                                                  # 3. restart Claude Code (skills register at startup)
+/asic-tools:sync-rules                            # 4. optional: deploy the global engineering
+                                                  #    rules to ~/.claude/CLAUDE.md (diff-aware)
 ```
 
 Skills are namespaced: `/asic-tools:agentdash`, `/asic-tools:draft-prp`,
-`/asic-tools:scaffold`, `/asic-tools:release`. Plugin skills show up in the desktop app's
-customize page; filesystem personal skills currently do not
+`/asic-tools:prp-implement`, `/asic-tools:scaffold`, `/asic-tools:release`,
+`/asic-tools:sync-rules`. Plugin skills show up in the desktop app's customize page;
+filesystem personal skills currently do not
 ([claude-code#66998](https://github.com/anthropics/claude-code/issues/66998)).
+
+### Updating
+
+Plugin versions are pinned — merging new commits to this repo ships nothing until the
+plugin version bumps and you pull it:
+
+```
+claude plugin marketplace update asic-dev         # refresh the marketplace clone
+claude plugin update asic-tools@asic-dev          # pull the new plugin version
+                                                  # restart Claude Code
+/asic-tools:sync-rules                            # re-sync if the release changed the rules
+```
 
 ### Dev mode (this repo checked out)
 
