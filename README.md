@@ -10,6 +10,7 @@ with Warp counterparts where they make sense.
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
+| [sync-rules](#global-rules) | Deploy the bundled global engineering rules to `~/.claude/CLAUDE.md` on any machine |
 
 ## Install
 
@@ -45,11 +46,19 @@ prompt of the same name manually (Drive is cloud-stored).
 
 ### Global rules
 
-[rules/CLAUDE.global.md](rules/CLAUDE.global.md) is the consolidated engineering rule set
-the skills assume (structure caps, uv-only, test trio, git constraints, naming standards).
-`install.sh` copies it to `~/.claude/CLAUDE.md` when absent and refuses to clobber local
-edits (reconcile manually if it reports a diff). The same file works as a Warp Drive
-global rule. A copy, not a symlink — the desktop app skips symlinks in some loaders.
+[plugins/asic-tools/rules/CLAUDE.global.md](plugins/asic-tools/rules/CLAUDE.global.md) is
+the consolidated engineering rule set the skills assume (structure caps, uv-only, test
+trio, git constraints, naming standards, canonical code examples). It ships inside the
+plugin, so on any machine with the plugin installed:
+
+```
+/asic-tools:sync-rules
+```
+
+installs or updates `~/.claude/CLAUDE.md` — diff-aware, never silently clobbering local
+edits. Dev mode: `install.sh` does the same copy. The same file works as a Warp Drive
+global rule (paste once per Warp account). Always a copy, not a symlink — the desktop app
+skips symlinks in some loaders.
 
 ---
 

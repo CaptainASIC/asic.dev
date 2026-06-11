@@ -4,12 +4,15 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
-## [Unreleased]
+## [0.4.0] - 2026-06-10
 
 ### Added
-- `rules/CLAUDE.global.md`: consolidated global engineering rules (single source for
-  `~/.claude/CLAUDE.md` and Warp Drive rules); install.sh installs it without clobbering
-  local edits.
+- Consolidated global engineering rules, bundled inside the plugin
+  (`plugins/asic-tools/rules/CLAUDE.global.md`) — single source for `~/.claude/CLAUDE.md`
+  and Warp Drive rules, with canonical Pydantic v2 / testing / git / naming examples.
+- **sync-rules** skill: deploy/update the bundled rules to `~/.claude/CLAUDE.md` on any
+  machine with the plugin installed; diff-aware, never clobbers local edits silently.
+- install.sh installs the rules file in dev mode without clobbering local edits.
 
 ## [0.3.0] - 2026-06-10
 
