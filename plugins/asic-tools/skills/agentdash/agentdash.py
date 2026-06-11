@@ -20,8 +20,11 @@ import re
 import shlex
 import shutil
 import sys
+import tempfile
+import webbrowser
 from collections import Counter
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 
 HOME = Path.home()
@@ -637,57 +640,78 @@ def render(entries: list[Entry], project: Path, color: bool) -> None:
             )
             print("  " + line)
     print()
-    summarize(entries, color)
+    summarize(entries, project, color)
 
 
-def summarize(entries: list[Entry], color: bool) -> None:
-    counts = Counter(e.kind for e in entries if not e.status.startswith("n/a"))
-    always = sum(e.tokens for e in entries)
-    desc_tokens = sum(
-        len(e.desc) // CHARS_PER_TOKEN
-        for e in entries
-        if e.kind in ("skill", "agent", "command") and e.status == "ok"
-    )
-    problems = [e for e in entries if e.status.startswith(("broken", "shadowed", "unregistered"))]
+def attention_of(entries: list[Entry]) -> list[tuple[Entry, str]]:
+    """Items worth flagging: busy hooks (even when nominally ok) plus outright problems."""
+    flagged: list[tuple[Entry, str]] = []
     # hooks firing on many events run a process constantly; surface even when "ok"
-    busy_hooks = []
     for e in entries:
         if e.kind != "hook":
             continue
         m = re.match(r"(\d+) event", e.desc)
         if m and int(m.group(1)) >= 10:
-            busy_hooks.append((e, int(m.group(1))))
+            flagged.append((e, f"fires on {m.group(1)} events; spawns a process each time"))
+    flagged += [
+        (e, e.status)
+        for e in entries
+        if e.status.startswith(("broken", "shadowed", "unregistered"))
+    ]
+    return flagged
+
+
+def build_report(entries: list[Entry], project: Path) -> dict:
+    """Everything a renderer needs as plain data — shared by --json, --html, and SUMMARY."""
+    att = attention_of(entries)
+    reasons = {id(e): reason for e, reason in att}
+    counts = Counter(e.kind for e in entries if not e.status.startswith("n/a"))
+    return {
+        "project": str(project),
+        "generated": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "summary": {
+            "counts": dict(sorted(counts.items())),
+            "always_loaded_tokens": sum(e.tokens for e in entries),
+            "desc_tokens": sum(
+                len(e.desc) // CHARS_PER_TOKEN
+                for e in entries
+                if e.kind in ("skill", "agent", "command") and e.status == "ok"
+            ),
+            "problems": sum(
+                e.status.startswith(("broken", "shadowed", "unregistered")) for e in entries
+            ),
+            "attention": [
+                {"kind": e.kind, "name": e.name, "detail": reason, "source": e.source}
+                for e, reason in att
+            ],
+        },
+        "entries": [
+            asdict(e) | {"section": section_of(e), "attention": reasons.get(id(e), "")}
+            for e in entries
+        ],
+    }
+
+
+def summarize(entries: list[Entry], project: Path, color: bool) -> None:
+    s = build_report(entries, project)["summary"]
     print(paint("SUMMARY", "1", color))
     print(paint("-" * 100, "2", color))
-    print("  " + ", ".join(f"{k}: {v}" for k, v in sorted(counts.items())))
-    print(f"  always-loaded context: ~{always} tokens (memory/rules files)")
-    print(f"  plus ~{desc_tokens} tokens of skill/agent/command descriptions in the system prompt")
-    if problems or busy_hooks:
-        print(paint(f"  attention ({len(problems) + len(busy_hooks)}):", "33", color))
-        for e, n in busy_hooks:
-            print(
-                f"    hook {e.name!r} fires on {n} events — spawns a process each time ({e.source})"
-            )
-        for e in problems:
-            print(f"    {e.kind} {e.name!r} — {e.status} ({e.source})")
+    print("  " + ", ".join(f"{k}: {v}" for k, v in s["counts"].items()))
+    print(f"  always-loaded context: ~{s['always_loaded_tokens']} tokens (memory/rules files)")
+    print(
+        f"  plus ~{s['desc_tokens']} tokens of skill/agent/command descriptions"
+        " in the system prompt"
+    )
+    if s["attention"]:
+        print(paint(f"  attention ({len(s['attention'])}):", "33", color))
+        for a in s["attention"]:
+            print(f"    {a['kind']} {a['name']!r} — {a['detail']} ({a['source']})")
     else:
         print(paint("  no broken, shadowed, or unregistered items", "32", color))
 
 
 def to_json(entries: list[Entry], project: Path) -> str:
-    counts = Counter(e.kind for e in entries if not e.status.startswith("n/a"))
-    payload = {
-        "project": str(project),
-        "summary": {
-            "counts": dict(sorted(counts.items())),
-            "always_loaded_tokens": sum(e.tokens for e in entries),
-            "problems": sum(
-                e.status.startswith(("broken", "shadowed", "unregistered")) for e in entries
-            ),
-        },
-        "entries": [asdict(e) for e in entries],
-    }
-    return json.dumps(payload, indent=1)
+    return json.dumps(build_report(entries, project), indent=1)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -696,7 +720,17 @@ def main(argv: list[str] | None = None) -> int:
         description="Audit Claude Code + Warp agent config across global and project scope.",
     )
     ap.add_argument("--project", type=Path, default=Path.cwd(), help="project root (default: cwd)")
-    ap.add_argument("--json", action="store_true", help="machine-readable output")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--json", action="store_true", help="machine-readable output")
+    mode.add_argument(
+        "--html",
+        nargs="?",
+        const="",
+        metavar="PATH",
+        help="write a self-contained themed HTML report and open it"
+        " (default path: system temp dir)",
+    )
+    ap.add_argument("--no-open", action="store_true", help="with --html: do not open a browser")
     ap.add_argument("--no-color", action="store_true", help="disable ANSI colors")
     args = ap.parse_args(argv)
 
@@ -704,6 +738,20 @@ def main(argv: list[str] | None = None) -> int:
     entries = collect(project)
     if args.json:
         print(to_json(entries, project))
+        return 0
+    if args.html is not None:
+        # sibling module; imported lazily so table/json modes never depend on it
+        from html_report import render_html
+
+        out = (
+            Path(tempfile.gettempdir()) / f"agentdash-{project.name}.html"
+            if args.html == ""
+            else Path(args.html).expanduser()
+        )
+        out.write_text(render_html(build_report(entries, project)), encoding="utf-8")
+        print(f"report written: {short(out)}")
+        if not args.no_open:
+            webbrowser.open(out.resolve().as_uri())
         return 0
     color = sys.stdout.isatty() and not args.no_color
     render(entries, project, color)
