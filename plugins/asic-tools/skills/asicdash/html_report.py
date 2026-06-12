@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""HTML report renderer for agentdash.
+"""HTML report renderer for asicdash.
 
-Turns the report dict from agentdash.build_report() into one self-contained
+Turns the report dict from asicdash.build_report() into one self-contained
 HTML file: inline CSS/JS, no CDN fetches, works offline. Collapsible sections
-per scope (native <details>), plugins grouped one sub-block each, ASIC Light /
+per scope (native <details>), plugins grouped one sub-block each, a Claude
+usage section (heatmap + modal + weekly chart, see usage.py), ASIC Light /
 ASIC Dark themes with a persisted toggle (follows the system scheme until the
 user picks one).
 
@@ -14,6 +15,8 @@ from __future__ import annotations
 
 import html
 from collections import Counter
+
+from usage import usage_fragment
 
 # Display order and sentence-case labels for the four scope sections.
 SECTIONS = [
@@ -141,7 +144,7 @@ _JS = """\
   var btn = document.getElementById("theme-toggle");
   var root = document.documentElement;
   var stored = null;
-  try { stored = localStorage.getItem("agentdash-theme"); } catch (e) {}
+  try { stored = localStorage.getItem("asicdash-theme"); } catch (e) {}
   if (stored === "light" || stored === "dark") root.setAttribute("data-theme", stored);
   function current() {
     var t = root.getAttribute("data-theme");
@@ -154,7 +157,7 @@ _JS = """\
   btn.addEventListener("click", function () {
     var next = current() === "dark" ? "light" : "dark";
     root.setAttribute("data-theme", next);
-    try { localStorage.setItem("agentdash-theme", next); } catch (e) {}
+    try { localStorage.setItem("asicdash-theme", next); } catch (e) {}
     label();
   });
   label();
@@ -333,12 +336,13 @@ def _context_bar(summary: dict) -> str:
 
 
 def render_html(report: dict) -> str:
-    """Render the agentdash report dict as a complete standalone HTML document.
+    """Render the asicdash report dict as a complete standalone HTML document.
 
     Args:
-        report: Payload from agentdash.build_report() — project, generated
-            timestamp, summary (counts, token estimates, attention list), and
-            entries enriched with section and attention fields.
+        report: Payload from asicdash.build_report() — project, generated
+            timestamp, summary (counts, token estimates, attention list),
+            entries enriched with section and attention fields, and an
+            optional "usage" payload from usage.collect_usage().
 
     Returns:
         Full HTML document as a string, ready to write to disk.
@@ -350,15 +354,20 @@ def render_html(report: dict) -> str:
         for key, label in SECTIONS
         if any(e["section"] == key for e in entries)
     )
+    u_css, u_html, u_js = ("", "", "")
+    if report.get("usage"):
+        u_css, u_html, u_js = usage_fragment(report["usage"], _ICON_CHEVRON)
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         '<meta name="color-scheme" content="light dark">'
-        f"<title>agentdash — {_esc(report['project'])}</title>"
-        f"<style>{_CSS}</style></head><body><main>"
-        f'<header><div><h1>agentdash</h1><p class="sub"><code>{_esc(report["project"])}</code>'
+        f"<title>asicdash — {_esc(report['project'])}</title>"
+        f"<style>{_CSS}{u_css}</style></head><body><main>"
+        f'<header><div><h1>asicdash</h1><p class="sub"><code>{_esc(report["project"])}</code>'
         f" · scanned {_esc(report['generated'])}</p></div>"
         '<button id="theme-toggle" type="button">Dark mode</button></header>'
-        f"{_stat_cards(summary, entries)}{_banners(summary['attention'])}{sections}"
-        f"{_context_bar(summary)}</main><script>{_JS}</script></body></html>"
+        f"{_stat_cards(summary, entries)}{_banners(summary['attention'])}{u_html}{sections}"
+        f"{_context_bar(summary)}</main><script>{_JS}</script>"
+        + (f"<script>{u_js}</script>" if u_js else "")
+        + "</body></html>"
     )

@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.5.0] - 2026-06-12
+
+### Added
+- **asicdash** Claude usage section in the HTML report: GitHub-style contribution
+  heatmap built from local session transcripts (`~/.claude/projects/**/*.jsonl`),
+  color-coded by surface (Code = CLI, Cowork = desktop; Chat shown honestly as
+  "no local data"), per-day breakdown modal, and a weekly stacked token chart.
+  New `usage.py` collector module, stdlib only.
+
+### Changed
+- **agentdash renamed to asicdash** (skill, script, Warp workflow). The skill still
+  triggers on `/agentdash` phrasing for muscle memory.
+- asicdash default output is now the themed HTML report (opens in the browser);
+  the terminal table moved behind a new `--cli` flag. `--json` unchanged.
+
 ## [0.4.0] - 2026-06-10
 
 ### Added

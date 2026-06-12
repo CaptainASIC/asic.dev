@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Dev-mode install: symlink Claude skills, copy Warp workflows. End users: install the
 # plugin instead (see README). Uninstall: rm the ~/.claude/skills/<name> symlinks and
-# ~/.warp/workflows/agentdash.yaml.
+# ~/.warp/workflows/asicdash.yaml.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,8 +15,8 @@ for skill in "$REPO"/plugins/asic-tools/skills/*/; do
   ln -sfn "${skill%/}" "$HOME/.claude/skills/$name"
 done
 
-cp -f "$REPO/warp/agentdash.yaml" "$HOME/.warp/workflows/agentdash.yaml"
-chmod +x "$REPO/plugins/asic-tools/skills/agentdash/agentdash.py"
+cp -f "$REPO/warp/asicdash.yaml" "$HOME/.warp/workflows/asicdash.yaml"
+chmod +x "$REPO/plugins/asic-tools/skills/asicdash/asicdash.py"
 
 # Global engineering rules -> ~/.claude/CLAUDE.md (copy, not symlink: the desktop app is
 # known to skip symlinks in some loaders). Never clobber local edits silently.
@@ -34,7 +34,7 @@ fi
 
 echo "installed (dev mode):"
 echo "  claude skills  -> ~/.claude/skills/* (symlinks to repo, one per plugin skill)"
-echo "  warp workflow  -> ~/.warp/workflows/agentdash.yaml (copy)"
+echo "  warp workflow  -> ~/.warp/workflows/asicdash.yaml (copy)"
 echo
 echo "manual step for Warp: paste each warp/*.md into a Warp Drive prompt of the same name"
 echo "(Warp Drive is cloud-stored; no file install possible)."

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""agentdash: audit visible and invisible agent-harness config for Claude Code and Warp.
+"""asicdash: config + usage dashboard for Claude Code and Warp.
 
 Scans global (~/.claude, ~/.warp) and project scope for skills, agents, commands,
 rules, hooks, plugins, memory files, MCP servers, and Warp workflows. Reports what
 loads into every session (with token estimates), what is broken (missing
 executables, bad frontmatter), what is shadowed by a narrower scope, and what is
 not file-visible at all (Warp Drive, cloud routines) -- labeled honestly instead
-of silently skipped.
+of silently skipped. The HTML report adds a Claude usage section built from
+local session transcripts (see usage.py).
 
-Stdlib only. Output: aligned table (default) or --json.
+Stdlib only. Output: themed HTML report (default), --cli table, or --json.
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ CHARS_PER_TOKEN = 4  # crude but stable estimate for always-loaded cost
 
 
 def known_paths(project: Path) -> dict[str, Path]:
-    """Every filesystem location agentdash knows about, in one place.
+    """Every filesystem location asicdash knows about, in one place.
 
     Claude Code's config layout shifts between versions; fix breakage here,
     not inside scanners.
@@ -616,7 +617,7 @@ def render(entries: list[Entry], project: Path, color: bool) -> None:
     w_kind, w_name, w_status, w_tok = 12, 36, 28, 6
     w_detail = max(20, term_width - (w_kind + w_name + w_status + w_tok + 8))
 
-    print(paint(f"agentdash — {short(project)}", "1", color))
+    print(paint(f"asicdash — {short(project)}", "1", color))
     for section in SECTIONS:
         rows = [e for e in entries if section_of(e) == section]
         if not rows:
@@ -708,9 +709,7 @@ def summarize(entries: list[Entry], project: Path, color: bool) -> None:
             print(f"    {a['kind']} {a['name']!r} — {a['detail']} ({a['source']})")
     else:
         print(paint("  no broken, shadowed, or unregistered items", "32", color))
-    print(
-        paint("  tip: --html opens this as a collapsible themed report in the browser", "2", color)
-    )
+    print(paint("  tip: run without --cli for the themed HTML report with usage stats", "2", color))
 
 
 def to_json(entries: list[Entry], project: Path) -> str:
@@ -719,22 +718,23 @@ def to_json(entries: list[Entry], project: Path) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        prog="agentdash",
-        description="Audit Claude Code + Warp agent config across global and project scope.",
+        prog="asicdash",
+        description="Config + usage dashboard for Claude Code + Warp."
+        " Default: themed HTML report opened in the browser.",
     )
     ap.add_argument("--project", type=Path, default=Path.cwd(), help="project root (default: cwd)")
     mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--cli", action="store_true", help="aligned table on stdout (chat-friendly)")
     mode.add_argument("--json", action="store_true", help="machine-readable output")
     mode.add_argument(
         "--html",
         nargs="?",
         const="",
         metavar="PATH",
-        help="write a self-contained themed HTML report and open it"
-        " (default path: system temp dir)",
+        help="HTML report path (default mode; PATH defaults to the system temp dir)",
     )
-    ap.add_argument("--no-open", action="store_true", help="with --html: do not open a browser")
-    ap.add_argument("--no-color", action="store_true", help="disable ANSI colors")
+    ap.add_argument("--no-open", action="store_true", help="HTML mode: do not open a browser")
+    ap.add_argument("--no-color", action="store_true", help="disable ANSI colors (--cli)")
     args = ap.parse_args(argv)
 
     project = args.project.expanduser().resolve()
@@ -742,22 +742,25 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         print(to_json(entries, project))
         return 0
-    if args.html is not None:
-        # sibling module; imported lazily so table/json modes never depend on it
-        from html_report import render_html
-
-        out = (
-            Path(tempfile.gettempdir()) / f"agentdash-{project.name}.html"
-            if args.html == ""
-            else Path(args.html).expanduser()
-        )
-        out.write_text(render_html(build_report(entries, project)), encoding="utf-8")
-        print(f"report written: {short(out)}")
-        if not args.no_open:
-            webbrowser.open(out.resolve().as_uri())
+    if args.cli:
+        color = sys.stdout.isatty() and not args.no_color
+        render(entries, project, color)
         return 0
-    color = sys.stdout.isatty() and not args.no_color
-    render(entries, project, color)
+    # sibling modules; imported lazily so --cli/--json never depend on them
+    from html_report import render_html
+    from usage import collect_usage
+
+    report = build_report(entries, project)
+    report["usage"] = collect_usage()
+    out = (
+        Path(tempfile.gettempdir()) / f"asicdash-{project.name}.html"
+        if args.html in (None, "")
+        else Path(args.html).expanduser()
+    )
+    out.write_text(render_html(report), encoding="utf-8")
+    print(f"report written: {short(out)}")
+    if not args.no_open:
+        webbrowser.open(out.resolve().as_uri())
     return 0
 
 
