@@ -5,7 +5,7 @@ with Warp counterparts where they make sense.
 
 | Tool | What it does |
 |---|---|
-| [agentdash](#agentdash) | Audit visible and invisible agent config across global + project scope |
+| [asicdash](#asicdash) | Config + usage dashboard: audit visible and invisible agent config, chart Claude usage |
 | [draft-prp](#draft-prp) | Research-first generator for Product Requirements Prompts |
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
@@ -26,7 +26,7 @@ New machine, start to finish:
                                                   #    rules to ~/.claude/CLAUDE.md (diff-aware)
 ```
 
-Skills are namespaced: `/asic-tools:agentdash`, `/asic-tools:draft-prp`,
+Skills are namespaced: `/asic-tools:asicdash`, `/asic-tools:draft-prp`,
 `/asic-tools:prp-implement`, `/asic-tools:scaffold`, `/asic-tools:release`,
 `/asic-tools:sync-rules`. Plugin skills show up in the desktop app's customize page;
 filesystem personal skills currently do not
@@ -51,12 +51,12 @@ claude plugin update asic-tools@asic-dev          # pull the new plugin version
 ```
 
 Symlinks each skill under `plugins/asic-tools/skills/` into `~/.claude/skills/` — bare
-`/agentdash` and `/draft-prp` names, and edits in the repo are live without reinstalling.
+`/asicdash` and `/draft-prp` names, and edits in the repo are live without reinstalling.
 Don't combine both installs: you'd get duplicate skill registrations.
 
 ### Warp
 
-`install.sh` copies `warp/agentdash.yaml` to `~/.warp/workflows/` (Warp watches real files,
+`install.sh` copies `warp/asicdash.yaml` to `~/.warp/workflows/` (Warp watches real files,
 so a copy — rerun after editing). Each remaining `warp/*.md` is pasted into a Warp Drive
 prompt of the same name manually (Drive is cloud-stored).
 
@@ -78,10 +78,12 @@ skips symlinks in some loaders.
 
 ---
 
-## agentdash
+## asicdash
 
-Audit visible and invisible agent-harness config for Claude Code and Warp, across global and
-project scope. One deterministic CLI; Claude skill and Warp workflow are thin wrappers around it.
+Config + usage dashboard for Claude Code and Warp (formerly **agentdash**). Audits visible and
+invisible agent-harness config across global and project scope, and charts Claude usage from
+local session transcripts. One deterministic CLI; Claude skill and Warp workflow are thin
+wrappers around it.
 
 ### Why
 
@@ -95,26 +97,30 @@ see by listing directories:
   `AGENTS.md` loaded into every session
 - **Rot and shadowing** — hook scripts on disk that nothing references, project entries shadowing
   global ones, broken frontmatter, missing executables
+- **Claude usage** — per-day activity from `~/.claude/projects/**/*.jsonl`: GitHub-style
+  contribution heatmap colored by surface (Code = CLI, Cowork = desktop; claude.ai Chat leaves
+  no local transcript and is labeled "no local data"), per-day breakdown modals, weekly stacked
+  token chart
 
 ### Usage
 
 ```bash
-# plugin install path (marketplace clone); dev-mode symlink path is ~/.claude/skills/agentdash/
-DASH=~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/skills/agentdash/agentdash.py
-python3 "$DASH"                              # table, current project
+# plugin install path (marketplace clone); dev-mode symlink path is ~/.claude/skills/asicdash/
+DASH=~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/skills/asicdash/asicdash.py
+python3 "$DASH"                              # themed HTML report, opens in browser (default)
+python3 "$DASH" --cli                        # aligned table on stdout
 python3 "$DASH" --json                       # machine-readable
-python3 "$DASH" --html                       # themed HTML report, opens in browser
 python3 "$DASH" --html report.html --no-open # explicit path, no browser launch
 python3 "$DASH" --project ~/Repositories/Airi
 ```
 
-The HTML report (`html_report.py`, stdlib only like the scanner) is a single self-contained
-file: collapsible sections per scope, plugins folded to one block each with skill/agent chips,
-attention banners, a context-cost bar, and ASIC Light/Dark themes (follows the system scheme,
-toggle persisted in `localStorage`).
+The HTML report (`html_report.py` + `usage.py`, stdlib only like the scanner) is a single
+self-contained file: collapsible sections per scope, plugins folded to one block each with
+skill/agent chips, attention banners, the usage heatmap, a context-cost bar, and ASIC
+Light/Dark themes (follows the system scheme, toggle persisted in `localStorage`).
 
-In Claude Code: ask "show my config dashboard" (triggers the `agentdash` skill).
-In Warp: run the `agentdash` workflow.
+In Claude Code: ask "show my config dashboard" (triggers the `asicdash` skill).
+In Warp: run the `asicdash` workflow.
 
 ### Coverage
 
@@ -128,6 +134,7 @@ In Warp: run the `agentdash` workflow.
 | `CLAUDE.md`, `CLAUDE.local.md`, managed memory `MEMORY.md` | global + project | token estimate |
 | `.mcp.json`, `~/.claude.json` mcpServers | global + project | names + command |
 | `~/.warp/workflows/`, `.warp/workflows/`, `WARP.md`, `AGENTS.md` | global + project | YAML top-level parse |
+| `~/.claude/projects/**/*.jsonl` session transcripts | usage (HTML report) | per-day token/session aggregation |
 
 ### Known gaps, on purpose
 
@@ -135,13 +142,16 @@ In Warp: run the `agentdash` workflow.
   undocumented schema. Not parsed; reported as `n/a` instead of pretending coverage.
 - **Claude routines / scheduled cloud agents**: stored server-side, no local file. Reported as
   `n/a`; list with `/schedule` in Claude Code.
+- **claude.ai Chat usage**: web sessions leave no local transcript; the usage section labels
+  Chat "no local data" rather than guessing.
 - Token counts are `bytes / 4` estimates, not tokenizer output.
 
 ### Maintenance
 
 Claude Code's config layout shifts between versions. All scanned locations live in one table:
-`known_paths()` in [agentdash.py](plugins/asic-tools/skills/agentdash/agentdash.py). Fix
-breakage there.
+`known_paths()` in [asicdash.py](plugins/asic-tools/skills/asicdash/asicdash.py). Fix
+breakage there. Transcript field assumptions (entrypoint values, usage keys) live in
+[usage.py](plugins/asic-tools/skills/asicdash/usage.py).
 
 ---
 

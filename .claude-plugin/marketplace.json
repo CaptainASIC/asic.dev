@@ -9,7 +9,7 @@
     {
       "name": "asic-tools",
       "source": "./plugins/asic-tools",
-      "description": "Agent-harness tooling: draft-prp + prp-implement PRP lifecycle, agentdash config auditor, scaffold project bootstrap, release cutter",
+      "description": "Agent-harness tooling: draft-prp + prp-implement PRP lifecycle, asicdash config + usage dashboard, scaffold project bootstrap, release cutter",
       "author": {
         "name": "Captain ASIC"
       }
