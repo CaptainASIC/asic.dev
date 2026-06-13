@@ -2,12 +2,14 @@
 """Claude usage collector + HTML fragment for the asicdash report.
 
 Aggregates per-day activity from local Claude Code session transcripts
-(~/.claude/projects/**/*.jsonl) into three surfaces:
+(~/.claude/projects/**/*.jsonl). Every transcript here is a Claude Code
+session; the entrypoint field only records how Code was launched, which is
+the one split the local data can honestly make:
 
-  code   — CLI sessions (entrypoint "cli")
-  cowork — desktop/Cowork sessions (entrypoint contains "desktop")
-  chat   — claude.ai web; leaves no local transcript, always shown as
-           "no local data" rather than silently omitted
+  terminal — launched from the CLI (entrypoint "cli")
+  desktop  — launched from the Claude desktop app (entrypoint "claude-desktop")
+  chat     — claude.ai web; leaves no local transcript, always shown as
+             "no local data" rather than silently omitted
 
 Renders a GitHub-style contribution heatmap (cell color = dominant surface,
 intensity = output-token quartile), a per-day breakdown modal, and a weekly
@@ -21,13 +23,13 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
-SURFACES = ("code", "cowork")  # surfaces with local data; chat is rendered as n/a
+SURFACES = ("terminal", "desktop")  # surfaces with local data; chat is rendered as n/a
 WINDOW_DAYS = 371  # 53 weeks, matching the heatmap span
 
 
 def surface_of(entrypoint: str) -> str:
     """Map a transcript entrypoint value onto a dashboard surface."""
-    return "cowork" if "desktop" in entrypoint else "code"
+    return "desktop" if "desktop" in entrypoint else "terminal"
 
 
 def _scan_file(path: Path, by_day: dict, cutoff: datetime) -> None:
@@ -128,18 +130,18 @@ def _fmt_tokens(n: int) -> str:
 # Heatmap ramps per surface, 1 (faint) .. 4 (strong); chat appears in the
 # legend/modal only. Dark stops invert so brighter = more activity.
 _LIGHT_VARS = """\
-  --u-code-1: #9fe1cb; --u-code-2: #5dcaa5; --u-code-3: #1d9e75; --u-code-4: #0f6e56;
-  --u-cowork-1: #f5c4b3; --u-cowork-2: #f0997b; --u-cowork-3: #d85a30; --u-cowork-4: #993c1d;
+  --u-terminal-1: #9fe1cb; --u-terminal-2: #5dcaa5; --u-terminal-3: #1d9e75; --u-terminal-4: #0f6e56;
+  --u-desktop-1: #f5c4b3; --u-desktop-2: #f0997b; --u-desktop-3: #d85a30; --u-desktop-4: #993c1d;
   --u-chat-1: #cecbf6; --u-chat-2: #afa9ec; --u-chat-3: #7f77dd; --u-chat-4: #534ab7;"""
 
 _DARK_VARS = """\
-  --u-code-1: #085041; --u-code-2: #0f6e56; --u-code-3: #1d9e75; --u-code-4: #5dcaa5;
-  --u-cowork-1: #712b13; --u-cowork-2: #993c1d; --u-cowork-3: #d85a30; --u-cowork-4: #f0997b;
+  --u-terminal-1: #085041; --u-terminal-2: #0f6e56; --u-terminal-3: #1d9e75; --u-terminal-4: #5dcaa5;
+  --u-desktop-1: #712b13; --u-desktop-2: #993c1d; --u-desktop-3: #d85a30; --u-desktop-4: #f0997b;
   --u-chat-1: #3c3489; --u-chat-2: #534ab7; --u-chat-3: #7f77dd; --u-chat-4: #afa9ec;"""
 
 _CELL_RULES = "".join(
     f".u-{s}-{i} {{ background: var(--u-{s}-{i}); }}\n"
-    for s in ("code", "cowork", "chat")
+    for s in ("terminal", "desktop", "chat")
     for i in range(1, 5)
 )
 
@@ -152,7 +154,12 @@ USAGE_CSS = (
     + "\n  }\n}\n"
     + _CELL_RULES
     + """\
-.u-wrap { padding: 4px 16px 14px; border-top: 1px solid var(--border); }
+.u-wrap { padding: 4px 16px 14px; border-top: 1px solid var(--border); position: relative; }
+.u-tip { position: absolute; display: none; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 12px;
+  line-height: 1.5; pointer-events: none; z-index: 5; white-space: nowrap; }
+.u-tip .t-date { font-weight: 500; }
+.u-tip .t-row { display: flex; align-items: center; gap: 6px; color: var(--muted); }
 .u-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted);
   margin: 10px 0 12px; }
 .u-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px;
@@ -198,7 +205,7 @@ USAGE_CSS = (
 USAGE_JS = """\
 (function () {
   var data = JSON.parse(document.getElementById("u-data").textContent);
-  var SURF = [["code", "Code"], ["cowork", "Cowork"]];
+  var SURF = [["terminal", "Terminal"], ["desktop", "Desktop"]];
   var MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   function fmt(n) {
     if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
@@ -255,6 +262,34 @@ USAGE_JS = """\
     if (e.key === "Escape") overlay.classList.remove("show");
   });
 
+  var tip = document.getElementById("u-tip");
+  var wrap = tip.parentNode;
+  function showTip(cell, k, day, t) {
+    var sessions = 0, rows = "";
+    SURF.forEach(function (c) {
+      var v = day[c[0]];
+      if (!v) return;
+      sessions += v.sessions;
+      rows += '<div class="t-row"><span class="u-sw u-' + c[0] + '-3"></span>' + c[1] + " " +
+        Math.round(v.out / t * 100) + "% \\u00b7 " + fmt(v.out) + " tok \\u00b7 " + v.sessions +
+        " session" + (v.sessions === 1 ? "" : "s") + "</div>";
+    });
+    tip.innerHTML = '<div class="t-date">' +
+      new Date(k + "T00:00:00").toLocaleDateString(undefined,
+        { weekday: "short", month: "short", day: "numeric" }) +
+      " \\u2014 " + fmt(t) + " tok \\u00b7 " + sessions +
+      " session" + (sessions === 1 ? "" : "s") + "</div>" + rows;
+    tip.style.display = "block";
+    var cr = cell.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+    var left = cr.left - wr.left + 16;
+    if (left + tip.offsetWidth > wr.width - 8) left = cr.left - wr.left - tip.offsetWidth - 6;
+    var top = cr.top - wr.top - tip.offsetHeight - 6;
+    if (top < 0) top = cr.top - wr.top + 18;
+    tip.style.left = Math.max(0, left) + "px";
+    tip.style.top = top + "px";
+  }
+  function hideTip() { tip.style.display = "none"; }
+
   var grid = document.getElementById("u-grid");
   var months = document.getElementById("u-months");
   var lastMonth = -1;
@@ -280,7 +315,7 @@ USAGE_JS = """\
         var day = data.days[k];
         var t = day ? dayOut(day) : 0;
         if (t > 0) {
-          var dom = "code", best = -1;
+          var dom = "terminal", best = -1;
           SURF.forEach(function (c) {
             var v = day[c[0]] ? day[c[0]].out : 0;
             if (v > best) { best = v; dom = c[0]; }
@@ -296,6 +331,14 @@ USAGE_JS = """\
           cell.addEventListener("keydown", function (k, day) {
             return function (e) { if (e.key === "Enter" || e.key === " ") openModal(k, day); };
           }(k, day));
+          cell.addEventListener("mouseenter", function (cell, k, day, t) {
+            return function () { showTip(cell, k, day, t); };
+          }(cell, k, day, t));
+          cell.addEventListener("focus", function (cell, k, day, t) {
+            return function () { showTip(cell, k, day, t); };
+          }(cell, k, day, t));
+          cell.addEventListener("mouseleave", hideTip);
+          cell.addEventListener("blur", hideTip);
         }
       }
       col.appendChild(cell);
@@ -308,22 +351,22 @@ USAGE_JS = """\
   var weeks = [];
   var wmax = 0;
   for (var w2 = 41; w2 < 53; w2++) {
-    var agg = { code: 0, cowork: 0 };
+    var agg = { terminal: 0, desktop: 0 };
     for (var r2 = 0; r2 < 7; r2++) {
       var dk = iso(addDays(start, w2 * 7 + r2));
       var dd = data.days[dk];
       if (dd) SURF.forEach(function (c) { if (dd[c[0]]) agg[c[0]] += dd[c[0]].out; });
     }
     agg.start = addDays(start, w2 * 7);
-    agg.total = agg.code + agg.cowork;
+    agg.total = agg.terminal + agg.desktop;
     if (agg.total > wmax) wmax = agg.total;
     weeks.push(agg);
   }
   weeks.forEach(function (wk) {
     var bar = document.createElement("div");
     bar.className = "u-bar";
-    bar.title = "week of " + iso(wk.start) + " \\u2014 code " + fmt(wk.code) +
-      " \\u00b7 cowork " + fmt(wk.cowork);
+    bar.title = "week of " + iso(wk.start) + " \\u2014 terminal " + fmt(wk.terminal) +
+      " \\u00b7 desktop " + fmt(wk.desktop);
     SURF.forEach(function (c) {
       if (!wk[c[0]]) return;
       var seg = document.createElement("div");
@@ -358,8 +401,8 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
     )
     legend = (
         '<div class="u-legend">'
-        '<span><span class="u-sw u-code-3"></span>Code</span>'
-        '<span><span class="u-sw u-cowork-3"></span>Cowork</span>'
+        '<span><span class="u-sw u-terminal-3"></span>Terminal</span>'
+        '<span><span class="u-sw u-desktop-3"></span>Desktop app</span>'
         '<span class="na"><span class="u-sw u-chat-3"></span>Chat — no local data</span>'
         "</div>"
     )
@@ -368,7 +411,7 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
         "<span>Wed</span><span></span><span>Fri</span><span></span></div>"
     )
     scale = '<span class="u-cell"></span>' + "".join(
-        f'<span class="u-cell u-code-{i}"></span>' for i in range(1, 5)
+        f'<span class="u-cell u-terminal-{i}"></span>' for i in range(1, 5)
     )
     html_out = (
         f'<details class="sec" open><summary>{chevron_icon}Claude usage'
@@ -376,7 +419,9 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
         f'<div class="u-wrap">{legend}'
         '<div class="u-months" id="u-months"></div>'
         f'<div class="u-hm">{dows}<div class="u-grid" id="u-grid"></div></div>'
-        '<div class="u-foot"><span>cell color = dominant surface · click a day for detail'
+        '<div class="u-tip" id="u-tip"></div>'
+        '<div class="u-foot"><span>cell color = dominant surface · hover for breakdown'
+        " · click for detail"
         f'</span><span class="u-scale">less {scale} more</span></div>'
         '<div class="u-chart-title">Output tokens per week, last 12 weeks</div>'
         '<div class="u-chart" id="u-chart"></div>'

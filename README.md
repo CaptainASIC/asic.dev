@@ -97,10 +97,10 @@ see by listing directories:
   `AGENTS.md` loaded into every session
 - **Rot and shadowing** — hook scripts on disk that nothing references, project entries shadowing
   global ones, broken frontmatter, missing executables
-- **Claude usage** — per-day activity from `~/.claude/projects/**/*.jsonl`: GitHub-style
-  contribution heatmap colored by surface (Code = CLI, Cowork = desktop; claude.ai Chat leaves
-  no local transcript and is labeled "no local data"), per-day breakdown modals, weekly stacked
-  token chart
+- **Claude Code usage** — per-day activity from `~/.claude/projects/**/*.jsonl` (every transcript
+  there is a Claude Code session): GitHub-style contribution heatmap colored by launch surface
+  (Terminal = CLI, Desktop = the Claude desktop app; claude.ai Chat leaves no local transcript and
+  is labeled "no local data"), hover tooltips, per-day breakdown modals, weekly stacked token chart
 
 ### Usage
 

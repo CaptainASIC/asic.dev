@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.5.1] - 2026-06-13
+
+### Added
+- **asicdash** heatmap hover tooltips: date, total tokens, session count, and
+  per-surface percentage split for the day — glanceable breakdown without
+  opening the click-modal. Keyboard focus shows the same tooltip.
+
+### Changed
+- **asicdash** usage surfaces relabeled to match what the transcripts actually
+  record. Every `~/.claude/projects` transcript is a Claude Code session; the
+  only honest split is the launch entrypoint, so "Code/Cowork" is now
+  "Terminal" (cli) / "Desktop" (claude-desktop app). The previous labels
+  misfiled all desktop-launched Code sessions as "Cowork". Chat (claude.ai)
+  still shown as "no local data".
+
 ## [0.5.0] - 2026-06-12
 
 ### Added
