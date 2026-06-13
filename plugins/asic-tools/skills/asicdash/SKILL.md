@@ -1,6 +1,6 @@
 ---
 name: asicdash
-description: Config + usage dashboard for Claude Code + Warp (formerly agentdash). Audits skills, agents, commands, rules, hooks, plugins, memory files, MCP servers, and Warp workflows across global and project scope — including invisible config (hook registrations, plugin-injected skills, always-loaded context cost) — and charts Claude usage from local session transcripts (GitHub-style heatmap, per-day modals, Code/Cowork split). Use when the user asks "what skills/agents/hooks do I have", "show my config", "config dashboard", "what's loaded into my context", "audit my claude or warp setup", "show my claude usage", or invokes /asicdash or /agentdash.
+description: Config + usage dashboard for Claude Code + Warp (formerly agentdash). Audits skills, agents, commands, rules, hooks, plugins, memory files, MCP servers, and Warp workflows across global and project scope — including invisible config (hook registrations, plugin-injected skills, always-loaded context cost) — and charts Claude Code usage from local session transcripts (GitHub-style heatmap, per-day modals, Terminal/Desktop launch split). Use when the user asks "what skills/agents/hooks do I have", "show my config", "config dashboard", "what's loaded into my context", "audit my claude or warp setup", "show my claude usage", or invokes /asicdash or /agentdash.
 ---
 
 # asicdash
