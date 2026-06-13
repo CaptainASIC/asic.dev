@@ -152,7 +152,12 @@ USAGE_CSS = (
     + "\n  }\n}\n"
     + _CELL_RULES
     + """\
-.u-wrap { padding: 4px 16px 14px; border-top: 1px solid var(--border); }
+.u-wrap { padding: 4px 16px 14px; border-top: 1px solid var(--border); position: relative; }
+.u-tip { position: absolute; display: none; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 12px;
+  line-height: 1.5; pointer-events: none; z-index: 5; white-space: nowrap; }
+.u-tip .t-date { font-weight: 500; }
+.u-tip .t-row { display: flex; align-items: center; gap: 6px; color: var(--muted); }
 .u-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted);
   margin: 10px 0 12px; }
 .u-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px;
@@ -255,6 +260,34 @@ USAGE_JS = """\
     if (e.key === "Escape") overlay.classList.remove("show");
   });
 
+  var tip = document.getElementById("u-tip");
+  var wrap = tip.parentNode;
+  function showTip(cell, k, day, t) {
+    var sessions = 0, rows = "";
+    SURF.forEach(function (c) {
+      var v = day[c[0]];
+      if (!v) return;
+      sessions += v.sessions;
+      rows += '<div class="t-row"><span class="u-sw u-' + c[0] + '-3"></span>' + c[1] + " " +
+        Math.round(v.out / t * 100) + "% \\u00b7 " + fmt(v.out) + " tok \\u00b7 " + v.sessions +
+        " session" + (v.sessions === 1 ? "" : "s") + "</div>";
+    });
+    tip.innerHTML = '<div class="t-date">' +
+      new Date(k + "T00:00:00").toLocaleDateString(undefined,
+        { weekday: "short", month: "short", day: "numeric" }) +
+      " \\u2014 " + fmt(t) + " tok \\u00b7 " + sessions +
+      " session" + (sessions === 1 ? "" : "s") + "</div>" + rows;
+    tip.style.display = "block";
+    var cr = cell.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+    var left = cr.left - wr.left + 16;
+    if (left + tip.offsetWidth > wr.width - 8) left = cr.left - wr.left - tip.offsetWidth - 6;
+    var top = cr.top - wr.top - tip.offsetHeight - 6;
+    if (top < 0) top = cr.top - wr.top + 18;
+    tip.style.left = Math.max(0, left) + "px";
+    tip.style.top = top + "px";
+  }
+  function hideTip() { tip.style.display = "none"; }
+
   var grid = document.getElementById("u-grid");
   var months = document.getElementById("u-months");
   var lastMonth = -1;
@@ -296,6 +329,14 @@ USAGE_JS = """\
           cell.addEventListener("keydown", function (k, day) {
             return function (e) { if (e.key === "Enter" || e.key === " ") openModal(k, day); };
           }(k, day));
+          cell.addEventListener("mouseenter", function (cell, k, day, t) {
+            return function () { showTip(cell, k, day, t); };
+          }(cell, k, day, t));
+          cell.addEventListener("focus", function (cell, k, day, t) {
+            return function () { showTip(cell, k, day, t); };
+          }(cell, k, day, t));
+          cell.addEventListener("mouseleave", hideTip);
+          cell.addEventListener("blur", hideTip);
         }
       }
       col.appendChild(cell);
@@ -376,7 +417,9 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
         f'<div class="u-wrap">{legend}'
         '<div class="u-months" id="u-months"></div>'
         f'<div class="u-hm">{dows}<div class="u-grid" id="u-grid"></div></div>'
-        '<div class="u-foot"><span>cell color = dominant surface · click a day for detail'
+        '<div class="u-tip" id="u-tip"></div>'
+        '<div class="u-foot"><span>cell color = dominant surface · hover for breakdown'
+        " · click for detail"
         f'</span><span class="u-scale">less {scale} more</span></div>'
         '<div class="u-chart-title">Output tokens per week, last 12 weeks</div>'
         '<div class="u-chart" id="u-chart"></div>'
