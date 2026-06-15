@@ -4,6 +4,19 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.6.0] - 2026-06-15
+
+### Added
+- **idea-refine** skill: structured divergent/convergent ideation that runs
+  upstream of `draft-prp`. Takes a raw idea through restate → sharpen (3–5
+  questions) → 5–8 variations → cluster to 2–3 directions → stress-test →
+  surface assumptions, and ships a one-pager (problem, recommended direction,
+  assumptions-to-validate, MVP scope, explicit Not-Doing list) to
+  `PRPs/ideas/<slug>.md`. One-pager fields map onto the PRP template (Not Doing
+  → §1 strict non-goals, assumptions → §4.4 / SPECULATIVE markers) and the skill
+  offers the `draft-prp` hand-off. Fills the raw-idea → formed-feature gap at the
+  front of the PRP pipeline. Claude Code only for now; Warp twin deferred.
+
 ## [0.5.1] - 2026-06-13
 
 ### Added

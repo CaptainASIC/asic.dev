@@ -6,6 +6,7 @@ with Warp counterparts where they make sense.
 | Tool | What it does |
 |---|---|
 | [asicdash](#asicdash) | Config + usage dashboard: audit visible and invisible agent config, chart Claude usage |
+| [idea-refine](#idea-refine) | Refine a raw idea into a build-ready one-pager — upstream of draft-prp |
 | [draft-prp](#draft-prp) | Research-first generator for Product Requirements Prompts |
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
@@ -26,9 +27,9 @@ New machine, start to finish:
                                                   #    rules to ~/.claude/CLAUDE.md (diff-aware)
 ```
 
-Skills are namespaced: `/asic-tools:asicdash`, `/asic-tools:draft-prp`,
-`/asic-tools:prp-implement`, `/asic-tools:scaffold`, `/asic-tools:release`,
-`/asic-tools:sync-rules`. Plugin skills show up in the desktop app's customize page;
+Skills are namespaced: `/asic-tools:asicdash`, `/asic-tools:idea-refine`,
+`/asic-tools:draft-prp`, `/asic-tools:prp-implement`, `/asic-tools:scaffold`,
+`/asic-tools:release`, `/asic-tools:sync-rules`. Plugin skills show up in the desktop app's customize page;
 filesystem personal skills currently do not
 ([claude-code#66998](https://github.com/anthropics/claude-code/issues/66998)).
 
@@ -152,6 +153,41 @@ Claude Code's config layout shifts between versions. All scanned locations live 
 `known_paths()` in [asicdash.py](plugins/asic-tools/skills/asicdash/asicdash.py). Fix
 breakage there. Transcript field assumptions (entrypoint values, usage keys) live in
 [usage.py](plugins/asic-tools/skills/asicdash/usage.py).
+
+---
+
+## idea-refine
+
+Refines a raw idea into a sharp, build-ready concept **before** any PRP or code — the cheap
+filter that runs upstream of `draft-prp` so its expensive research budget never lands on the
+wrong idea.
+
+### Why
+
+`draft-prp` assumes the feature ask is already concrete; it does verified-context research, not
+"is this the right thing to build". That leaves a gap at the front of the pipeline: raw idea →
+formed feature. This skill fills it with structured divergent/convergent thinking, and it is
+deliberately *not* a yes-machine — weak ideas get pushed back on, KISS/YAGNI steer toward the
+simplest version that solves the real problem.
+
+1. **Understand & expand** — restate as "How Might We", 3–5 sharpening questions, 5–8 idea
+   variations through lenses (inversion, simplification, 10×, audience-shift, …)
+2. **Evaluate & converge** — cluster to 2–3 distinct directions, stress-test on
+   value/feasibility/differentiation, surface hidden assumptions
+3. **Sharpen & ship** — a one-pager: problem, recommended direction, assumptions-to-validate,
+   MVP scope, and an explicit **Not Doing** list
+
+Writes exactly one file: `PRPs/ideas/<slug>.md` (creates `PRPs/ideas/` if missing), co-located
+with `PRPs/` so the idea → PRP chain stays in one tree. The one-pager's fields map straight onto
+the `draft-prp` template (Not Doing → §1 strict non-goals, assumptions → §4.4 / SPECULATIVE
+markers), and the skill offers the `draft-prp` hand-off rather than forcing it.
+
+### Usage
+
+In Claude Code: `/idea-refine`, or say "refine this idea" / "stress-test my plan" mid-chat.
+
+Layout: [SKILL.md](plugins/asic-tools/skills/idea-refine/SKILL.md) is self-contained — the
+ideation lenses and evaluation criteria are inlined, no reference files.
 
 ---
 

@@ -1,8 +1,8 @@
 {
   "name": "asic-tools",
   "displayName": "Captain ASIC's Dev Toolbox",
-  "version": "0.5.1",
-  "description": "Agent-harness tooling for Claude Code + Warp. PRP lifecycle: draft-prp (research-first PRP generator) and prp-implement (two-phase drift-checked executor). Plus asicdash (config + usage dashboard: audit visible and invisible config, Claude usage heatmap), scaffold (standards-enforced Python bootstrap), release (multi-location version bump + changelog), and sync-rules (deploy the bundled global engineering rules to ~/.claude/CLAUDE.md).",
+  "version": "0.6.0",
+  "description": "Agent-harness tooling for Claude Code + Warp. PRP lifecycle: idea-refine (upstream ideation one-pager), draft-prp (research-first PRP generator), and prp-implement (two-phase drift-checked executor). Plus asicdash (config + usage dashboard: audit visible and invisible config, Claude usage heatmap), scaffold (standards-enforced Python bootstrap), release (multi-location version bump + changelog), and sync-rules (deploy the bundled global engineering rules to ~/.claude/CLAUDE.md).",
   "author": {
     "name": "Captain ASIC",
     "url": "https://github.com/CaptainASIC"
