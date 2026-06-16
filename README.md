@@ -8,6 +8,7 @@ with Warp counterparts where they make sense.
 | [asicdash](#asicdash) | Config + usage dashboard: audit visible and invisible agent config, chart Claude usage |
 | [idea-refine](#idea-refine) | Refine a raw idea into a build-ready one-pager — upstream of draft-prp |
 | [draft-prp](#draft-prp) | Research-first generator for Product Requirements Prompts |
+| [prp-review](#prp-review) | Adversarial review gate: 6-lens Workflow hardens a PRP before implementation |
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
@@ -228,6 +229,34 @@ Layout: [SKILL.md](plugins/asic-tools/skills/draft-prp/SKILL.md) is the workflow
 [style_guide.md](plugins/asic-tools/skills/draft-prp/references/style_guide.md) hold the
 section skeleton and the standing engineering rules (structure caps, stack defaults, DB
 naming, test minimums, git constraints) loaded only when drafting.
+
+---
+
+## prp-review
+
+Adversarial review gate between `draft-prp` and `prp-implement`. Given a drafted PRP, it runs a
+Workflow that fans out six distinct-lens reviewers — three on logic (requirements coverage,
+architecture soundness, edge-cases & verifiability) and three on style/convention drift against
+the real target repo (naming, structure, error/test/docstring conventions) — adjudicates their
+findings to drop false positives, applies the blocker/major fixes to the PRP in place, and
+re-reviews up to three rounds. It appends a `## Review Log` to the PRP and surfaces any residual
+blockers.
+
+### Why
+
+`prp-implement` trusts the PRP completely, and `draft-prp`'s self-audit is a single agent
+checking its own work. An independent adversarial pass catches logic gaps and convention drift
+before any implementation budget is spent — the cheap gate before the expensive run.
+
+### Usage
+
+In Claude Code: `/asic-tools:prp-review PRP-NNN`, or `/prp-review` to target the newest
+ready PRP, or accept the hand-off `draft-prp` offers after a draft. Invoking it opts into the
+multi-agent Workflow. Claude Code only for now; Warp twin deferred.
+
+Layout: [SKILL.md](plugins/asic-tools/skills/prp-review/SKILL.md) is the driver;
+[references/review_workflow.js](plugins/asic-tools/skills/prp-review/references/review_workflow.js)
+is the fan-out/adjudicate/apply/re-review Workflow script.
 
 ---
 

@@ -4,6 +4,20 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.7.0] - 2026-06-16
+
+### Added
+- **prp-review** skill: adversarial review gate between `draft-prp` and
+  `prp-implement`. Authors and runs a Workflow that fans out six distinct-lens
+  reviewers (three on logic — requirements coverage, architecture soundness,
+  edge-cases & verifiability; three on style/convention drift against the real
+  target repo — naming, structure, error/test/docstring conventions),
+  adjudicates findings to drop false positives, applies blocker/major fixes to
+  the PRP in place, and re-reviews up to three rounds before appending a
+  `## Review Log`. `draft-prp` now offers it as a hand-off and `prp-implement`
+  warns (advisory) when a PRP carries no clean review log. Closes the last open
+  seam in the PRP pipeline. Claude Code only for now; Warp twin deferred.
+
 ## [0.6.0] - 2026-06-15
 
 ### Added
