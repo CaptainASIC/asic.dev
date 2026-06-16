@@ -25,6 +25,10 @@ skipping it is the first way implementations go wrong.
 - **Dependencies** (front matter `Depends on`) are implemented — check
   `.serena/memories/prp/` status memos and the codebase artifacts they name.
 - **Tooling** named in §7/§9 commands actually runs in this repo.
+- **Review log** (advisory, never blocking): if the PRP has no `## Review Log` section, or its
+  log records residual blockers, warn the user that the PRP was not (cleanly) hardened by
+  `prp-review` and recommend running `/asic-tools:prp-review` first — then proceed if they
+  confirm. Do not refuse on this basis.
 
 ### A3. Drift check (the step that earns this skill its keep)
 

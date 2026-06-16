@@ -111,3 +111,7 @@ Before reporting done, audit the draft against this list — fix, don't excuse:
 
 Then write the file (mkdir `PRPs/` if needed — the only file this skill writes) and report:
 path, size, open questions if any, and any SPECULATIVE markers with why.
+
+Then offer the review gate: *"Adversarially review this PRP before implementing?
+(`/asic-tools:prp-review PRP-NNN`)"* — offered, never auto-run, mirroring how `idea-refine`
+offers `draft-prp`.
