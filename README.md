@@ -8,8 +8,8 @@ with Warp counterparts where they make sense.
 | [asicdash](#asicdash) | Config + usage dashboard: audit visible and invisible agent config, chart Claude usage |
 | [idea-refine](#idea-refine) | Refine a raw idea into a build-ready one-pager — upstream of draft-prp |
 | [draft-prp](#draft-prp) | Research-first generator for Product Requirements Prompts |
-| [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [prp-review](#prp-review) | Adversarial review gate: 6-lens Workflow hardens a PRP before implementation |
+| [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
 | [sync-rules](#global-rules) | Deploy the bundled global engineering rules to `~/.claude/CLAUDE.md` on any machine |
@@ -232,31 +232,6 @@ naming, test minimums, git constraints) loaded only when drafting.
 
 ---
 
-## prp-implement
-
-Executes a PRP in the same two-prompt rhythm the format was designed for: **"review the
-PRP and plan for implementation"** → **"execute the plan"** — formalized so neither half
-gets skipped under time pressure.
-
-Phase A loads the PRP *and* its §4.1 MUST READ context, checks preconditions (status,
-dependency PRPs, runnable tooling), then runs a **drift check**: the PRP was written
-against the codebase as of its date, so every referenced file, gotcha, and code snippet is
-verified against current reality before anything executes. Material drift stops the run
-with a proposed amendment — executing a stale PRP produces confident wrong code. It ends
-by presenting the plan and pausing for approval.
-
-Phase B executes task-by-task in §5 order (test-first where §7 defines tests, per-task
-verify, surgical scope — unlisted changes stop and ask), walks the §9 validation levels in
-order without skipping, and commits in Conventional format. Phase C is the close-out
-ritual: acceptance checklist ticked against reality, PRP status flipped, §10 doc updates
-applied (PLANNING/TASKS/CHANGELOG/Serena memory), and a final report of files-touched vs
-the PRP's own table.
-
-In Claude Code: `/asic-tools:prp-implement PRP-040`. In Warp: the `prp-implement` Drive
-prompt ([warp/prp-implement.md](warp/prp-implement.md)).
-
----
-
 ## prp-review
 
 Adversarial review gate between `draft-prp` and `prp-implement`. Given a drafted PRP, it runs a
@@ -282,6 +257,31 @@ multi-agent Workflow. Claude Code only for now; Warp twin deferred.
 Layout: [SKILL.md](plugins/asic-tools/skills/prp-review/SKILL.md) is the driver;
 [references/review_workflow.js](plugins/asic-tools/skills/prp-review/references/review_workflow.js)
 is the fan-out/adjudicate/apply/re-review Workflow script.
+
+---
+
+## prp-implement
+
+Executes a PRP in the same two-prompt rhythm the format was designed for: **"review the
+PRP and plan for implementation"** → **"execute the plan"** — formalized so neither half
+gets skipped under time pressure.
+
+Phase A loads the PRP *and* its §4.1 MUST READ context, checks preconditions (status,
+dependency PRPs, runnable tooling), then runs a **drift check**: the PRP was written
+against the codebase as of its date, so every referenced file, gotcha, and code snippet is
+verified against current reality before anything executes. Material drift stops the run
+with a proposed amendment — executing a stale PRP produces confident wrong code. It ends
+by presenting the plan and pausing for approval.
+
+Phase B executes task-by-task in §5 order (test-first where §7 defines tests, per-task
+verify, surgical scope — unlisted changes stop and ask), walks the §9 validation levels in
+order without skipping, and commits in Conventional format. Phase C is the close-out
+ritual: acceptance checklist ticked against reality, PRP status flipped, §10 doc updates
+applied (PLANNING/TASKS/CHANGELOG/Serena memory), and a final report of files-touched vs
+the PRP's own table.
+
+In Claude Code: `/asic-tools:prp-implement PRP-040`. In Warp: the `prp-implement` Drive
+prompt ([warp/prp-implement.md](warp/prp-implement.md)).
 
 ---
 
