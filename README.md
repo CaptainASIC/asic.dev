@@ -270,8 +270,11 @@ Phase A loads the PRP *and* its §4.1 MUST READ context, checks preconditions (s
 dependency PRPs, runnable tooling), then runs a **drift check**: the PRP was written
 against the codebase as of its date, so every referenced file, gotcha, and code snippet is
 verified against current reality before anything executes. Material drift stops the run
-with a proposed amendment — executing a stale PRP produces confident wrong code. It ends
-by presenting the plan and pausing for approval.
+with a proposed amendment — executing a stale PRP produces confident wrong code. On a resume
+(the PRP's branch already exists), it orients from the working scratchpad and re-checks only the
+cited files that changed since the branch forked — including any that landed on the base
+meanwhile — rather than re-running the whole sweep. It ends by presenting the plan and pausing
+for approval.
 
 Phase B executes task-by-task in §5 order (test-first where §7 defines tests, per-task
 verify, surgical scope — unlisted changes stop and ask), walks the §9 validation levels in

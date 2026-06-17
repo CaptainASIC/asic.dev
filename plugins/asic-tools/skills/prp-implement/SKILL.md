@@ -21,7 +21,9 @@ skipping it is the first way implementations go wrong.
 ### A2. Preconditions
 
 - **Status** is `Ready for execution`. Already-Implemented → stop and ask (re-run is a
-  user decision). In-progress branch already exists → report its state first.
+  user decision). In-progress branch already exists → this is a **resume**, not a fresh run:
+  report its state, then run **A2.5 in place of A3** (A2.5 *is* the resume drift check — the
+  full A3 sweep does **not** also run).
 - **Dependencies** (front matter `Depends on`) are implemented — check
   `.serena/memories/prp/` status memos and the codebase artifacts they name.
 - **Tooling** named in §7/§9 commands actually runs in this repo.
@@ -29,6 +31,62 @@ skipping it is the first way implementations go wrong.
   log records residual blockers, warn the user that the PRP was not (cleanly) hardened by
   `prp-review` and recommend running `/asic-tools:prp-review` first — then proceed if they
   confirm. Do not refuse on this basis.
+
+### A2.5 Resume an in-progress run
+
+Entered only when A2 found an existing `feature/prp-NNN-slug` branch for this PRP — work already
+started. A2.5 runs **in place of A3**, not before it: it is the resume drift check, so the full A3
+sweep does not also run on a resume. Do not re-run from scratch and do not assume the codebase froze
+while the run was paused. Resume is **change-aware** and stays read-only, like A3:
+
+1. **Orient.** The **branch commit log is the authority on which §5 tasks are done** — but a commit
+   need not map 1:1 to a §5 task (per the commit policy, commits are logical groups, typically per
+   task or per §6 file-section). First resolve the merge-base `BASE` exactly as step 2 does
+   (`BASE=$(git merge-base HEAD <base>)`, the resumer naming `<base>`), then match
+   `git log $BASE..HEAD --oneline` commits to §5 tasks by their
+   subject and touched files — the same `$BASE` the own-progress diff uses, so done-detection and
+   the diff share one baseline and stay correct under base drift; a task is **done** when a commit
+   demonstrably covers it (its files are
+   present in that commit and the §5 acceptance is met). When a single logical-group commit covers
+   several tasks, mark all of them done; when a commit covers only part of a task (e.g. a per-file
+   commit for a multi-file task), treat the task as **not done** and resume it. **Ambiguous → treat
+   as not done** (conservative: re-doing an idempotent task is safe, skipping an unfinished one is
+   not). Cross-reference the §5 task list and, when present, the scratchpad to disambiguate.
+   If `PRPs/.work/PRP-NNN-scratchpad.md` survived (PRP-002 retains it on an aborted STOP), read it to
+   *enrich* orientation — architectural map, decisions, prior drift notes — but do not read done-state
+   from it: the scratchpad carries no structured done/pending field (that is §12 future work). If it
+   is absent (a trivial PRP that elected no scratchpad, or a pre-scratchpad run), orient from the
+   commit log alone and **widen step 3** to re-verify the union of **every PRP-cited file** with the
+   remaining-task files (i.e. the full A3 citation set rather than only the base-drift intersection),
+   compensating for the missing prior drift notes.
+
+2. **Find what changed since the branch forked.** Resolve the base the feature forked from — do
+   **not** read it from front matter (the PRP front matter declares only `Branch:`, the feature
+   branch, never a base/fork field), and do **not** use `git rev-parse @{upstream}`: that resolves
+   the branch's own remote-tracking mirror, not its fork parent, and is unset on a local feature
+   branch. Instead, **ask the resumer to name the base branch** the feature forked from (for a
+   stacked PRP it is the parent feature branch, e.g. `feature/prp-002-scratchpad` — not `main`).
+   Then `BASE=$(git merge-base HEAD <base>)`.
+   - Base drift — commits that landed on the base meanwhile: `git diff --name-only "$BASE" <base>`
+   - Own progress so far: `git diff --name-only "$BASE" HEAD`
+
+3. **Targeted drift re-check (not the full A3 sweep).** Re-verify only: (a) PRP-cited files (§1
+   table, §4) that appear in the **base-drift** set — those may have changed under the plan — and
+   (b) the files the **remaining (undone)** tasks will touch. Reuse A3's read-only verdict shape
+   `{ citation, status: holds | drifted, evidence }` and its Explore fan-out, scaled to the count.
+   Cited files outside the base-drift set have **no observable change since the fork** (git shows
+   them unmodified between `$BASE` and `<base>`), so they are safe to trust without re-verifying —
+   the skip is justified by git alone, not by any plan-time ledger.
+   Any `drifted` row → STOP exactly as A3 (present, propose amendment, user decides). If base drift
+   is large or conflicts with the branch, report it and stop — rebasing or merging the base is the
+   user's call via GitKraken; this skill never rebases, merges, or pushes.
+
+4. **Plan the remainder.** A4 produces a plan covering only the undone tasks, noting "resuming from
+   Task N" and any re-check drift, then PAUSES for "go" as usual. On approval, Phase B re-enters the
+   task loop at the first undone task (never re-running a committed one). On a resume the existing
+   scratchpad continues as working memory — Phase B's seed step (which initialises Decisions and
+   Discovered During Work as empty for a fresh run) is **skipped**: do not re-seed or overwrite the
+   surviving scratchpad, append to it.
 
 ### A3. Drift check (the step that earns this skill its keep)
 
@@ -78,7 +136,8 @@ flagged as questions, not silently planned in.
    run, else derived now from the §4.1/§4.2 files already read in A3), **Decisions** (empty),
    **Drift notes** (from A3), **Discovered During Work** (empty — the live home for the items step 3
    collects).
-3. **Task loop** — §5 order, strictly:
+3. **Task loop** — §5 order, strictly (on a **resume** per A2.5, start at the
+   first task not already done — never re-run a task already committed):
    - **Scratchpad turn** (when one exists): read it at the top of the task to orient from the
      map and prior decisions instead of re-reading source already mapped; at the bottom append
      the run's new findings — the decision taken and why, drift discovered, and any
