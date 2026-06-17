@@ -206,8 +206,9 @@ training data instead of read from source. An implementing agent trusts those an
 So this skill is ~20% template, ~80% enforced process:
 
 1. **Context sweep** — README, PLANNING, TASKS, Serena memories, prior PRPs, tooling/lockfiles
-2. **Codebase research** — reads every file the feature touches; library claims verified
-   against installed versions; evidence required for every CRITICAL/GOTCHA
+2. **Codebase research** — when a graphify knowledge graph exists, leads with `graphify
+   query`/`explain`/`path` to scope which files the feature touches, then reads them; library
+   claims verified against installed versions; evidence required for every CRITICAL/GOTCHA
 3. **Refusal gate** — if context is insufficient, it stops and lists what's missing instead
    of drafting thin
 4. **Interview** — open design decisions become batched questions, recommendation first
