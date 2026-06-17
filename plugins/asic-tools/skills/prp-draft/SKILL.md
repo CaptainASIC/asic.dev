@@ -40,16 +40,29 @@ Read, in parallel, tolerating absence:
 
 If `PRPs/` does not exist, you will create it at write time and start at `PRP-001`.
 
+When `graphify-out/wiki/index.md` exists, it is the fastest broad-navigation entry for the feature
+area — prefer it to raw directory browsing for orientation.
+
 ## Phase 2 — Codebase research
 
-This is most of the work. Identify every file the feature touches — entry points, services,
-models, config, tests — and read them. For each integration point record: exact path,
+This is most of the work. **When `graphify-out/graph.json` exists, lead with a graphify
+orientation pass** before opening any raw file: `graphify query "<feature area>"` for a scoped
+subgraph, `graphify explain "<concept>"` for a focused concept, and `graphify path "<A>" "<B>"` for
+relationships — to identify which files the feature touches. This matches the repo's standing rule
+(graphify before grep/`Read`) and avoids sequentially loading files that do not matter.
+When no graph exists, identify the touched files directly. Either way, then read the identified
+files —
+entry points, services, models, config, tests. For each integration point record: exact path,
 relevant symbol names, line numbers you actually saw, and any surprises (type mismatches,
-sync/async boundaries, size caps already exceeded, naming drift).
+sync/async boundaries, size caps already exceeded, naming drift). Graphify orients toward the files;
+the verified `path:line` citation still comes from reading them.
 
 - Verify external library claims against the installed version's docs (Ref MCP if connected,
   else WebFetch/WebSearch). Record the verified version in the PRP.
-- Large surface area: fan out read-only subagents (Explore) per subsystem. Require each to
+- Large surface area: fan out read-only subagents (Explore) per subsystem. When
+  `graphify-out/graph.json` exists, each subagent's prompt must instruct graphify-first too —
+  scope the subsystem with `graphify query`/`explain` before reading — since the directive applies
+  to subagents, not only the main thread. Require each to
   return a **structured evidence list** — one record per integration point, never prose:
   `{ path, symbol, line, surprise }` (`line` = a number read this session; `surprise` = the
   gotcha, or `null`). Reject any return that summarises instead of citing — a conclusion you

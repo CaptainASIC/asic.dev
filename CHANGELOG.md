@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.11.0] - 2026-06-17
+
+### Added
+- **prp-draft directed exploration (graphify-first research).** When
+  `graphify-out/graph.json` exists in the target repo, Phase 2 now leads with a
+  graphify orientation pass (`graphify query`/`explain`/`path`) to identify which
+  files the feature touches before opening any raw file, and the Explore fan-out
+  subagent prompts carry the same graphify-first directive; Phase 1 gains a
+  pointer to `graphify-out/wiki/index.md` for broad navigation. Gated on the
+  graph existing — absent it, research behaves exactly as before. Makes
+  prp-draft's own research embody the repo's standing graphify-before-grep/Read
+  rule rather than fight it. The structured-evidence citation contract is
+  unchanged: graphify orients toward files, the verified `path:line` still comes
+  from reading them.
+
 ## [0.10.0] - 2026-06-17
 
 ### Added
