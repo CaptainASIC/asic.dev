@@ -4,6 +4,19 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.9.0] - 2026-06-17
+
+### Added
+- **prp-implement working scratchpad.** On multi-task or subsystem PRPs, Phase B
+  now seeds a gitignored working-memory file (`PRPs/.work/PRP-NNN-scratchpad.md`)
+  from the A3 drift table and §4 context — architectural map, decisions, drift
+  notes, and the live home for "Discovered During Work" — reads it at each task
+  boundary to resist context decay on long runs, and at close-out promotes its
+  durable contents into the existing §10 artifacts (TASKS.md, the serena memo)
+  then deletes it. Trivial one- to two-task PRPs skip it; the practice scales to
+  scope the same way the A3 drift check does. Builds on the existing "Discovered
+  During Work" convention rather than replacing it.
+
 ## [0.8.1] - 2026-06-17
 
 ### Fixed
