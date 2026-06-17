@@ -9,7 +9,10 @@ export const meta = {
 }
 
 // args.prpPath — absolute or repo-relative path to the PRP file under review.
-const PRP = args && args.prpPath
+// The harness may hand `args` to a scriptPath workflow as a JSON string rather than a parsed
+// object, so coerce before reading.
+const ARGS = typeof args === 'string' ? JSON.parse(args) : args
+const PRP = ARGS && ARGS.prpPath
 if (!PRP) throw new Error('review_workflow: args.prpPath is required')
 const MAX_ROUNDS = 3
 
