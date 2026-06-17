@@ -321,3 +321,7 @@ survey missed, and refuses to proceed if existing version locations already disa
 
 In Claude Code: `/asic-tools:release`. In Warp: the `release` Drive prompt
 ([warp/release.md](warp/release.md)).
+
+## License
+
+[MIT](LICENSE) © Captain ASIC
