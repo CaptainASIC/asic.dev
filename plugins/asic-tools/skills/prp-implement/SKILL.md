@@ -32,16 +32,24 @@ skipping it is the first way implementations go wrong.
 
 ### A3. Drift check (the step that earns this skill its keep)
 
-The PRP was written against the codebase as of its Date. Verify it still holds:
+The PRP was written against the codebase as of its Date. Verify it still holds across
+three axes:
 
 - Every file in the §1 summary table and §4.2 tree exists at the stated path.
-- Spot-check §4.4 gotchas and §6 before/after snippets against current code — line
-  numbers shifted is fine; *semantics changed* is not.
-- Dependency versions §4.1 cites vs lockfile now.
+- §4.4 gotchas and §6 before/after snippets vs current code — line numbers shifted is
+  fine; *semantics changed* is not.
+- Dependency versions §4.1 cites vs the lockfile now.
 
-Material drift (file gone, contract changed, gotcha invalidated) → STOP. Report each
-mismatch, propose the PRP amendment, let the user decide. Executing a stale PRP produces
-confident wrong code — the exact failure PRPs exist to prevent.
+Scale the sweep to the PRP. A contained PRP (a handful of citations) checks inline. A
+large PRP (subsystem scope, many §4 citations) fans out read-only subagents (Explore) —
+one per cited file or gotcha cluster — each returning a **structured verdict**, never
+prose: `{ citation, status: holds | drifted, evidence }` (`evidence` = the `path:line`
+that proves it, or the mismatch found). This phase stays read-only — no file is touched.
+Merge the verdicts into a drift table.
+
+Any `drifted` row — file gone, contract changed, gotcha invalidated → STOP. Present the
+drift table, propose the PRP amendment per row, let the user decide. Executing a stale PRP
+produces confident wrong code — the exact failure PRPs exist to prevent.
 
 ### A4. Plan
 

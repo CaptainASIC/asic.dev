@@ -49,7 +49,7 @@ match them.
   task isn't listed, add it with a brief description and today's date. **Mark completed
   tasks immediately.** Add sub-tasks/TODOs discovered mid-work under a
   **"Discovered During Work"** section.
-- Feature work is PRP-driven: PRPs live in `PRPs/`, drafted with `/asic-tools:draft-prp`,
+- Feature work is PRP-driven: PRPs live in `PRPs/`, drafted with `/asic-tools:prp-draft`,
   executed with `/asic-tools:prp-implement`. New projects: `/asic-tools:scaffold`.
   Releases: `/asic-tools:release`.
 

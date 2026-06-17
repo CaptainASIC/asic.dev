@@ -4,6 +4,32 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.8.0] - 2026-06-17
+
+### Changed
+- **draft-prp renamed to prp-draft.** The three PRP-lifecycle skills now share a
+  `prp-*` prefix and group under one tab-completion namespace (`prp-draft`,
+  `prp-review`, `prp-implement`); `idea-refine` stays unprefixed as pre-PRP
+  ideation. The Claude Code invocation is now `/asic-tools:prp-draft` and the
+  Warp twin moved to `warp/prp-draft.md` — update any saved aliases. Skill dir,
+  slug, both catalog manifests, the bundled global rules, and all cross-skill
+  references moved together; natural-language triggers ("draft a PRP") are
+  unchanged.
+
+### Added
+- **prp-draft Phase 2 evidence schema.** Fan-out research subagents must now
+  return a structured evidence list (`{ path, symbol, line, surprise }`) merged
+  into §4.1/§4.4 of the PRP, instead of prose conclusions — any finding that
+  cannot trace to a `path:line` is rejected. Tightens the research contract
+  without converting the skill to a Workflow; the interview and refusal gates
+  stay human-in-loop.
+- **prp-implement A3 drift check scales to a structured fan-out.** Contained
+  PRPs still check inline; large subsystem PRPs now fan out read-only Explore
+  subagents (one per cited §4 file or gotcha cluster) returning structured
+  verdicts (`{ citation, status, evidence }`) merged into a drift table. Stays
+  read-only per the Phase A no-mutation rule; execution (Phase B) remains
+  sequential and human-in-loop by design.
+
 ## [0.7.0] - 2026-06-16
 
 ### Added

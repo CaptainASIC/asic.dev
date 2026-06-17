@@ -1,10 +1,10 @@
-# draft-prp — Warp prompt
+# prp-draft — Warp prompt
 
-Save this as a Warp Drive prompt (or rule) named `draft-prp`. Invoke it when turning a
+Save this as a Warp Drive prompt (or rule) named `prp-draft`. Invoke it when turning a
 discussion or design summary into a PRP. Reference files live in the Claude Code plugin
-marketplace clone at `~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/skills/draft-prp/references/`
+marketplace clone at `~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/skills/prp-draft/references/`
 (installed via `/plugin marketplace add CaptainASIC/asic.dev`), or in your repo checkout
-under `plugins/asic-tools/skills/draft-prp/references/`.
+under `plugins/asic-tools/skills/prp-draft/references/`.
 
 ---
 
@@ -38,8 +38,8 @@ you read, a lockfile, or official docs (use Ref MCP).
    recommendation first. Answers land in §3 as design-decision subsections.
 
 6. DRAFT — read prp_template.md and style_guide.md from
-   ~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/skills/draft-prp/references/
-   (or the repo checkout's plugins/asic-tools/skills/draft-prp/references/), then write
+   ~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/skills/prp-draft/references/
+   (or the repo checkout's plugins/asic-tools/skills/prp-draft/references/), then write
    PRPs/PRP-NNN_TITLE_IN_SNAKE_CAPS.md (mkdir PRPs/ if missing — the only file you write).
    Canonical §1–§12 skeleton; depth scales with scope; outline first, then fill
    section-by-section. Branch in front matter: feature/prp-NNN-short-slug.

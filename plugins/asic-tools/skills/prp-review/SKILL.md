@@ -1,6 +1,6 @@
 ---
 name: prp-review
-description: Adversarial review gate for a drafted PRP — fans out six distinct-lens reviewers (three on logic, three on style/convention drift against the real target repo) via a Workflow, adjudicates their findings to drop false positives, applies blocker/major fixes to the PRP in place, and re-reviews up to three rounds before appending a review-log. Use when the user says "review this PRP", "harden the PRP", "adversarial review", "stress-test PRP-NNN", or invokes /prp-review — after draft-prp and before prp-implement. Sits between draft-prp and prp-implement in the pipeline.
+description: Adversarial review gate for a drafted PRP — fans out six distinct-lens reviewers (three on logic, three on style/convention drift against the real target repo) via a Workflow, adjudicates their findings to drop false positives, applies blocker/major fixes to the PRP in place, and re-reviews up to three rounds before appending a review-log. Use when the user says "review this PRP", "harden the PRP", "adversarial review", "stress-test PRP-NNN", or invokes /prp-review — after prp-draft and before prp-implement. Sits between prp-draft and prp-implement in the pipeline.
 ---
 
 # prp-review
@@ -71,7 +71,7 @@ remain, recommend a fix-and-rerun before implementing. Otherwise offer the next 
 - Don't apply minor/nit or unvalidated findings — only adjudicated blocker/major.
 - Don't run more than three rounds or loop "until everyone agrees" — report residuals instead.
 - Don't rewrite the PRP wholesale or touch any file other than the PRP under review.
-- Don't re-run draft-prp's codebase research — style reviewers read only the cited files.
+- Don't re-run prp-draft's codebase research — style reviewers read only the cited files.
 - Don't drop residual blockers silently — they go in the review-log and the report.
 
 ## Verification

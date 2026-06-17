@@ -1,13 +1,13 @@
 ---
 name: idea-refine
-description: Refine a raw idea into a sharp, build-ready concept before any PRP or code — structured divergent/convergent thinking that ends in a one-pager (problem, recommended direction, assumptions, MVP scope, explicit non-goals). Use when the user says "refine this idea", "ideate", "stress-test my plan", "help me think through X", or invokes /idea-refine — typically when an idea is still vague, or upstream of draft-prp when the feature ask isn't yet concrete. Sits before draft-prp in the pipeline; hands off to it. Pushes back on weak ideas — not a yes-machine.
+description: Refine a raw idea into a sharp, build-ready concept before any PRP or code — structured divergent/convergent thinking that ends in a one-pager (problem, recommended direction, assumptions, MVP scope, explicit non-goals). Use when the user says "refine this idea", "ideate", "stress-test my plan", "help me think through X", or invokes /idea-refine — typically when an idea is still vague, or upstream of prp-draft when the feature ask isn't yet concrete. Sits before prp-draft in the pipeline; hands off to it. Pushes back on weak ideas — not a yes-machine.
 ---
 
 # idea-refine
 
-The cheap filter before the expensive research. `draft-prp` does a heavy codebase sweep and
+The cheap filter before the expensive research. `prp-draft` does a heavy codebase sweep and
 verification pass — you do not want that budget spent on the wrong idea. This skill is the
-upstream step: diverge, converge, and produce a one-pager that becomes a clean `draft-prp`
+upstream step: diverge, converge, and produce a one-pager that becomes a clean `prp-draft`
 input. It writes one artifact and no code.
 
 **Prime directive: surface assumptions before committing to a direction.** Untested
@@ -92,10 +92,10 @@ writes). Co-located with `PRPs/` so the idea → PRP chain lives in one tree.
 The **Not Doing** list is the most valuable section — focus is saying no to good ideas. Make
 the trade-offs explicit.
 
-## Phase 4 — Hand off to draft-prp
+## Phase 4 — Hand off to prp-draft
 
-The one-pager is built to feed `draft-prp` Phase 0. Offer it: *"Draft a PRP from this?
-(`/asic-tools:draft-prp`)"* — do not auto-invoke. When the user accepts, the fields map
+The one-pager is built to feed `prp-draft` Phase 0. Offer it: *"Draft a PRP from this?
+(`/asic-tools:prp-draft`)"* — do not auto-invoke. When the user accepts, the fields map
 straight onto the canonical PRP template:
 
 | one-pager field | PRP destination |
@@ -105,9 +105,9 @@ straight onto the canonical PRP template:
 | MVP Scope | §1 scope boundary (what's in) |
 | **Not Doing (and Why)** | §1 **Strict non-goals**, §11 anti-patterns |
 | Key Assumptions to Validate | §4.4 GOTCHA candidates / `SPECULATIVE — verify` markers |
-| Open Questions | `draft-prp` Phase 4 interview inputs |
+| Open Questions | `prp-draft` Phase 4 interview inputs |
 
-`idea-refine` settles *what to build and why*; `draft-prp` then does the verified-context
+`idea-refine` settles *what to build and why*; `prp-draft` then does the verified-context
 research `idea-refine` deliberately skips. Keep the seam clean — do not start codebase
 research here.
 
@@ -118,7 +118,7 @@ research here.
 - Don't produce a direction without a Not-Doing list and surfaced assumptions.
 - Don't yes-machine a weak idea — push back with specificity.
 - Don't over-engineer the process or ignore existing codebase constraints.
-- Don't bleed into `draft-prp`'s job: no codebase research, no PRP drafting here.
+- Don't bleed into `prp-draft`'s job: no codebase research, no PRP drafting here.
 
 ## Verification
 
@@ -130,4 +130,4 @@ Before reporting done:
 - [ ] Hidden assumptions listed with validation strategies
 - [ ] A Not-Doing list makes trade-offs explicit
 - [ ] Output is a concrete one-pager at `PRPs/ideas/<slug>.md`, user confirmed before save
-- [ ] draft-prp hand-off offered, not forced
+- [ ] prp-draft hand-off offered, not forced

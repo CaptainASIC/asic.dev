@@ -436,7 +436,7 @@ All notable changes to this project are documented here. Format follows
 1. Read PLANNING.md (architecture, conventions, constraints) before any task.
 2. Check TASKS.md before starting; add missing tasks with today's date.
 3. All commands run through uv: `uv run pytest`, `uv run ruff check .`, `uv add <pkg>`.
-4. Feature work is PRP-driven — see PRPs/ and /asic-tools:draft-prp.
+4. Feature work is PRP-driven — see PRPs/ and /asic-tools:prp-draft.
 5. Git: feature branches only, ruff clean before commit, no AI attribution, never push.
 ```
 
