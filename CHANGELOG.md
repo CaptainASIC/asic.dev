@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.8.1] - 2026-06-17
+
+### Fixed
+- **prp-review Workflow now reads `args` when the harness passes it as a JSON
+  string.** In `scriptPath` mode the `Workflow` tool can hand the script its
+  `args` global as a JSON-encoded string rather than a parsed object, so
+  `args.prpPath` was `undefined` and `review_workflow.js` threw
+  "args.prpPath is required" before any reviewer ran. The script now coerces a
+  string `args` via `JSON.parse` before reading `prpPath`; object `args` still
+  works unchanged.
+
 ## [0.8.0] - 2026-06-17
 
 ### Changed
