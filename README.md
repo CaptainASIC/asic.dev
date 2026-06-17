@@ -6,8 +6,8 @@ with Warp counterparts where they make sense.
 | Tool | What it does |
 |---|---|
 | [asicdash](#asicdash) | Config + usage dashboard: audit visible and invisible agent config, chart Claude usage |
-| [idea-refine](#idea-refine) | Refine a raw idea into a build-ready one-pager — upstream of draft-prp |
-| [draft-prp](#draft-prp) | Research-first generator for Product Requirements Prompts |
+| [idea-refine](#idea-refine) | Refine a raw idea into a build-ready one-pager — upstream of prp-draft |
+| [prp-draft](#prp-draft) | Research-first generator for Product Requirements Prompts |
 | [prp-review](#prp-review) | Adversarial review gate: 6-lens Workflow hardens a PRP before implementation |
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
@@ -29,7 +29,7 @@ New machine, start to finish:
 ```
 
 Skills are namespaced: `/asic-tools:asicdash`, `/asic-tools:idea-refine`,
-`/asic-tools:draft-prp`, `/asic-tools:prp-implement`, `/asic-tools:scaffold`,
+`/asic-tools:prp-draft`, `/asic-tools:prp-implement`, `/asic-tools:scaffold`,
 `/asic-tools:release`, `/asic-tools:sync-rules`. Plugin skills show up in the desktop app's customize page;
 filesystem personal skills currently do not
 ([claude-code#66998](https://github.com/anthropics/claude-code/issues/66998)).
@@ -53,7 +53,7 @@ claude plugin update asic-tools@asic-dev          # pull the new plugin version
 ```
 
 Symlinks each skill under `plugins/asic-tools/skills/` into `~/.claude/skills/` — bare
-`/asicdash` and `/draft-prp` names, and edits in the repo are live without reinstalling.
+`/asicdash` and `/prp-draft` names, and edits in the repo are live without reinstalling.
 Don't combine both installs: you'd get duplicate skill registrations.
 
 ### Warp
@@ -160,12 +160,12 @@ breakage there. Transcript field assumptions (entrypoint values, usage keys) liv
 ## idea-refine
 
 Refines a raw idea into a sharp, build-ready concept **before** any PRP or code — the cheap
-filter that runs upstream of `draft-prp` so its expensive research budget never lands on the
+filter that runs upstream of `prp-draft` so its expensive research budget never lands on the
 wrong idea.
 
 ### Why
 
-`draft-prp` assumes the feature ask is already concrete; it does verified-context research, not
+`prp-draft` assumes the feature ask is already concrete; it does verified-context research, not
 "is this the right thing to build". That leaves a gap at the front of the pipeline: raw idea →
 formed feature. This skill fills it with structured divergent/convergent thinking, and it is
 deliberately *not* a yes-machine — weak ideas get pushed back on, KISS/YAGNI steer toward the
@@ -180,8 +180,8 @@ simplest version that solves the real problem.
 
 Writes exactly one file: `PRPs/ideas/<slug>.md` (creates `PRPs/ideas/` if missing), co-located
 with `PRPs/` so the idea → PRP chain stays in one tree. The one-pager's fields map straight onto
-the `draft-prp` template (Not Doing → §1 strict non-goals, assumptions → §4.4 / SPECULATIVE
-markers), and the skill offers the `draft-prp` hand-off rather than forcing it.
+the `prp-draft` template (Not Doing → §1 strict non-goals, assumptions → §4.4 / SPECULATIVE
+markers), and the skill offers the `prp-draft` hand-off rather than forcing it.
 
 ### Usage
 
@@ -192,7 +192,7 @@ ideation lenses and evaluation criteria are inlined, no reference files.
 
 ---
 
-## draft-prp
+## prp-draft
 
 Turns a feature discussion (mid-chat "let's make this a PRP", or a pasted design summary) into
 a **Product Requirements Prompt** — a self-contained, implementation-ready instruction document
@@ -221,12 +221,12 @@ memory updates are the *implementing* agent's job, spelled out in the PRP's §10
 
 ### Usage
 
-In Claude Code: `/draft-prp`, or just say "turn this into a PRP" mid-conversation.
-In Warp: invoke the `draft-prp` Drive prompt (see [warp/draft-prp.md](warp/draft-prp.md)).
+In Claude Code: `/prp-draft`, or just say "turn this into a PRP" mid-conversation.
+In Warp: invoke the `prp-draft` Drive prompt (see [warp/prp-draft.md](warp/prp-draft.md)).
 
-Layout: [SKILL.md](plugins/asic-tools/skills/draft-prp/SKILL.md) is the workflow driver;
-[prp_template.md](plugins/asic-tools/skills/draft-prp/references/prp_template.md) and
-[style_guide.md](plugins/asic-tools/skills/draft-prp/references/style_guide.md) hold the
+Layout: [SKILL.md](plugins/asic-tools/skills/prp-draft/SKILL.md) is the workflow driver;
+[prp_template.md](plugins/asic-tools/skills/prp-draft/references/prp_template.md) and
+[style_guide.md](plugins/asic-tools/skills/prp-draft/references/style_guide.md) hold the
 section skeleton and the standing engineering rules (structure caps, stack defaults, DB
 naming, test minimums, git constraints) loaded only when drafting.
 
@@ -234,7 +234,7 @@ naming, test minimums, git constraints) loaded only when drafting.
 
 ## prp-review
 
-Adversarial review gate between `draft-prp` and `prp-implement`. Given a drafted PRP, it runs a
+Adversarial review gate between `prp-draft` and `prp-implement`. Given a drafted PRP, it runs a
 Workflow that fans out six distinct-lens reviewers — three on logic (requirements coverage,
 architecture soundness, edge-cases & verifiability) and three on style/convention drift against
 the real target repo (naming, structure, error/test/docstring conventions) — adjudicates their
@@ -244,14 +244,14 @@ blockers.
 
 ### Why
 
-`prp-implement` trusts the PRP completely, and `draft-prp`'s self-audit is a single agent
+`prp-implement` trusts the PRP completely, and `prp-draft`'s self-audit is a single agent
 checking its own work. An independent adversarial pass catches logic gaps and convention drift
 before any implementation budget is spent — the cheap gate before the expensive run.
 
 ### Usage
 
 In Claude Code: `/asic-tools:prp-review PRP-NNN`, or `/prp-review` to target the newest
-ready PRP, or accept the hand-off `draft-prp` offers after a draft. Invoking it opts into the
+ready PRP, or accept the hand-off `prp-draft` offers after a draft. Invoking it opts into the
 multi-agent Workflow. Claude Code only for now; Warp twin deferred.
 
 Layout: [SKILL.md](plugins/asic-tools/skills/prp-review/SKILL.md) is the driver;

@@ -34,4 +34,4 @@ done. A scaffold that fails any of those is not done.
    not create a GitHub repo unless asked.
 
 5. REPORT: path, top-level tree, four green check lines, next steps (GH repo → remote →
-   push branch → merge in GitKraken; start features with draft-prp).
+   push branch → merge in GitKraken; start features with prp-draft).

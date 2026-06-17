@@ -1,9 +1,9 @@
 ---
-name: draft-prp
-description: Draft a Product Requirements Prompt (PRP) — an implementation-ready instruction document for an AI coding agent (Claude Code or Warp) to build a feature. Use when the user says "draft a PRP", "create a PRP", "turn this into a PRP", "make this a PRP", or invokes /draft-prp — typically mid-conversation after discussing a feature, or with a pasted design summary. Researches the target repo before writing; refuses with a missing-context list rather than drafting thin.
+name: prp-draft
+description: Draft a Product Requirements Prompt (PRP) — an implementation-ready instruction document for an AI coding agent (Claude Code or Warp) to build a feature. Use when the user says "draft a PRP", "create a PRP", "turn this into a PRP", "make this a PRP", or invokes /prp-draft — typically mid-conversation after discussing a feature, or with a pasted design summary. Researches the target repo before writing; refuses with a missing-context list rather than drafting thin.
 ---
 
-# draft-prp
+# prp-draft
 
 A PRP is a self-contained instruction set an AI agent executes to implement a feature with no
 other context. Quality lives in verified specifics — real file paths, real line numbers, real
@@ -49,8 +49,12 @@ sync/async boundaries, size caps already exceeded, naming drift).
 
 - Verify external library claims against the installed version's docs (Ref MCP if connected,
   else WebFetch/WebSearch). Record the verified version in the PRP.
-- Large surface area: fan out read-only subagents (Explore) per subsystem and have them
-  return path:line evidence, not conclusions.
+- Large surface area: fan out read-only subagents (Explore) per subsystem. Require each to
+  return a **structured evidence list** — one record per integration point, never prose:
+  `{ path, symbol, line, surprise }` (`line` = a number read this session; `surprise` = the
+  gotcha, or `null`). Reject any return that summarises instead of citing — a conclusion you
+  cannot trace to a `path:line` is not usable. Merge the records straight into §4: path /
+  symbol / line into §4.1 references, each non-null `surprise` into a §4.4 gotcha.
 - Anything you could not verify gets marked `SPECULATIVE — verify before relying` in the
   draft, and is surfaced to the user. Prefer zero of these.
 
@@ -114,4 +118,4 @@ path, size, open questions if any, and any SPECULATIVE markers with why.
 
 Then offer the review gate: *"Adversarially review this PRP before implementing?
 (`/asic-tools:prp-review PRP-NNN`)"* — offered, never auto-run, mirroring how `idea-refine`
-offers `draft-prp`.
+offers `prp-draft`.

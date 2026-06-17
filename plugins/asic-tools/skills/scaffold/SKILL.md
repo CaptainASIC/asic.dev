@@ -81,4 +81,4 @@ Do not push; do not create a GitHub repo unless asked.
 
 Path, tree summary (one line per top-level entry), the four green check outputs (one line
 each), and next steps: create GitHub repo → `git remote add origin` → push branch + merge
-via GitKraken; start feature work with `/asic-tools:draft-prp`.
+via GitKraken; start feature work with `/asic-tools:prp-draft`.
