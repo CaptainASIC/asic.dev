@@ -275,7 +275,10 @@ by presenting the plan and pausing for approval.
 
 Phase B executes task-by-task in §5 order (test-first where §7 defines tests, per-task
 verify, surgical scope — unlisted changes stop and ask), walks the §9 validation levels in
-order without skipping, and commits in Conventional format. Phase C is the close-out
+order without skipping, and commits in Conventional format. On multi-task or subsystem PRPs it
+keeps a gitignored working scratchpad (`PRPs/.work/PRP-NNN-scratchpad.md`) — architectural map,
+decisions, and "Discovered During Work" — read at each task boundary to resist context decay on
+long runs, then promoted into the close-out artifacts and deleted. Phase C is the close-out
 ritual: acceptance checklist ticked against reality, PRP status flipped, §10 doc updates
 applied (PLANNING/TASKS/CHANGELOG/Serena memory), and a final report of files-touched vs
 the PRP's own table.
