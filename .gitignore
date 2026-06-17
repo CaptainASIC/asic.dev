@@ -1,5 +1,6 @@
 __pycache__/
 .ruff_cache/
+.venv/
 .DS_Store
 .claude/settings.json
 .claude/settings.local.json

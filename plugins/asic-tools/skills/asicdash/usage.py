@@ -96,22 +96,48 @@ def collect_usage() -> dict:
             _scan_file(f, by_day, cutoff)
     all_sids: set[str] = set()
     total_out = 0
+    total_inp = 0
     days: dict[str, dict] = {}
     for date_iso, surfaces in sorted(by_day.items()):
         days[date_iso] = {}
         for surface, agg in surfaces.items():
             all_sids |= agg["sids"]
             total_out += agg["out"]
+            total_inp += agg["inp"]
             days[date_iso][surface] = {
                 "out": agg["out"],
                 "inp": agg["inp"],
                 "msgs": agg["msgs"],
                 "sessions": len(agg["sids"]),
             }
+    # Token totals over trailing windows. ISO date strings sort lexicographically, so
+    # `date_iso >= bound` is a valid date filter without parsing; "" includes everything.
+    today = datetime.now().astimezone().date()
+    bounds = {
+        "today": today.isoformat(),
+        "d7": (today - timedelta(days=6)).isoformat(),
+        "d30": (today - timedelta(days=29)).isoformat(),
+        "all": "",
+    }
+    periods: dict[str, dict] = {}
+    for key, since in bounds.items():
+        out = inp = 0
+        for date_iso, surfaces in days.items():
+            if date_iso >= since:
+                for agg in surfaces.values():
+                    out += agg["out"]
+                    inp += agg["inp"]
+        periods[key] = {"out": out, "inp": inp}
     return {
-        "today": datetime.now().astimezone().date().isoformat(),
+        "today": today.isoformat(),
         "days": days,
-        "totals": {"out": total_out, "active_days": len(days), "sessions": len(all_sids)},
+        "totals": {
+            "out": total_out,
+            "inp": total_inp,
+            "active_days": len(days),
+            "sessions": len(all_sids),
+            "periods": periods,
+        },
     }
 
 
@@ -152,9 +178,14 @@ USAGE_CSS = (
     '  :root:not([data-theme="light"]) {\n'
     + _DARK_VARS
     + "\n  }\n}\n"
-    + _CELL_RULES
     + """\
 .u-wrap { padding: 4px 16px 14px; border-top: 1px solid var(--border); position: relative; }
+.u-tot { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0 14px; }
+.u-tot-c { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
+.u-tot-l { font-size: 11px; color: var(--muted); }
+.u-tot-v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.4; }
+.u-tot-u { font-size: 11px; font-weight: 400; color: var(--muted); }
+.u-tot-s { font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .u-tip { position: absolute; display: none; background: var(--surface);
   border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 12px;
   line-height: 1.5; pointer-events: none; z-index: 5; white-space: nowrap; }
@@ -200,6 +231,11 @@ USAGE_CSS = (
 .u-m-row .val { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
 .u-m-row.na { color: var(--faint); }
 """
+    # Cell-color rules LAST: `.u-{surface}-{level}` and `.u-cell` are equal-specificity, so
+    # the later rule wins. Placed after the `.u-cell` empty background, the colors paint
+    # active cells (and the less→more scale swatches); otherwise `.u-cell`'s background
+    # overrode every color and active days rendered blank.
+    + _CELL_RULES
 )
 
 USAGE_JS = """\
@@ -399,6 +435,19 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
         f"{t['active_days']} active days · {t['sessions']} sessions"
         f" · ~{_fmt_tokens(t['out'])} output tokens"
     )
+    # Token totals at four granularities — the at-a-glance answer to "how much have I used".
+    p = t["periods"]
+    tot = '<div class="u-tot">' + "".join(
+        f'<div class="u-tot-c"><div class="u-tot-l">{lbl}</div>'
+        f'<div class="u-tot-v">{_fmt_tokens(p[k]["out"])} <span class="u-tot-u">out</span></div>'
+        f'<div class="u-tot-s">{_fmt_tokens(p[k]["inp"])} in</div></div>'
+        for lbl, k in (
+            ("Today", "today"),
+            ("Last 7 days", "d7"),
+            ("Last 30 days", "d30"),
+            ("All-time", "all"),
+        )
+    ) + "</div>"
     legend = (
         '<div class="u-legend">'
         '<span><span class="u-sw u-terminal-3"></span>Terminal</span>'
@@ -416,7 +465,7 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
     html_out = (
         f'<details class="sec" open><summary>{chevron_icon}Claude usage'
         f'<span class="meta">{meta}</span></summary>'
-        f'<div class="u-wrap">{legend}'
+        f'<div class="u-wrap">{tot}{legend}'
         '<div class="u-months" id="u-months"></div>'
         f'<div class="u-hm">{dows}<div class="u-grid" id="u-grid"></div></div>'
         '<div class="u-tip" id="u-tip"></div>'
