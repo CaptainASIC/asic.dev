@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.10.0] - 2026-06-17
+
+### Added
+- **prp-implement change-aware resumption.** When a PRP's `feature/prp-NNN-slug`
+  branch already exists, A2 now routes through a new A2.5 sub-phase instead of a
+  fresh run: it orients from the branch commit log (the authority on which tasks
+  are done) enriched by the PRP-002 scratchpad, computes `git merge-base` and
+  diffs to find the files that changed since the branch forked — both the run's
+  own commits and commits that landed on the base meanwhile — runs a targeted
+  drift re-check on only the affected cited files plus the remaining tasks' files
+  (in place of the full A3 sweep), and resumes the task loop at the first undone
+  task. Stays read-only through Phase A; never rebases, merges, or pushes — large
+  base drift is reported for the user to reconcile. Completes the scratchpad story
+  opened in 0.9.0.
+
 ## [0.9.0] - 2026-06-17
 
 ### Added
