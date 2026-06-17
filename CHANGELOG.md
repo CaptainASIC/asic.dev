@@ -4,6 +4,24 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.12.0] - 2026-06-17
+
+### Fixed
+- **asicdash usage heatmap cells now show their activity color.** A CSS cascade
+  bug rendered every heatmap cell (and the less→more scale swatches) with the
+  empty `--surface-2` background: the base `.u-cell` rule was declared after the
+  equal-specificity `.u-{surface}-{level}` color rules, so it always won. Active
+  days looked inactive even though they were clickable. The colour rules are now
+  emitted last so they paint as intended.
+
+### Added
+- **asicdash usage token totals at four granularities.** The Claude usage section
+  now leads with a four-card panel — Today / Last 7 days / Last 30 days /
+  All-time — each showing output (and input) token totals, so "how many tokens
+  have I used" is answered at a glance instead of inferred from the heatmap.
+  `collect_usage()` computes the trailing-window sums; the heatmap and per-day
+  modal are unchanged.
+
 ## [0.11.0] - 2026-06-17
 
 ### Added

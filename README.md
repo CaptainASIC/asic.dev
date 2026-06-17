@@ -102,7 +102,8 @@ see by listing directories:
 - **Claude Code usage** — per-day activity from `~/.claude/projects/**/*.jsonl` (every transcript
   there is a Claude Code session): GitHub-style contribution heatmap colored by launch surface
   (Terminal = CLI, Desktop = the Claude desktop app; claude.ai Chat leaves no local transcript and
-  is labeled "no local data"), hover tooltips, per-day breakdown modals, weekly stacked token chart
+  is labeled "no local data"), at-a-glance token totals for today / last 7 days / last 30 days /
+  all-time, hover tooltips, per-day breakdown modals, weekly stacked token chart
 
 ### Usage
 
