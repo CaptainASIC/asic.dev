@@ -5,6 +5,7 @@ export const meta = {
     { title: 'Review' },
     { title: 'Adjudicate' },
     { title: 'Apply' },
+    { title: 'Verify' },
   ],
 }
 
@@ -113,6 +114,30 @@ const APPLY_SCHEMA = {
   required: ['summary', 'edits'],
 }
 
+// The final round has no re-review after its apply. Rather than dump every applied blocker into
+// `residual` (which mislabels applied fixes as surviving blockers), a verifier re-reads the edited
+// PRP and reports, per finding, whether the issue genuinely remains. Only unresolved ones residual.
+const VERIFY_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    verdicts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          dedup_group: { type: 'string' },
+          resolved: { type: 'boolean' },
+          reason: { type: 'string' },
+        },
+        required: ['dedup_group', 'resolved', 'reason'],
+      },
+    },
+  },
+  required: ['verdicts'],
+}
+
 function reviewerPrompt(lens, round) {
   const readRepo = lens.kind === 'style'
     ? 'Read the repo files this PRP cites (§4.1 MUST READ and §4.2 tree) so you compare its ' +
@@ -149,12 +174,22 @@ function applyPrompt(toApply) {
     `section you changed. Returning the schema is your stop signal — do not keep re-reading.`
 }
 
+function verifyPrompt(applied) {
+  return `You are verifying that blocker/major review fixes actually landed in the PRP at ${PRP}. ` +
+    `Read the CURRENT PRP file. For each finding below, check whether its issue is now resolved in ` +
+    `the file text:\n\n${JSON.stringify(applied, null, 2)}\n\n` +
+    `Return one verdict per finding, keyed by its dedup_group: resolved=true if the PRP now ` +
+    `addresses the claim, resolved=false (with a reason) if the issue genuinely still remains. ` +
+    `Verify against the actual file content, not the suggested_fix wording. Return via the schema.`
+}
+
 // Keep one finding per dedup_group; prefer the highest severity in the group.
 const RANK = { blocker: 0, major: 1, minor: 2, nit: 3 }
 function dedupe(valid) {
   const byGroup = new Map()
   for (const f of valid) {
     const k = f.dedup_group || f.claim
+    f.dedup_group = k // stamp a stable key so the final-round verifier can match verdicts back
     const cur = byGroup.get(k)
     if (!cur || RANK[f.severity] < RANK[cur.severity]) byGroup.set(k, f)
   }
@@ -200,10 +235,24 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
   reviewLog.push({ round, raw: raw.length, valid: valid.length, applied: blockers.length,
     applied_findings: blockers, summary: result ? result.summary : '(apply returned no summary)' })
 
-  // Applied fixes are re-reviewed by the next round, which clears residual on a clean pass.
-  // The final round has no verification round after it, so its applied blockers stay
-  // unverified and are surfaced to the human rather than reported as confirmed-resolved.
-  residual = round === MAX_ROUNDS ? blockers : []
+  // Non-final rounds: applied fixes are re-reviewed by the next round, which recomputes residual.
+  // Final round: no re-review follows, so verify the applied fixes actually landed in the file and
+  // surface ONLY the genuinely-unresolved ones — not every applied blocker (that was the mislabel).
+  if (round === MAX_ROUNDS) {
+    phase('Verify')
+    log(`Round ${round}: verifying ${blockers.length} final-round fix(es) landed`)
+    const check = await agent(verifyPrompt(blockers),
+      { label: 'verify', phase: 'Verify', schema: VERIFY_SCHEMA })
+    const verdicts = new Map(
+      (check && check.verdicts ? check.verdicts : []).map((v) => [v.dedup_group, v]))
+    // Unresolved, or unverifiable (no verdict returned) → surface to the human.
+    residual = blockers.filter((b) => {
+      const v = verdicts.get(b.dedup_group)
+      return !v || v.resolved === false
+    })
+  } else {
+    residual = []
+  }
 }
 
 return { reviewLog, residual }
