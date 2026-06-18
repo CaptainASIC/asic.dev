@@ -13,6 +13,7 @@ with Warp counterparts where they make sense.
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
 | [sync-rules](#global-rules) | Deploy the bundled global engineering rules to `~/.claude/CLAUDE.md` on any machine |
+| [diagram](#diagram) | Generate editable draw.io architecture/network/system diagrams from a description, or visualize a repo |
 
 ## Install
 
@@ -30,7 +31,7 @@ New machine, start to finish:
 
 Skills are namespaced: `/asic-tools:asicdash`, `/asic-tools:idea-refine`,
 `/asic-tools:prp-draft`, `/asic-tools:prp-implement`, `/asic-tools:scaffold`,
-`/asic-tools:release`, `/asic-tools:sync-rules`. Plugin skills show up in the desktop app's customize page;
+`/asic-tools:release`, `/asic-tools:sync-rules`, `/asic-tools:diagram`. Plugin skills show up in the desktop app's customize page;
 filesystem personal skills currently do not
 ([claude-code#66998](https://github.com/anthropics/claude-code/issues/66998)).
 
@@ -329,6 +330,26 @@ survey missed, and refuses to proceed if existing version locations already disa
 
 In Claude Code: `/asic-tools:release`. In Warp: the `release` Drive prompt
 ([warp/release.md](warp/release.md)).
+
+## diagram
+
+Turns a natural-language description — or an existing repo's structure — into an editable
+`.drawio` file plus a rendered image, via the native draw.io desktop CLI. Diagrams become
+version-controllable artifacts: the editable source is committed beside the picture under
+`docs/diagrams/`. Picks one of six types (ERD, UML class, sequence, architecture, ML/DL,
+flowchart), resolves vendor-correct AWS/Azure/GCP/Kubernetes icons and AI/LLM brand logos via a
+10k+-shape search index, applies a semantic color system, vision-self-checks the render for
+overlaps/clipping, iterates with you, then exports PNG/SVG/PDF and offers to embed the result into
+a PRP or README. Also visualizes a Python/JS-TS/Go/Rust repo's import graph or a Python class
+hierarchy (Graphviz auto-layout). Ported and adapted (MIT) from
+[Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill).
+
+**Prerequisite:** the draw.io desktop CLI — `brew install --cask drawio`. Optional Graphviz
+(`brew install graphviz`) enables auto-layout for large code-structure graphs. When the CLI is
+absent the skill fails fast with the install command and falls back to a diagrams.net browser URL.
+
+In Claude Code: ask "draw a diagram of …" / "visualize this module structure" (triggers the
+`diagram` skill), or `/asic-tools:diagram`.
 
 ## License
 
