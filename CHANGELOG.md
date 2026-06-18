@@ -4,6 +4,27 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.13.0] - 2026-06-18
+
+### Added
+- **`diagram` skill — draw.io diagram generation.** Turns a natural-language description (or an
+  existing repo's structure) into an editable `.drawio` file under `docs/diagrams/` and exports
+  PNG/SVG/PDF via the draw.io desktop CLI, with a skippable vision self-check pass, a 2-round
+  feedback loop, six diagram types (ERD/UML class/sequence/architecture/ML-DL/flowchart) with a
+  selection heuristic, three style presets, vendor AWS/Azure/GCP/Kubernetes icons via a 10k+-shape
+  search index, an AI/LLM logo resolver, and Python/JS-TS/Go/Rust code-to-diagram (Graphviz
+  auto-layout). Ported and adapted (MIT) from Agents365-ai/drawio-skill (v1.14.0); the eleven helper
+  scripts were rewritten to the project's Python conventions. Requires `brew install --cask drawio`;
+  fails fast with the install command and a diagrams.net browser fallback when absent. Plugin
+  bumped 0.12.1 → 0.13.0.
+
+### Fixed
+- **prp-review no longer mislabels applied fixes as residual blockers.** The review Workflow set
+  `residual` to every final-round blocker unconditionally, so fixes that were successfully applied
+  in the last round were reported as surviving blockers (`residual` equalled `applied_findings`). A
+  new Verify phase now re-reads the edited PRP after the final apply and keeps only genuinely
+  unresolved findings in `residual`.
+
 ## [0.12.1] - 2026-06-18
 
 ### Fixed
