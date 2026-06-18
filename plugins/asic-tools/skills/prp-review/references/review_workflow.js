@@ -89,6 +89,30 @@ const ADJUDICATION_SCHEMA = {
   required: ['findings'],
 }
 
+// Forcing the apply agent to terminate in a structured tool call bounds it: without a schema
+// it returns free text and can thrash (re-read, re-edit) with no completion signal, stalling
+// the workflow's final await. The schema is the convergence signal.
+const APPLY_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    summary: { type: 'string' },
+    edits: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          prp_section: { type: 'string' },
+          change: { type: 'string' },
+        },
+        required: ['prp_section', 'change'],
+      },
+    },
+  },
+  required: ['summary', 'edits'],
+}
+
 function reviewerPrompt(lens, round) {
   const readRepo = lens.kind === 'style'
     ? 'Read the repo files this PRP cites (§4.1 MUST READ and §4.2 tree) so you compare its ' +
@@ -121,7 +145,8 @@ function applyPrompt(toApply) {
     `with the Edit tool:\n\n${JSON.stringify(toApply, null, 2)}\n\n` +
     `Make surgical edits to the relevant sections only. Do not rewrite unrelated parts, do not ` +
     `add a Review Log section (the driver does that), do not touch any file other than ${PRP}. ` +
-    `Return a one-line summary of what you changed.`
+    `When the edits are done, return via the schema: a one-line summary and one entry per ` +
+    `section you changed. Returning the schema is your stop signal — do not keep re-reading.`
 }
 
 // Keep one finding per dedup_group; prefer the highest severity in the group.
@@ -160,19 +185,25 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
   })
   const valid = dedupe((adj && adj.findings ? adj.findings : []).filter((f) => f.valid))
   const blockers = valid.filter((f) => f.severity === 'blocker' || f.severity === 'major')
-  residual = blockers
 
   if (blockers.length === 0) {
     reviewLog.push({ round, raw: raw.length, valid: valid.length, applied: 0,
       note: 'no blocker/major findings — only advisory remain', advisory: valid })
+    residual = []
     break
   }
 
   phase('Apply')
   log(`Round ${round}: applying ${blockers.length} blocker/major fix(es)`)
-  const summary = await agent(applyPrompt(blockers), { label: 'apply', phase: 'Apply' })
+  const result = await agent(applyPrompt(blockers),
+    { label: 'apply', phase: 'Apply', schema: APPLY_SCHEMA })
   reviewLog.push({ round, raw: raw.length, valid: valid.length, applied: blockers.length,
-    applied_findings: blockers, summary })
+    applied_findings: blockers, summary: result ? result.summary : '(apply returned no summary)' })
+
+  // Applied fixes are re-reviewed by the next round, which clears residual on a clean pass.
+  // The final round has no verification round after it, so its applied blockers stay
+  // unverified and are surfaced to the human rather than reported as confirmed-resolved.
+  residual = round === MAX_ROUNDS ? blockers : []
 }
 
 return { reviewLog, residual }

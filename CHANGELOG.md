@@ -4,6 +4,19 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.12.1] - 2026-06-18
+
+### Fixed
+- **prp-review no longer hangs at the finalize stage.** The review Workflow's
+  trailing "apply" agent ran without an output schema, so it returned free text
+  with no convergence signal and could thrash (re-read, re-edit) until the
+  workflow's final `await` stalled — recovered only by cache-resume. It now
+  terminates in a structured `APPLY_SCHEMA` tool call, which is its stop signal.
+  The same change fixes a `residual` mislabel: residual blockers were assigned
+  before the apply ran on every round, so a final-round apply reported its own
+  just-applied fixes as surviving blockers; now only genuinely unverified
+  final-round blockers surface as residual.
+
 ## [0.12.0] - 2026-06-17
 
 ### Fixed
