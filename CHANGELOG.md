@@ -4,6 +4,16 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.13.1] - 2026-06-19
+
+### Added
+- **Four global engineering rules** in `CLAUDE.global.md` (and synced to `~/.claude/CLAUDE.md`):
+  *reuse first* — exhaust existing implementations and patterns before introducing a new one;
+  *no parallel patterns* — delete the old implementation when a new pattern replaces it;
+  *no throwaway scripts* — one-off scripts stay in scratch space, never committed as permanent
+  files; and *mock data only in tests* — never in dev or prod environments. Plugin bumped
+  0.13.0 → 0.13.1.
+
 ## [0.13.0] - 2026-06-18
 
 ### Added
