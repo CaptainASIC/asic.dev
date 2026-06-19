@@ -16,6 +16,10 @@ match them.
 - **DIP** — high-level modules depend on abstractions, not concrete low-level modules.
 - **Fail fast** — detect and raise on invalid state immediately rather than limping along.
   Catch specific exceptions; never blanket `except Exception`.
+- **Reuse first** — exhaust existing implementations, utilities, and patterns before
+  introducing a new one. A new pattern must justify itself against what already works.
+- **No parallel patterns** — if a new pattern replaces an old one, migrate fully and
+  delete the old implementation. Never leave two ways to do the same thing.
 
 ## Before writing code
 
@@ -40,6 +44,9 @@ match them.
 - Remove imports/variables/functions that YOUR change orphaned. Never delete pre-existing
   dead code or overwrite existing logic unless explicitly instructed or required by a task
   in TASKS.md — mention what you noticed instead.
+- No throwaway scripts in the tree — one-off or exploratory scripts stay in scratch space,
+  never committed as permanent files. If the logic is worth keeping, fold it into the
+  codebase properly (module + tests).
 
 ## Project awareness
 
@@ -272,6 +279,8 @@ def test_user_update_email_fails_with_invalid_format(sample_user):
   condition. Unit tests mock external dependencies; integration tests verify component
   interaction; e2e tests cover full workflows.
 - Never mock-to-pass; never ignore a failing test — read the error, fix the root cause.
+- Mock data only in tests — never in dev or prod environments. Dev and prod use real data
+  sources and integrations; no fake payloads or hardcoded samples standing in for live behavior.
 - Coverage target 80%+, prioritizing critical paths and complex logic over trivia.
 
 ## Error handling & logging
