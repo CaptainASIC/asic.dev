@@ -4,6 +4,14 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.14.1] - 2026-06-20
+
+### Changed
+- **Eval `d2` now asserts the SNYK_TOKEN UUID is redacted** instead of tracking it as a gap.
+  DataSentry 0.3.0 added a dedicated `snyk-token` rule that redacts bare-UUID tokens
+  (`SNYK_TOKEN=…` → `[DS:snyk-token:…]`), closing P4. Requires datasentry ≥ 0.3.0. Docs updated
+  (`docs/prp-loop-hardening.md` P4 marked closed, `evals/README.md`). Plugin bumped 0.14.0 → 0.14.1.
+
 ## [0.14.0] - 2026-06-20
 
 ### Added
