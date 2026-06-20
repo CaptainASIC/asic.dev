@@ -72,18 +72,18 @@ Logic-lens findings still verify against PRP text. Unverifiable → residual (un
 
 ---
 
-## P4 — DataSentry misses UUID-form secrets (e.g. SNYK_TOKEN) ✅ (documented + tested)
+## P4 — DataSentry missed UUID-form secrets (e.g. SNYK_TOKEN) ✅ CLOSED in datasentry 0.3.0
 
-**Damage:** Empirically confirmed this session — DataSentry `PostToolUse:*` redaction **fires**
-on Bash output (the Ref API key came back `[DS:generic-api-key:a47b]`), proving redaction is not
-bypassed on the fan-out/tool path. **But** the `SNYK_TOKEN` (a bare UUID) passed through in
-**cleartext** — the generic-api-key pattern does not match UUID-shaped tokens.
+**Damage (was):** DataSentry `PostToolUse:*` redaction fires on Bash output (the Ref API key came
+back `[DS:generic-api-key:a47b]`), proving redaction is not bypassed on the fan-out/tool path.
+**But** the `SNYK_TOKEN` (a bare UUID) passed through in **cleartext** — the generic-api-key
+pattern did not match UUID-shaped tokens.
 
-**Fix:** DataSentry is a separate plugin (out of this repo's edit scope), so the redaction
-pattern fix is logged for the datasentry repo, not changed here. This release **adds an eval**
-that (a) proves redaction fires on a generic key in tool output and (b) **asserts the known UUID
-gap** so it's tracked, not silently trusted. Operational mitigation: keep `SNYK_TOKEN` in the MCP
-`env` block (never echoed by a skill); no skill prints it.
+**Resolution:** DataSentry 0.3.0 adds a dedicated `snyk-token` rule; the UUID now redacts to
+`[DS:snyk-token:…]` (verified: `SNYK_TOKEN=…` → `[DS:snyk-token:a564]`). Eval `d2` was flipped
+from *tracking the gap* to *asserting redaction* (requires datasentry ≥ 0.3.0). DataSentry is a
+separate plugin — the rule was patched in the datasentry repo, not here. Operational hygiene
+unchanged: `SNYK_TOKEN` stays in the MCP `env` block, never echoed by a skill.
 
 ---
 
