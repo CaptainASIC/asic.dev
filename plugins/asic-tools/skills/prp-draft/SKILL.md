@@ -13,6 +13,12 @@ library quirks. An unverified PRP is worse than none: the implementing agent tru
 guessed API signatures, no assumed file paths. Every CRITICAL/GOTCHA traces to something you
 read in source, a lockfile, or official docs this session.
 
+**Verified-context rule (see `docs/agent-tooling.md`):** every claim, decision, or gotcha that
+enters the PRP carries exactly one citation — a graphify graph node, a `path:line` read this
+session, or a Ref doc URL with its resolved version. A conclusion you cannot trace to one of
+those is not usable: mark it `SPECULATIVE — verify before relying` and surface it. Retrieval
+lanes are fixed: graphify CLI (structure) → serena (symbols/memory) → Ref (external docs).
+
 Reference files (read when you reach the phase that needs them):
 - `references/prp_template.md` — canonical section skeleton with per-section guidance
 - `references/style_guide.md` — voice, formatting, and the user's standing engineering rules
