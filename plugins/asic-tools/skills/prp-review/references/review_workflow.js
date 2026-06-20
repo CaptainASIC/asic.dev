@@ -140,14 +140,19 @@ const VERIFY_SCHEMA = {
 
 function reviewerPrompt(lens, round) {
   const readRepo = lens.kind === 'style'
-    ? 'Read the repo files this PRP cites (§4.1 MUST READ and §4.2 tree) so you compare its ' +
-      'proposals against code that actually exists. '
+    ? 'Compare the PRP\'s proposals against code that actually exists: when ' +
+      'graphify-out/graph.json exists, FIRST orient with the graphify CLI ' +
+      '(`graphify query "<area>"` / `explain` / `path`) to find the cited files, THEN read the ' +
+      'repo files this PRP cites (§4.1 MUST READ and §4.2 tree). Do not blind-grep before ' +
+      'graphify has oriented you (see docs/agent-tooling.md). '
     : ''
   return `You are an adversarial PRP reviewer with the "${lens.key}" lens (round ${round}). ` +
     `Read the PRP at ${PRP}. ${readRepo}\n\n` +
     `Your lens: ${lens.focus}\n\n` +
     `Be skeptical and specific. Report only real problems you can ground in evidence (a quote ` +
     `from the PRP or a file:line you read) — no style preferences, no praise, no speculation. ` +
+    `Every finding MUST cite either a PRP quote or a file:line you actually read; an uncited ` +
+    `claim will be rejected by the adjudicator. ` +
     `Severity: blocker = would produce wrong code; major = significant gap; minor = should ` +
     `fix; nit = optional. Return findings via the schema; empty findings array if the PRP is ` +
     `sound on your lens.`
@@ -180,7 +185,11 @@ function verifyPrompt(applied) {
     `the file text:\n\n${JSON.stringify(applied, null, 2)}\n\n` +
     `Return one verdict per finding, keyed by its dedup_group: resolved=true if the PRP now ` +
     `addresses the claim, resolved=false (with a reason) if the issue genuinely still remains. ` +
-    `Verify against the actual file content, not the suggested_fix wording. Return via the schema.`
+    `Verify against the actual file content, not the suggested_fix wording. For any STYLE-lens ` +
+    `finding (naming/structure/conventions), do not accept the edit on the PRP's word alone — ` +
+    `re-confirm against the cited repo file (graphify-first to locate it, then read the ` +
+    `file:line) that the PRP now matches the real code; resolved=false if the edit diverges from ` +
+    `what the repo actually does. Return via the schema.`
 }
 
 // Keep one finding per dedup_group; prefer the highest severity in the group.

@@ -102,7 +102,10 @@ Scale the sweep to the PRP. A contained PRP (a handful of citations) checks inli
 large PRP (subsystem scope, many §4 citations) fans out read-only subagents (Explore) —
 one per cited file or gotcha cluster — each returning a **structured verdict**, never
 prose: `{ citation, status: holds | drifted, evidence }` (`evidence` = the `path:line`
-that proves it, or the mismatch found). This phase stays read-only — no file is touched.
+that proves it, or the mismatch found). When `graphify-out/graph.json` exists, each
+subagent's prompt must instruct **graphify-first** (orient with `graphify query`/`explain`/
+`path` before reading the cited file) — the directive applies to subagents, not only the main
+thread (see `docs/agent-tooling.md`). This phase stays read-only — no file is touched.
 Merge the verdicts into a drift table.
 
 Any `drifted` row — file gone, contract changed, gotcha invalidated → STOP. Present the
@@ -156,11 +159,35 @@ flagged as questions, not silently planned in.
 5. **Commits** — logical groups (typically per task or per §6 file-section), Conventional
    format, ruff clean *before* each commit, no AI attribution, never push. Never commit the
    scratchpad — `PRPs/.work/` is outside every PRP's summary table, so surgical scope excludes it.
+6. **Security gate (Snyk MCP) — required, fail-closed.** Runs **once**, after every §9
+   validation level is green and all task commits are made, **before** Phase C. This is the only
+   security scan in the loop — a gate, never a per-tool-call check. `snyk agent-scan`
+   (supply-chain) is **out of scope** here; the user runs it separately.
+   - **Auth precondition.** Confirm the Snyk MCP is reachable and authenticated
+     (`mcp__Snyk__snyk_auth` if a check is needed). Unauthenticated, MCP absent, or a scan that
+     errors → **treat as a BLOCK** (fail-closed): stop with the exact state, never proceed on an
+     unknown security posture.
+   - **Adaptive scan selection** (scan what the repo actually contains):
+     - `mcp__Snyk__snyk_code_scan` — **always** (SAST over the implemented code).
+     - `mcp__Snyk__snyk_sca_scan` — only if a real dependency manifest **and** lockfile exist
+       (`package.json`+lock, `pyproject.toml`+`uv.lock`/`requirements.txt` with real deps,
+       `go.mod`, …). Skip with a logged reason when there are no resolvable dependencies.
+     - `mcp__Snyk__snyk_iac_scan` — only if IaC is present (terraform, k8s manifests,
+       CloudFormation).
+     - `mcp__Snyk__snyk_container_scan` — only if a Dockerfile / image build is present.
+   - **Block condition.** Any finding of severity **high or critical** → **BLOCK**: do not enter
+     Phase C, do not check off acceptance. Present the findings (rule, file:line, severity), fix
+     them under the PRP's surgical scope (new commits), and **re-run the gate** — it must return
+     no high/critical before the loop may advance. `medium`/`low` → record as advisory in the
+     final report and proceed.
+   - Gate result (scans run, counts by severity, pass/block) is reported in Phase C step 5 and,
+     when it blocks, becomes a Stop condition.
 
 ## Phase C — Close-out (part of execute, not optional)
 
 1. **Acceptance checklist** (§9): verify every box against reality; check them off in the
-   PRP file itself.
+   PRP file itself. The Phase B step 6 Snyk gate must have passed (no high/critical) — a blocked
+   gate means Phase C was never entered.
 2. **PRP front matter**: `Status: Implemented (YYYY-MM-DD)`, add `Branch:` if absent.
 3. **Apply §10 verbatim**: PLANNING.md merge, TASKS.md completion entry (dated, plus the
    collected Discovered During Work items), CHANGELOG entry if mandated, serena memory
@@ -176,13 +203,15 @@ flagged as questions, not silently planned in.
    stop-state report; it is unstaged, so it never enters a commit.)
 5. **Final report**: acceptance checklist status, files touched vs the PRP's summary
    table (any difference is a finding, explain it), test/validation outputs (one line per
-   level), commits made, and what remains for the user — push + merge via GitKraken, plus
-   any deferred items with where they're recorded.
+   level), **the Snyk gate result (scans run, findings by severity, pass)**, commits made, and
+   what remains for the user — push + merge via GitKraken, plus any deferred items with where
+   they're recorded.
 
 ## Stop conditions (anywhere)
 
 Stale PRP (A3), unmet dependency (A2), scope wall (B3), unrecoverable validation failure
-(B4). Stopping with a precise state report is success; powering through the contract is
+(B4), **security gate block (B6: a high/critical Snyk finding, or Snyk unauthenticated/
+unavailable — fail-closed)**. Stopping with a precise state report is success; powering through the contract is
 the failure mode. When a scratchpad was seeded, the stop-state report names the surviving
 `PRPs/.work/PRP-NNN-scratchpad.md` — it is intentionally retained as resumable working memory,
 unstaged so it never enters a commit; only a successful Phase C close-out deletes it.
