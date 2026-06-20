@@ -10,7 +10,7 @@ Proves four properties of the hardened PRP loop:
   (a) retrieval routing picks the right source       -> test_retrieval_routing
   (b) a PRP cannot advance past a failed gate         -> test_prp_gate_invariants
   (c) the Snyk gate blocks a seeded high finding       -> test_snyk_gate
-  (d) DataSentry redaction fires (+ tracks UUID gap)   -> test_datasentry_redaction
+  (d) DataSentry redaction fires (AWS key + UUID token) -> test_datasentry_redaction
 
 Exit code is non-zero if any non-skipped check fails.
 """
@@ -209,7 +209,8 @@ def test_datasentry_redaction() -> None:
         secret not in updated and "[DS:" in updated,
         "AWS key replaced with [DS:...] placeholder",
     )
-    # Known gap (P4): a bare UUID like SNYK_TOKEN matches no standard-level rule -> NOT redacted.
+    # Gap P4 closed in datasentry 0.3.0: a bare UUID SNYK_TOKEN is now caught by a dedicated
+    # snyk-token rule. Assert it is redacted (requires datasentry >= 0.3.0).
     uuid = "a8820553-7a45-4908-bd36-964b7606cce2"
     payload2 = {
         "hook_event_name": "PostToolUse",
@@ -217,12 +218,12 @@ def test_datasentry_redaction() -> None:
         "tool_response": {"stdout": f"SNYK_TOKEN={uuid}"},
     }
     out2 = _run_datasentry(script, payload2)
-    # No hits -> script prints nothing -> empty dict. Assert the gap so it stays tracked.
-    redacted2 = "[DS:" in json.dumps(out2)
+    blob2 = json.dumps(out2)
+    redacted2 = "[DS:" in blob2 and uuid not in blob2
     check(
-        "d2 UUID-form token gap is tracked (NOT redacted at standard)",
-        not redacted2,
-        "bare UUID passes through — documented gap P4 in docs/prp-loop-hardening.md",
+        "d2 UUID-form token (SNYK_TOKEN) is redacted (gap P4 closed in datasentry 0.3.0)",
+        redacted2,
+        "bare UUID replaced with [DS:snyk-token:...] placeholder",
     )
 
 
