@@ -4,6 +4,40 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.14.0] - 2026-06-20
+
+### Added
+- **In-loop security gate (Snyk MCP) in `prp-implement`.** New required Phase B step 6 runs once,
+  after all §9 validation passes and before Phase C close-out — a gate, never a per-tool-call
+  check. It is **fail-closed**: any high/critical Snyk finding blocks close-out until fixed and
+  re-scanned clean, and an unauthenticated or unavailable Snyk is itself a block (never a silent
+  pass). Scans are **adaptive**: `snyk_code_scan` always, `snyk_sca_scan` when a real
+  manifest+lock exists, `snyk_iac_scan`/`snyk_container_scan` only when IaC/containers are present.
+  Wired into the §9 acceptance check, the Phase C final report, and the Stop conditions.
+  `snyk agent-scan` (supply-chain) is explicitly out of scope. Plugin bumped 0.13.1 → 0.14.0.
+- **Retrieval-lane routing rules (`docs/agent-tooling.md`).** Hard rules fixing the three lanes —
+  graphify CLI (structure), serena (symbols/memory), Ref (external docs) — with a per-PRP-step
+  source table and a **verified-context rule**: every claim entering a PRP carries a citation
+  (graph node, `path:line`, or Ref URL) or is marked `SPECULATIVE`. `prp-draft` now states the
+  rule and points at the doc.
+- **`evals/` harness.** Stdlib runner proving retrieval routing, the gate cannot be skipped, the
+  Snyk gate blocks a seeded high-severity finding (live scan), and DataSentry redaction fires
+  (with the UUID-token coverage gap tracked).
+
+### Fixed
+- **Reviewers and the drift fan-out no longer scan blind.** `prp-review`'s style-lens reviewer
+  prompts and `prp-implement`'s A3/A2.5 Explore fan-out now require graphify-first orientation
+  before reading cited files, and review findings must cite a PRP quote or a read `file:line` or
+  be rejected by the adjudicator.
+- **`prp-review` final-round verify no longer self-grades style fixes.** The verifier now
+  re-confirms style-lens fixes against the cited repo file, not the PRP text alone.
+
+### Changed
+- **Dropped the dead `graphify-airi` MCP server** from `~/.claude.json`. It was hardwired to the
+  Airi repo's graph, so calls from any other repo returned the wrong graph. All graphify retrieval
+  now routes through the CLI (correct local graph). (Machine-local config change, not shipped in
+  the plugin.)
+
 ## [0.13.1] - 2026-06-19
 
 ### Added
