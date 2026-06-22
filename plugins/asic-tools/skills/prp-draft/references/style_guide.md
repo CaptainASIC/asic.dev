@@ -46,7 +46,11 @@ If a task pushes a file past a cap, the task list must include the split. Pre-ex
 violations get noted as a GOTCHA, not silently worsened.
 
 **Architecture** — KISS and YAGNI govern: minimum code that solves the problem, nothing
-speculative, no single-use abstractions, no unrequested configurability. Vertical slice
+speculative, no single-use abstractions, no unrequested configurability. Apply the
+**decision ladder** (global rules) — stop at the first rung that holds (need-to-exist → stdlib
+→ native → installed dep → one line → minimum) and never skip the
+validation/authz/error/accessibility carve-out; PRPs encode this in §3 (architecture decisions)
+and §11 (anti-patterns). Vertical slice
 layout with tests beside code. Agent-shaped modules split as `agent.py` / `tools.py` /
 `prompts.py`. SRP per module; fail fast — validate early, raise on invalid state, no
 blanket `except Exception`.

@@ -21,6 +21,26 @@ match them.
 - **No parallel patterns** — if a new pattern replaces an old one, migrate fully and
   delete the old implementation. Never leave two ways to do the same thing.
 
+## Decision ladder
+
+Before writing code to solve a problem, walk these rungs in order and **stop at the first one
+that holds** — do not climb higher than the problem needs:
+
+1. **Does this need to exist at all?** (YAGNI) — if the requirement is speculative or the code
+   is single-use, the answer is no code.
+2. **Standard library?** — solve it with what the language already ships.
+3. **Native platform feature?** — a built-in of the framework/runtime/OS already in play.
+4. **An already-installed dependency?** — reuse what the project depends on; do not add a new one.
+5. **One line?** — the smallest local addition that does the job.
+6. **The minimum that works** — and nothing beyond it.
+
+**Non-negotiable carve-out — these are never a rung you may skip:** trust-boundary input
+validation, authentication/authorization, error and data-loss handling, and accessibility.
+"The minimum that works" never means "skip the guard." Be lazy, never negligent — a minimal
+solution still validates its inputs, handles its errors, and stays accessible.
+
+_Decision ladder adapted from `ponytail` (MIT)._
+
 ## Before writing code
 
 - State assumptions explicitly. Multiple interpretations exist → present them; don't pick
