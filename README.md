@@ -8,7 +8,7 @@ with Warp counterparts where they make sense.
 | [asicdash](#asicdash) | Config + usage dashboard: audit visible and invisible agent config, chart Claude usage |
 | [idea-refine](#idea-refine) | Refine a raw idea into a build-ready one-pager — upstream of prp-draft |
 | [prp-draft](#prp-draft) | Research-first generator for Product Requirements Prompts |
-| [prp-review](#prp-review) | Adversarial review gate: 6-lens Workflow hardens a PRP before implementation |
+| [prp-review](#prp-review) | Adversarial review gate: 7-lens Workflow hardens a PRP before implementation |
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
@@ -238,8 +238,8 @@ naming, test minimums, git constraints) loaded only when drafting.
 ## prp-review
 
 Adversarial review gate between `prp-draft` and `prp-implement`. Given a drafted PRP, it runs a
-Workflow that fans out six distinct-lens reviewers — three on logic (requirements coverage,
-architecture soundness, edge-cases & verifiability) and three on style/convention drift against
+Workflow that fans out seven distinct-lens reviewers — four on logic (requirements coverage,
+architecture soundness, over-build, edge-cases & verifiability) and three on style/convention drift against
 the real target repo (naming, structure, error/test/docstring conventions) — adjudicates their
 findings to drop false positives, applies the blocker/major fixes to the PRP in place, and
 re-reviews up to three rounds. It appends a `## Review Log` to the PRP and surfaces any residual
