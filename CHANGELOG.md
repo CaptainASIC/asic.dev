@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.15.0] - 2026-06-22
+
+### Added
+- **YAGNI decision ladder in the global rules.** New `## Decision ladder` section in
+  `CLAUDE.global.md` (after Philosophy): a stop-at-first-rung checklist — need-to-exist (YAGNI)
+  → stdlib → native platform feature → installed dependency → one line → the minimum that works
+  — with a **non-negotiable carve-out** (trust-boundary validation, authn/authz, error/data-loss
+  handling, accessibility are never skippable; "lazy, never negligent"). Ladder adapted from
+  `ponytail` (MIT). Cross-referenced from `prp-draft`'s `style_guide.md` so every drafted PRP
+  encodes it in §3/§11.
+- **Over-build lens in `prp-review`.** A 7th reviewer (4 logic, 3 style) walks a PRP's proposed
+  design through the ladder rungs; the `architecture` lens narrows to soundness/fit so the two do
+  not duplicate. No schema change. Plugin bumped 0.14.1 → 0.15.0. Run `sync-rules` post-merge to
+  deploy the new rules to `~/.claude/CLAUDE.md`; paste the same block into the Warp Drive global rule.
+
 ## [0.14.1] - 2026-06-20
 
 ### Changed

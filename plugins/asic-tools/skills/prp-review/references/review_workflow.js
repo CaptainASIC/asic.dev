@@ -1,6 +1,6 @@
 export const meta = {
   name: 'prp-review',
-  description: 'Adversarial PRP review gate: 6-lens fan-out, adjudicate, apply fixes, re-review (capped 3 rounds)',
+  description: 'Adversarial PRP review gate: 7-lens fan-out, adjudicate, apply fixes, re-review (capped 3 rounds)',
   phases: [
     { title: 'Review' },
     { title: 'Adjudicate' },
@@ -17,14 +17,20 @@ const PRP = ARGS && ARGS.prpPath
 if (!PRP) throw new Error('review_workflow: args.prpPath is required')
 const MAX_ROUNDS = 3
 
-// Six distinct lenses: 3 logic, 3 style. Style lenses compare the PRP against real repo code.
+// Seven distinct lenses: 4 logic, 3 style. Style lenses compare the PRP against real repo code.
 const LENSES = [
   { key: 'requirements', kind: 'logic',
     focus: 'Does the PRP fully cover its stated goal (§1) and desired behaviour (§2.3)? Find ' +
            'missing requirements, unstated assumptions, and goal/scope mismatches.' },
   { key: 'architecture', kind: 'logic',
-    focus: 'Is the §3 architecture sound and the simplest that works (KISS/YAGNI)? Find ' +
-           'over-engineering, fragile designs, and decisions that fight the codebase.' },
+    focus: 'Is the §3 architecture sound and a fit for the codebase? Find fragile designs, ' +
+           'decisions that fight the codebase, and missing integration concerns.' },
+  { key: 'overbuild', kind: 'logic',
+    focus: 'Walk each proposed artifact through the decision ladder: does it need to exist ' +
+           '(YAGNI), or would stdlib / a native feature / an installed dep / one line do? Flag ' +
+           'speculative features, single-use abstractions, unrequested configurability, and new ' +
+           'dependencies that earn nothing. Carve-out: never flag validation, authz, error/' +
+           'data-loss handling, or accessibility as over-build — those are non-negotiable.' },
   { key: 'verifiability', kind: 'logic',
     focus: 'Is every §5 task paired with a real VERIFY, and is every §9 acceptance criterion ' +
            'observable? Find edge cases with no test and unverifiable claims.' },
@@ -210,7 +216,7 @@ let residual = []
 
 for (let round = 1; round <= MAX_ROUNDS; round++) {
   phase('Review')
-  log(`Round ${round}/${MAX_ROUNDS}: 6 reviewers`)
+  log(`Round ${round}/${MAX_ROUNDS}: 7 reviewers`)
   const reviews = await parallel(LENSES.map((lens) => () =>
     agent(reviewerPrompt(lens, round), {
       label: `review:${lens.key}`, phase: 'Review', schema: FINDINGS_SCHEMA,
