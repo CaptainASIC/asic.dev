@@ -4,6 +4,18 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.16.2] - 2026-06-25
+
+### Fixed
+- **`improve-repo` no longer discards real findings when a check also reports a partial skip.**
+  The audit grouping loop in `improve_workflow.js` checked `result.skipped` before `result.findings`
+  and `continue`d, so a check that ran one tool and skipped another (e.g. `standards-surface` found
+  `ruff format` drift but `mypy` was absent) had its findings thrown away — they surfaced only in
+  the skip-reason prose, never as a pickable category. The loop now checks findings first: findings
+  always surface as a category, and a partial skip is recorded alongside them (`partial: true`),
+  never in their place. Found by the first live audit of `asic.dev` itself. Plugin bumped
+  0.16.1 → 0.16.2.
+
 ## [0.16.1] - 2026-06-25
 
 ### Fixed

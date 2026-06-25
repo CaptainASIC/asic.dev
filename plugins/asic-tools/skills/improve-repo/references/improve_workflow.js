@@ -172,17 +172,25 @@ const results = await parallel(active.map((check) => () =>
     .then((r) => ({ check, result: r }))
 ))
 
-// Group by check. A check with a skipped reason (or a dead agent) goes to `skipped`, not
-// `categories`; a check that ran clean (zero findings) is simply omitted from both.
+// Group by check. Findings ALWAYS surface as a category — even when the agent also set a
+// `skipped` note. A check can run one of several tools and skip another (e.g. standards-surface
+// runs ruff, finds format drift, but mypy is absent): the partial-skip note must never discard
+// the real findings. So check findings FIRST. `skipped` records a check only when it produced no
+// findings (nothing ran, or a tool was unavailable with nothing to report); a partial skip
+// alongside real findings is recorded with `partial: true`, not in place of them. A check that
+// ran clean with zero findings and no skip is omitted from both.
 const categories = []
 const skipped = []
 for (const entry of results.filter(Boolean)) {
   const { check, result } = entry
   if (!result) { skipped.push({ key: check.key, reason: 'audit agent returned no result' }); continue }
-  if (result.skipped) { skipped.push({ key: check.key, reason: result.skipped }); continue }
   const findings = result.findings || []
-  if (findings.length === 0) continue
-  categories.push({ category: check.key, safety: check.safety, tier: check.tier, findings })
+  if (findings.length > 0) {
+    categories.push({ category: check.key, safety: check.safety, tier: check.tier, findings })
+    if (result.skipped) skipped.push({ key: check.key, reason: result.skipped, partial: true })
+    continue
+  }
+  if (result.skipped) { skipped.push({ key: check.key, reason: result.skipped }); continue }
 }
 
 return { categories, skipped }
