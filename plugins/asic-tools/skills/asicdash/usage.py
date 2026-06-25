@@ -437,17 +437,21 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
     )
     # Token totals at four granularities — the at-a-glance answer to "how much have I used".
     p = t["periods"]
-    tot = '<div class="u-tot">' + "".join(
-        f'<div class="u-tot-c"><div class="u-tot-l">{lbl}</div>'
-        f'<div class="u-tot-v">{_fmt_tokens(p[k]["out"])} <span class="u-tot-u">out</span></div>'
-        f'<div class="u-tot-s">{_fmt_tokens(p[k]["inp"])} in</div></div>'
-        for lbl, k in (
-            ("Today", "today"),
-            ("Last 7 days", "d7"),
-            ("Last 30 days", "d30"),
-            ("All-time", "all"),
+    tot = (
+        '<div class="u-tot">'
+        + "".join(
+            f'<div class="u-tot-c"><div class="u-tot-l">{lbl}</div>'
+            f'<div class="u-tot-v">{_fmt_tokens(p[k]["out"])} <span class="u-tot-u">out</span></div>'
+            f'<div class="u-tot-s">{_fmt_tokens(p[k]["inp"])} in</div></div>'
+            for lbl, k in (
+                ("Today", "today"),
+                ("Last 7 days", "d7"),
+                ("Last 30 days", "d30"),
+                ("All-time", "all"),
+            )
         )
-    ) + "</div>"
+        + "</div>"
+    )
     legend = (
         '<div class="u-legend">'
         '<span><span class="u-sw u-terminal-3"></span>Terminal</span>'
