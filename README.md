@@ -12,6 +12,7 @@ with Warp counterparts where they make sense.
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
+| [improve-repo](#improve-repo) | Repo-wide standards-conformance auditor: finds version/scaffold/import/naming drift, ships category-scoped fix PRs |
 | [sync-rules](#global-rules) | Deploy the bundled global engineering rules to `~/.claude/CLAUDE.md` on any machine |
 | [diagram](#diagram) | Generate editable draw.io architecture/network/system diagrams from a description, or visualize a repo |
 
@@ -330,6 +331,29 @@ survey missed, and refuses to proceed if existing version locations already disa
 
 In Claude Code: `/asic-tools:release`. In Warp: the `release` Drive prompt
 ([warp/release.md](warp/release.md)).
+
+---
+
+## improve-repo
+
+Audits an existing repo for drift from the standing engineering rules and ships the fixes as
+focused, reviewable PRs — the counterpart to `scaffold` (which enforces standards at birth) and
+`prp-review`/`prp-implement` (which enforce them per PRP). It profiles the repo (languages,
+single-deployable vs multi-publish, version locations, toolchain, project kind), then runs a
+Workflow that fans out one adversarial agent per enabled check: version-consolidation,
+import-hygiene, shared-import-extraction, scaffold-conformance, standards-surface, and
+naming-conventions. Python gets the full standards tier; JS/TS gets a hygiene tier (version +
+imports).
+
+It **composes** rather than reinvents: shells out to the repo's own `ruff`/`mypy`, reuses
+`release`'s [version_locations.md](plugins/asic-tools/skills/release/references/version_locations.md)
+table, and hands bug-hunting to `code-review` and cleanup to `simplify`. Findings come back as a
+markdown report grouped by category; once you pick a category, the skill applies the mechanical
+fixes on a `feature/improve-<category>` branch with a Conventional Commit and a ready-to-paste PR
+body, while generative or contract-changing fixes go to a human checklist. Like `release`, it never
+pushes.
+
+In Claude Code: `/asic-tools:improve-repo`.
 
 ## diagram
 

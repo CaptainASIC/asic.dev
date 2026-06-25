@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.16.0] - 2026-06-25
+
+### Added
+- **`improve-repo` skill — repo-wide standards-conformance auditor + fixer.** Profiles a repo
+  (languages, single-deployable vs multi-publish, version locations, toolchain), runs a Workflow
+  that fans out one adversarial agent per enabled check (version-consolidation, import-hygiene,
+  shared-import-extraction, scaffold-conformance, standards-surface, naming-conventions), and
+  presents findings grouped by category. Python gets a full standards audit (ruff/mypy surfaced,
+  vertical-slice + entity-PK conformance); JS/TS gets a hygiene tier (version + imports). Composes
+  existing tooling — shells `ruff`/`mypy`, reuses `release`'s version-location table, hands bugs to
+  `code-review` and cleanup to `simplify`. On a picked category it applies mechanical fixes on a
+  `feature/improve-<category>` branch with a Conventional Commit and a PR body;
+  generative/contract-changing fixes go to a human checklist. Never pushes. Plugin bumped
+  0.15.0 → 0.16.0.
+
 ## [0.15.0] - 2026-06-22
 
 ### Added
