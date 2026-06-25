@@ -78,12 +78,17 @@ const CHECKS = [
     focus: 'Run the repo\'s configured ruff and mypy (gated by profile.ruff / profile.mypy) and ' +
            'surface their output as findings — structure caps (files >500, functions >50, ' +
            'classes >100, lines >100), missing type hints, missing docstrings, lint violations. ' +
+           'Run BOTH `ruff check` AND `ruff format --check` — they are SEPARATE commands: ' +
+           '`ruff check` covers lint, `ruff format --check` covers formatting, and a repo can be ' +
+           'lint-clean while still having format drift. Emit a fixable:true finding for EACH file ' +
+           '`ruff format --check` reports as "would reformat" (Phase 4 applies it via ' +
+           '`ruff format <path>`); never fold a would-reformat file into the skipped reason. ' +
            'Do NOT re-implement these checks; invoke the tools and group what they report. Mark ' +
            'each finding fixable:true when ruff can autofix it (formatting, import ordering, other ' +
-           'ruff --fix rules) so Phase 4 can apply it via `ruff check --fix`; mark fixable:false ' +
-           'for mypy findings and any ruff rule with no autofix (those route to the PR-body ' +
-           'checklist). If a ' +
-           'tool is not configured in this repo, set "skipped" to that reason and return no findings.' },
+           'ruff --fix rules) so Phase 4 can apply it via `ruff check --fix` (or `ruff format` for ' +
+           'format findings); mark fixable:false for mypy findings and any ruff rule with no ' +
+           'autofix (those route to the PR-body checklist). If a tool (ruff AND mypy both) is not ' +
+           'configured in this repo, set "skipped" to that reason and return no findings.' },
   { key: 'naming-conventions', tier: 'python', safety: 'propose',
     focus: 'Flag database/API naming drift against the standing rules: bare `id` primary keys ' +
            '(should be {entity}_id), FK naming ({referenced_entity}_id), timestamps {action}_at, ' +

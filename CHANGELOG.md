@@ -4,6 +4,16 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.16.1] - 2026-06-25
+
+### Fixed
+- **`improve-repo` `standards-surface` now runs `ruff format --check`, not just `ruff check`.**
+  The first live audit found the check ran `ruff check` (lint) only and folded format drift into
+  its *skipped* reason instead of surfacing it — a repo can be lint-clean while still having
+  formatting drift, since `ruff check` and `ruff format` are separate commands. The check's
+  `focus` now mandates both and emits a `fixable:true` finding for each "would reformat" file
+  (Phase 4 applies it via `ruff format <path>`). Plugin bumped 0.16.0 → 0.16.1.
+
 ## [0.16.0] - 2026-06-25
 
 ### Added
