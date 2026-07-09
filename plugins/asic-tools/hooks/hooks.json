@@ -1,0 +1,28 @@
+{
+  "description": "Captain ASIC hard-rule enforcement: deny AI-attributed commits and pushes, ask before committing to main, and restate rule precedence each turn.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/git-guard.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/precedence-inject.sh'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -80,6 +80,23 @@ edits. Dev mode: `install.sh` does the same copy. The same file works as a Warp 
 global rule (paste once per Warp account). Always a copy, not a symlink — the desktop app
 skips symlinks in some loaders.
 
+### Enforcement hooks
+
+`asic-tools` ships `hooks/hooks.json`, registered automatically when the plugin is enabled. It binds
+three standing rules that prose alone could not:
+
+| Rule | Behaviour |
+|---|---|
+| AI attribution in a commit message | **denied** — no escape. AI is a tool, not an author. |
+| `git push` | **denied** — the user pushes and merges via GitKraken. |
+| `git commit` on `main` / `master` | **asks** — you approve or reject in a permission dialog. |
+
+`ask` is the escape hatch by design: an env var or flag file would be forgeable by the agent, a
+permission dialog is not. Hooks load at session start — **restart Claude Code after updating the
+plugin**, then confirm with `/hooks` (source: `Plugin`).
+
+These hooks bind the agent, not you: a commit you make yourself in a terminal is untouched.
+
 ---
 
 ## asicdash
