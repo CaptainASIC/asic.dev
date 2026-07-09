@@ -4,6 +4,26 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.17.0] - 2026-07-09
+
+### Added
+- **`prp-review` — 8th `silent-failure` reviewer lens (Opus manual §3/§6).** A distinct logic lens
+  hunts the silent-failure surface a PRP would fail on late and quietly — boundaries
+  (parsing/encoding, time/timezone/DST, concurrency, auth/expiry), rarely-run paths, off-by-one,
+  wrong-but-plausible output — that no §5 VERIFY or §9 criterion would catch. Logic reviewers now
+  construct a concrete failing case for runtime-defect claims (an unconstructed claim is capped at
+  `minor`; structural/coverage findings are exempt), and the adjudicator weights severity by failure
+  silence without lifting that cap. Fan-out is now 8 lenses (5 logic, 3 style); the count is synced
+  across `review_workflow.js`, `SKILL.md`, and `README.md`.
+- **`prp-implement` — silent-failure risk triage.** A4 marks high-silent-risk tasks (time/timezone,
+  concurrency, auth/expiry, parsing/encoding, rarely-run paths) as high-verify, and the Phase B
+  VERIFY constructs the boundary/edge case for them instead of only the happy path.
+- **Global engineering rules — a five-question self-test.** `CLAUDE.global.md` gains an ambient
+  before-sending self-test (what was actually asked / known-vs-guessed / silent failure /
+  disconfirmation / reject-first) for prompts that never invoke a pipeline skill. Gap-closing against
+  the Opus "Operating Manual" — full-manual-into-global was measured at ~13× the self-test's cost and
+  deliberately rejected. Plugin bumped 0.16.2 → 0.17.0.
+
 ## [0.16.2] - 2026-06-25
 
 ### Fixed
