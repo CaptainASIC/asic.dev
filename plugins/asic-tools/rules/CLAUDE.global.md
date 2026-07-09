@@ -425,3 +425,17 @@ Closes #123
 - **Firecrawl** — web scraping/extraction (respect rate limits; validate extracted data).
 - **BrowserMCP** — browser automation and UI testing.
 - Neon and mem0 are retired — do not reference them.
+
+## Self-test — before sending any non-trivial answer
+
+Run this loop before shipping any non-trivial answer; it is the cheap insurance the rest of these
+rules assume, and it applies to every prompt — not only PRP-pipeline work.
+
+1. **What was actually asked** — does the first sentence answer *that*, not a preferred proxy for it?
+2. **Known vs. guessed** — which claims did I observe, which derive, which assume? Can the reader
+   tell the difference?
+3. **Silent failure** — what is the most expensive *silent* way this is wrong, and did effort go
+   there, or where checking was easy?
+4. **Disconfirmation** — what did I do that would have *disproven* this if it were false? If
+   nothing qualifies, I verified nothing.
+5. **Reject-first** — if a junior handed me this, what would I reject first? Fix that, then send.
