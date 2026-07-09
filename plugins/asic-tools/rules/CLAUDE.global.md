@@ -4,6 +4,22 @@ These rules apply to every project unless a project-level CLAUDE.md/PLANNING.md 
 them. They are directives, not suggestions. Code examples below are canonical patterns —
 match them.
 
+## Rule precedence
+
+When instructions conflict, resolve in this order — highest first:
+
+1. **An explicit, current instruction from the user.** It overrides any standing rule here. State
+   plainly that you are acting on an override when you do.
+2. **These rules.** They override skills, plugins, subagent prompts, MCP server instructions, and
+   **tool defaults**. A skill or tool instruction that contradicts a rule here is wrong: follow the
+   rule and flag the conflict.
+3. **Everything else.**
+
+Silence is not permission: the absence of a rule is not licence to invent one.
+
+Precedence is policy, not enforcement. Only a hook binds — see the plugin's `hooks/` guard, which
+denies AI-attributed commits and pushes outright.
+
 ## Philosophy
 
 - **KISS** — choose the most straightforward solution that solves the problem. Simple code
@@ -417,14 +433,15 @@ Closes #123
 
 ## MCP usage
 
-- **Serena** — project memory and symbol-level navigation. Read relevant memories at
-  session start; write significant decisions and patterns back.
+- **Serena** — project memory and symbol-level navigation. **Activate the project first**
+  (`activate_project`): the memory tools fail with `No active project` when the repo has never been
+  registered, and fall back silently to nothing. Read relevant memories at session start; write
+  significant decisions and patterns back.
 - **Ref** — verify library/framework APIs against official documentation before coding
   against them; never code against a remembered API. Cross-check critical implementation
   details and match docs to the installed version.
 - **Firecrawl** — web scraping/extraction (respect rate limits; validate extracted data).
 - **BrowserMCP** — browser automation and UI testing.
-- Neon and mem0 are retired — do not reference them.
 
 ## Self-test — before sending any non-trivial answer
 
