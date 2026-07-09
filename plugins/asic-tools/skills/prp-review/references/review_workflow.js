@@ -1,6 +1,6 @@
 export const meta = {
   name: 'prp-review',
-  description: 'Adversarial PRP review gate: 7-lens fan-out, adjudicate, apply fixes, re-review (capped 3 rounds)',
+  description: 'Adversarial PRP review gate: 8-lens fan-out, adjudicate, apply fixes, re-review (capped 3 rounds)',
   phases: [
     { title: 'Review' },
     { title: 'Adjudicate' },
@@ -17,7 +17,7 @@ const PRP = ARGS && ARGS.prpPath
 if (!PRP) throw new Error('review_workflow: args.prpPath is required')
 const MAX_ROUNDS = 3
 
-// Seven distinct lenses: 4 logic, 3 style. Style lenses compare the PRP against real repo code.
+// Eight distinct lenses: 5 logic, 3 style. Style lenses compare the PRP against real repo code.
 const LENSES = [
   { key: 'requirements', kind: 'logic',
     focus: 'Does the PRP fully cover its stated goal (§1) and desired behaviour (§2.3)? Find ' +
@@ -34,6 +34,13 @@ const LENSES = [
   { key: 'verifiability', kind: 'logic',
     focus: 'Is every §5 task paired with a real VERIFY, and is every §9 acceptance criterion ' +
            'observable? Find edge cases with no test and unverifiable claims.' },
+  { key: 'silent-failure', kind: 'logic',
+    focus: 'Hunt the silent-failure surface (manual §3): where would a task or design in this ' +
+           'PRP fail LATE and QUIETLY rather than loudly at build/test time? Boundaries — ' +
+           'parsing, encoding, time/timezone/DST, concurrency, auth/expiry — plus rarely-run ' +
+           'paths, off-by-one at edges, and wrong-but-plausible output. Flag any such surface ' +
+           'that no §5 VERIFY or §9 acceptance criterion would catch. A loud failure the build ' +
+           'or tests catch is out of scope for this lens.' },
   { key: 'naming', kind: 'style',
     focus: 'Do the PRP\'s proposed names (files, symbols, identifiers) match the conventions ' +
            'in the repo files it cites? Read those files; flag naming drift.' },
@@ -152,13 +159,21 @@ function reviewerPrompt(lens, round) {
       'repo files this PRP cites (§4.1 MUST READ and §4.2 tree). Do not blind-grep before ' +
       'graphify has oriented you (see docs/agent-tooling.md). '
     : ''
+  const counterexample = lens.kind === 'logic'
+    ? 'For any finding that claims a RUNTIME defect (wrong output, crash, race, boundary or ' +
+      'encoding error), construct the specific input, state, or timing that triggers it — an ' +
+      'actual constructed case, not "I can\'t think of one". A runtime-defect finding with no ' +
+      'constructed failing case is at most `minor`. This does NOT apply to structural, ' +
+      'architectural, or coverage findings (a fragile design, a missing requirement, an ' +
+      'unverifiable criterion) — those stand on their own evidence and keep their severity. '
+    : ''
   return `You are an adversarial PRP reviewer with the "${lens.key}" lens (round ${round}). ` +
     `Read the PRP at ${PRP}. ${readRepo}\n\n` +
     `Your lens: ${lens.focus}\n\n` +
     `Be skeptical and specific. Report only real problems you can ground in evidence (a quote ` +
     `from the PRP or a file:line you read) — no style preferences, no praise, no speculation. ` +
     `Every finding MUST cite either a PRP quote or a file:line you actually read; an uncited ` +
-    `claim will be rejected by the adjudicator. ` +
+    `claim will be rejected by the adjudicator. ${counterexample}` +
     `Severity: blocker = would produce wrong code; major = significant gap; minor = should ` +
     `fix; nit = optional. Return findings via the schema; empty findings array if the PRP is ` +
     `sound on your lens.`
@@ -171,7 +186,14 @@ function adjudicatePrompt(findings) {
     `For each finding: set valid=false (with a reason) if it is a false positive, a style ` +
     `preference, out of scope, or already handled by the PRP — otherwise valid=true. Collapse ` +
     `duplicates/overlaps by giving them the same dedup_group (unique string per distinct ` +
-    `issue). Keep severity honest. Read the PRP and cited files as needed to judge. Return ` +
+    `issue). ` +
+    `Weight severity by SILENCE: a defect that would surface only in production or on a rarely-` +
+    `run path (boundary, time/timezone, concurrency, auth/expiry) outranks one the build or ` +
+    `tests catch loudly — never let a loud-but-trivial finding outrank a silent-but-costly one. ` +
+    `This silence-weighting only RE-RANKS findings whose severity is otherwise justified; it does ` +
+    `NOT lift the reviewer's counterexample cap — a runtime-defect claim that arrived with no ` +
+    `constructed failing case stays capped at minor even when its failure surface is silent. ` +
+    `Keep severity honest. Read the PRP and cited files as needed to judge. Return ` +
     `every finding via the schema with valid/reason/dedup_group set.`
 }
 
@@ -216,7 +238,7 @@ let residual = []
 
 for (let round = 1; round <= MAX_ROUNDS; round++) {
   phase('Review')
-  log(`Round ${round}/${MAX_ROUNDS}: 7 reviewers`)
+  log(`Round ${round}/${MAX_ROUNDS}: ${LENSES.length} reviewers`)
   const reviews = await parallel(LENSES.map((lens) => () =>
     agent(reviewerPrompt(lens, round), {
       label: `review:${lens.key}`, phase: 'Review', schema: FINDINGS_SCHEMA,
