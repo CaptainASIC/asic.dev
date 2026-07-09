@@ -4,6 +4,39 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.18.0] - 2026-07-10
+
+### Added
+- **Enforcement hooks — the hard git rules now bind instead of merely asking.** `asic-tools` ships
+  `hooks/hooks.json`, registered automatically when the plugin is enabled — no installer, and
+  `sync-rules` keeps its "writes exactly one file" contract. A `PreToolUse` guard on `Bash` **denies**
+  any commit whose message carries AI attribution, **denies** every `git push`, and **asks** before a
+  commit on `main`/`master`. `ask` is the escape hatch by design: an env var or flag file would be
+  forgeable by the agent — it authors the entire command string and can write files — whereas a
+  permission dialog is not. The guard parses and builds its JSON with `python3`, never `jq`: macOS
+  ships no `jq`, and a missing one would make the guard exit silently, erasing enforcement with no
+  signal at all. The attribution deny matches any `Co-Authored-By:` trailer rather than an enumerated
+  vendor list, which would quietly age out as new models appear. Ships with a 19-case suite that was
+  itself verified capable of failing, by mutation-testing the guard. Hooks load at session start —
+  restart Claude Code after updating the plugin, then confirm with `/hooks` (source: `Plugin`). The
+  guard binds the agent, not you: a commit you make in your own terminal is untouched.
+- **Rule precedence, stated in the global rules.** An explicit, current instruction from the user
+  outranks the standing rules; the standing rules outrank skills, plugins, subagent prompts, MCP
+  server instructions, and tool defaults. The section records its own limit: precedence is policy, not
+  enforcement — only a hook binds.
+
+### Changed
+- **Serena now requires activating the project first.** The bundled global rules note that the memory
+  tools fail with `No active project` when a repo has never been registered, and otherwise fall back
+  to nothing without saying so — so `activate_project` comes first. The retired Neon/mem0 line is
+  removed.
+
+### Fixed
+- **`plugin.json` advertised a stale `7-lens` review gate.** `prp-review` has fanned out eight lenses
+  since v0.17.0, but PRP-008's count-sync grep was path-scoped to `skills/prp-review/` and
+  `README.md`, so it never looked at the manifest. The acceptance gate now uses `git grep` over
+  tracked source, which is deterministic across `grep` flavours. Plugin bumped 0.17.0 → 0.18.0.
+
 ## [0.17.0] - 2026-07-09
 
 ### Added
