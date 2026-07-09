@@ -1,13 +1,13 @@
 ---
 name: prp-review
-description: Adversarial review gate for a drafted PRP — fans out seven distinct-lens reviewers (four on logic, three on style/convention drift against the real target repo) via a Workflow, adjudicates their findings to drop false positives, applies blocker/major fixes to the PRP in place, and re-reviews up to three rounds before appending a review-log. Use when the user says "review this PRP", "harden the PRP", "adversarial review", "stress-test PRP-NNN", or invokes /prp-review — after prp-draft and before prp-implement. Sits between prp-draft and prp-implement in the pipeline.
+description: Adversarial review gate for a drafted PRP — fans out eight distinct-lens reviewers (five on logic, three on style/convention drift against the real target repo) via a Workflow, adjudicates their findings to drop false positives, applies blocker/major fixes to the PRP in place, and re-reviews up to three rounds before appending a review-log. Use when the user says "review this PRP", "harden the PRP", "adversarial review", "stress-test PRP-NNN", or invokes /prp-review — after prp-draft and before prp-implement. Sits between prp-draft and prp-implement in the pipeline.
 ---
 
 # prp-review
 
 The gate between a drafted PRP and its implementation. `prp-implement` trusts the PRP
 completely — a flawed spec yields confident wrong code. This skill runs an independent
-adversarial pass over a PRP before any implementation budget is spent: seven reviewers each with
+adversarial pass over a PRP before any implementation budget is spent: eight reviewers each with
 a distinct lens, an adjudicator that filters false positives, and a bounded fix-and-re-review
 loop. It edits the PRP in place and appends a review-log. It writes no code and runs nothing
 the PRP describes.
@@ -31,8 +31,8 @@ tool directly — do not ask again:
 - `scriptPath`: the bundled `references/review_workflow.js` (this skill's directory).
 - `args`: `{ "prpPath": "<resolved PRP path>" }`.
 
-The script fans out seven reviewers in parallel (4 logic: requirements-coverage,
-architecture-soundness, over-build, edge-cases & verifiability; 3 style: naming, structure,
+The script fans out eight reviewers in parallel (5 logic: requirements-coverage,
+architecture-soundness, over-build, edge-cases & verifiability, silent-failure; 3 style: naming, structure,
 conventions —
 each reading the cited repo files), adjudicates, applies blocker/major fixes to the PRP in
 place, and repeats up to three rounds, exiting early when a round yields no blocker/major
@@ -48,7 +48,7 @@ blocker/major findings if any survived three rounds.
 ```markdown
 ## Review Log
 
-Reviewed YYYY-MM-DD by prp-review (7 lenses, N round(s)).
+Reviewed YYYY-MM-DD by prp-review (8 lenses, N round(s)).
 
 - Round 1: 14 raw → 6 valid → 4 blocker/major applied.
 - Round 2: 3 raw → 1 valid → 1 applied.
