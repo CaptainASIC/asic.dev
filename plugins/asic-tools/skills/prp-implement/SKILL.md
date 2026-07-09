@@ -117,7 +117,11 @@ produces confident wrong code — the exact failure PRPs exist to prevent.
 Produce the implementation plan: §5 task list restated with current-state notes per task,
 test-first ordering where §7 defines the tests, validation checkpoints (§9 levels mapped
 to when they run), branch name from front matter, and any risks or SPECULATIVE markers
-found in the PRP. Include a **scratchpad decision**: whether this run keeps a working
+found in the PRP. **Silent-failure triage (manual §3):** mark §5 tasks whose failure would
+surface *late and quietly* — time/timezone/DST, concurrency, auth/expiry, parsing/encoding,
+rarely-run paths — as **high-verify** so Phase B scrutinises them harder; effort is lopsided (a
+repo-wide rename gets minutes, a ten-line timezone change gets the hour), and loud build-caught
+tasks need no flag. Include a **scratchpad decision**: whether this run keeps a working
 scratchpad during execution (Phase B). A multi-task or subsystem PRP does; a trivial one- or
 two-task PRP that finishes inside one context window does not — scale it to scope as A3 does.
 Keep it a plan, not a re-architecture — deviations from the PRP get
@@ -148,7 +152,10 @@ flagged as questions, not silently planned in.
    - Tests for the task first when §7 defines them (write failing → implement → green).
    - Implement per §6; re-read the relevant §4.4 CRITICALs immediately before touching
      each file they concern.
-   - Run the task's VERIFY pairing before moving on. Red verify = fix now, not later.
+   - Run the task's VERIFY pairing before moving on. Red verify = fix now, not later. For a
+     **high-verify** task (A4), the VERIFY is not the happy path alone — construct the boundary
+     or edge case (a DST transition, concurrent access, an expired token) and confirm it before
+     moving on.
    - Surgical scope: only files in the PRP's summary table. Needed-but-unlisted change →
      stop, explain, get a decision. Noticed-but-unneeded work → log it under the scratchpad's
      "Discovered During Work" (or hold it in context if no scratchpad), don't do it.
