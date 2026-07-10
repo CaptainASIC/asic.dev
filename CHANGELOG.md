@@ -4,6 +4,46 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.19.0] - 2026-07-10
+
+### Added
+- **`okf` skill — Open Knowledge Format v0.1 as the standard shape for knowledge bundles and
+  LLM-wikis.** OKF is a directory of markdown files with YAML frontmatter, one required field
+  (`type`), two reserved filenames (`index.md`, `log.md`), and a deliberately permissive consumption
+  model. The specification is vendored **verbatim** from
+  [GoogleCloudPlatform/knowledge-catalog](https://github.com/GoogleCloudPlatform/knowledge-catalog)
+  (`okf/SPEC.md`, Apache-2.0), pinned at commit `ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a` and
+  verified byte-identical with `cmp` — so the skill needs no network and adds no dependency.
+  `NOTICE.md` records the pin, the fetch date, and the command to re-check upstream: OKF v0.1 is a
+  Draft, it will move, and validating against a stale specification is a quiet failure.
+- **A conformance validator, which is the point.** §9 conformance is mechanically checkable and
+  nothing else checks it. `validate_okf.py` uses the standard library alone — `pyyaml` is not
+  importable and skill scripts run under bare `python3`. Its exit codes are distinct so a CI gate can
+  use them: `0` conformant, `1` non-conformant, `2` usage error, `3` **indeterminate** — frontmatter
+  outside the parseable subset (block sequences, nested maps), a validator *limitation* rather than a
+  verdict, which a gate should treat as pass-with-warning instead of blocking a spec-conformant
+  bundle. It never silently accepts: a line it cannot read surfaces loudly as exit `3` rather than
+  being skipped, and a missing or empty `type` hidden behind such a line is still exit `1`.
+  `type: ""`, `type: null`, and `type: ~` are an **empty** `type`, not content. It is equally never
+  stricter than the spec: unknown `type` values, unknown extra keys, broken cross-links, a missing
+  `index.md`, and absent recommended fields never fail a bundle, because §9 forbids consumers from
+  rejecting on those — over-strictness would be the defect.
+- **`okf_index.py`,** which renders the §6 index shape and emits no frontmatter. `--write` preserves
+  frontmatter already present, so regenerating a bundle-root `index.md` never destroys its
+  `okf_version` declaration (§11).
+- **The repository's first `pytest` suite** — 29 tests driving both CLIs by subprocess, and verified
+  capable of failing by mutation-testing the code they cover.
+
+### Changed
+- **The bundled global rules gained a one-line OKF trigger** (about twenty tokens) so the standard is
+  reachable without being remembered. The 3,761-token specification stays in the skill, loading on
+  demand rather than on every prompt in every project.
+
+### Fixed
+- **The index generator read every entry it discovered**, so a symlinked `.md` file or subdirectory
+  could escape the directory being indexed and be opened. Both scripts now resolve their inputs and
+  refuse to read anything that lands outside. Plugin bumped 0.18.0 → 0.19.0.
+
 ## [0.18.0] - 2026-07-10
 
 ### Added
