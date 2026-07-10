@@ -1,0 +1,5 @@
+---
+type: Reference
+---
+
+Valid concept.

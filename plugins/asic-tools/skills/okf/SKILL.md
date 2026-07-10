@@ -1,0 +1,81 @@
+---
+name: okf
+description: Open Knowledge Format (OKF) v0.1 — the standard shape for knowledge bundles and LLM-wikis. Use when the user says "knowledge bundle", "llm-wiki", "validate this bundle", "is this OKF conformant", "generate an index", "scaffold a knowledge base", or invokes /okf. Ships the vendored spec offline (Apache-2.0, pinned), an offline conformance validator, and a §6 index generator. Adds no dependency and needs no network.
+---
+
+# okf
+
+Open Knowledge Format (OKF) v0.1 is the standard shape for every knowledge bundle here: a directory
+of markdown files with YAML frontmatter, one required field (`type`), two reserved filenames
+(`index.md`, `log.md`), and a deliberately permissive consumption model.
+
+The spec is vendored offline at `references/okf-0.1.md`, taken verbatim from
+[GoogleCloudPlatform/knowledge-catalog](https://github.com/GoogleCloudPlatform/knowledge-catalog)
+(Apache-2.0, pinned — see `NOTICE.md`).
+
+**Read §9 there before judging a bundle conformant. Do not judge from memory.**
+
+## Invoking the scripts
+
+Both helper scripts run on the ambient `python3` (no project venv, no dependencies), by absolute
+path:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/okf/scripts/<name>.py" …
+```
+
+`CLAUDE_PLUGIN_ROOT` is set on plugin install; the `$HOME/.claude` fallback covers the dev-mode
+symlink. Both roots contain `skills/okf/`. Use this one form — never hardcode two paths. In the
+commands below `<S>` stands for `"${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/okf"`.
+
+## Validate a bundle
+
+```bash
+python3 <S>/scripts/validate_okf.py <bundle-root>
+```
+
+| Exit | Meaning |
+|---|---|
+| `0` | Conformant. Recommendation warnings may print to stderr; `--quiet` suppresses them. |
+| `1` | **Non-conformant.** Each violation is named by `path` (and `line` where meaningful). |
+| `2` | Usage or I/O error — the path is missing or is not a directory. |
+| `3` | **Indeterminate** — frontmatter outside the parseable subset (block sequences, nested maps). A validator limitation, *not* a verdict. A CI gate should treat this as pass-with-warning, never as non-conformant. |
+
+**The validator never fails a bundle for anything §9 forbids consumers to reject on**: missing
+optional frontmatter fields, unknown `type` values, unknown extra keys, broken cross-links, or a
+missing `index.md`. Those are warnings at most. Over-strictness is a defect, not rigour.
+
+It also never *silently accepts*. A line it cannot read is surfaced (exit `3`), never skipped — and a
+missing or empty `type` behind such a line is still an exit-`1` violation. `type: ""`, `type: ''`,
+`type: null`, and `type: ~` are all an **empty** `type` (§9.2), not content.
+
+## Generate an index
+
+```bash
+python3 <S>/scripts/okf_index.py <directory>          # print to stdout
+python3 <S>/scripts/okf_index.py <directory> --write  # write index.md
+```
+
+Emits the §6 shape — `* [Title](url) - description` entries under headings — and no frontmatter.
+`--write` preserves any frontmatter already present, so regenerating the bundle-root `index.md`
+never destroys its `okf_version` declaration.
+
+Only the bundle-root `index.md` may carry frontmatter, and only to declare `okf_version` (§11). In
+any other `index.md` it is a §6 violation.
+
+## Append a log entry
+
+There is no script for this — a `log.md` entry is three lines of markdown. Newest first; the date
+heading MUST be ISO `YYYY-MM-DD` (§7):
+
+```markdown
+## 2026-07-10
+* **Update**: Added the [orders table](/tables/orders.md).
+```
+
+## Anti-patterns
+
+- Don't add `pyyaml` or any dependency — these scripts run under bare `python3` with no venv.
+- Don't make the validator stricter than §9. A false reject is a bug.
+- Don't edit `references/okf-0.1.md`. It is vendored verbatim and its provenance is `cmp`-checkable
+  against the pinned upstream commit recorded in `NOTICE.md`.

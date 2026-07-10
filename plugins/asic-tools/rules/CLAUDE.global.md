@@ -422,6 +422,8 @@ Closes #123
   test instructions, and a feature/architecture overview belong there.
 - `CHANGELOG.md` per release: Keep a Changelog format, SemVer.
 - Docstrings double as API documentation — keep them accurate when behavior changes.
+- Knowledge bundles / LLM-wikis follow the **Open Knowledge Format (OKF)** — see the `okf` skill
+  (`/asic-tools:okf`) for the vendored spec, a conformance validator, and an index generator.
 
 ## Performance
 
