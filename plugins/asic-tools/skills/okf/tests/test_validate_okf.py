@@ -217,6 +217,23 @@ def test_symlink_outside_root_is_skipped(tmp_path: Path) -> None:
     assert "SKIP" in result.stderr
 
 
+def test_index_skips_symlink_outside_dir(tmp_path: Path) -> None:
+    """Security: the generator must not read a symlinked entry escaping the directory (CWE-23).
+
+    Reason: `describe()` reads every discovered `.md`. Without a containment guard the generator
+    would be the soft spot the validator's `iter_markdown` closes.
+    """
+    directory = tmp_path / "d"
+    directory.mkdir()
+    (directory / "real.md").write_text("---\ntype: Reference\n---\n", encoding="utf-8")
+    (directory / "escape.md").symlink_to("/etc/hosts")
+    result = run_index(directory)
+    assert result.returncode == 0, result.stderr
+    assert "SKIP" in result.stderr
+    assert "escape.md" not in result.stdout
+    assert "* [real](real.md)" in result.stdout
+
+
 # --------------------------------------------------------------------------- generator output shape
 
 

@@ -49,13 +49,37 @@ def describe(path: Path) -> tuple[str, str]:
     return data.get("title") or path.stem, data.get("description", "")
 
 
+def _contained(path: Path, directory: Path) -> bool:
+    """Return True iff ``path`` resolves inside ``directory``.
+
+    Args:
+        path: A child discovered by ``iterdir``/``glob``.
+        directory: The already-resolved directory being indexed.
+
+    Returns:
+        True when the resolved child stays within ``directory``.
+
+    Reason: a symlinked entry can point outside the directory, and ``describe()`` would read it —
+    CWE-23 path traversal, the class Snyk flagged in this repo's sibling `diagram/scripts` (PRP-008).
+    ``validate_okf.iter_markdown`` guards its walk the same way; the generator must not be the soft
+    spot.
+    """
+    return path.resolve().is_relative_to(directory)
+
+
 def render(directory: Path) -> str:
     """Render the §6 index body for one directory."""
     lines: list[str] = ["# Contents", ""]
     for child in sorted(p for p in directory.iterdir() if p.is_dir()):
+        if not _contained(child, directory):
+            logger.warning("SKIP  %s resolves outside the directory", child)
+            continue
         lines.append(f"* [{child.name}]({child.name}/) - ")
     for concept in sorted(directory.glob("*.md")):
         if concept.name in RESERVED:
+            continue
+        if not _contained(concept, directory):
+            logger.warning("SKIP  %s resolves outside the directory", concept)
             continue
         title, description = describe(concept)
         suffix = f" - {description}" if description else " - "
