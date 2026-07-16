@@ -4,6 +4,15 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [0.19.1] - 2026-07-16
+
+### Fixed
+- **`asic-tools` hooks now run.** The `git-guard` (PreToolUse) and `precedence-inject`
+  (UserPromptSubmit) hook commands single-quoted `${CLAUDE_PLUGIN_ROOT}`, which blocked
+  shell expansion — the literal path reached bash and both hooks failed with "No such file
+  or directory". Switched to double quotes, matching the convention every other plugin
+  uses, so the variable expands and the hooks fire.
+
 ## [0.19.0] - 2026-07-10
 
 ### Added
