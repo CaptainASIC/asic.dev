@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/git-guard.sh'",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/git-guard.sh\"",
             "timeout": 10
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/precedence-inject.sh'",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/precedence-inject.sh\"",
             "timeout": 5
           }
         ]
