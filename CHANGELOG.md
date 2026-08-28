@@ -6,6 +6,13 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Removed
+- **Warp support retired across the toolbox.** Claude Code is the sole harness: the `warp/` prompt
+  directory is deleted, `asicdash` no longer scans or reports Warp config (its `AGENTS.md` scan was
+  extracted into a Claude-scoped `scan_agents_md` so it keeps rendering), and packaging, README,
+  `install.sh`, and skill descriptions are Claude-Code-only. CHANGELOG history and the `no Warp`
+  commit-attribution guard are retained.
+
 ### Changed
 - **prp-draft / prp-implement: acceptance criteria are now runnable gates.** Each `§5` task pairs
   with a runnable gate (`CHECK:` + `EXPECT:`, met only when the command exits 0 **and** `EXPECT`
