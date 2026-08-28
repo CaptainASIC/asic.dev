@@ -125,15 +125,20 @@ src/
 ```yaml
 Task 1: MODIFY path/to/file.py
   - [sub-action, imperative]
-  - VERIFY: [the check that proves this task done — test name, command, observable]
+  - GATE G1 (runnable): [observable outcome that proves this task done]
+    CHECK: [shell command — copy-pasteable, detected tooling, e.g. uv run pytest tests/test_x.py -q]
+    EXPECT: [plain substring matched against combined stdout+stderr; for a pattern test, let CHECK run it and echo a fixed token]
 
 Task 2: CREATE path/to/new_file.py
   - MIRROR pattern from: path/to/exemplar.py
-  - VERIFY: [check]
+  - GATE G1 (manual): [a judgment no command can decide — what is reviewed, against what]
 ```
 
-[Action verbs: VERIFY, CREATE, MODIFY, APPEND, EXTEND, CHANGE, ADD, REMOVE, REPLACE, MERGE.
-Order = dependency order. Every task names exact files. Every task pairs with a verify.]
+[Action verbs: GATE, VERIFY, CREATE, MODIFY, APPEND, EXTEND, CHANGE, ADD, REMOVE, REPLACE, MERGE.
+Order = dependency order. Every task names exact files. Every task pairs with at least one gate.
+A runnable gate carries both `CHECK:` and `EXPECT:` (met only when the command exits 0 and `EXPECT`
+matches its combined output); a manual gate carries neither. A gate with only one of `CHECK:`/
+`EXPECT:` is malformed.]
 
 ## 6. Implementation Instructions
 
@@ -187,6 +192,9 @@ cd [backend] && uv run pytest tests/path/ -v
 
 ### 9.4 Acceptance Checklist
 - [ ] [One checkbox per implementation artifact and per behavioral guarantee.]
+- [ ] [Each acceptance box maps to one or more §5 gates. At close-out, `prp-implement` reconciles
+      every gate met/unmet/abandoned by qualified id (`Task N:Gn`) and never reports done while any
+      is unmet or abandoned.]
 - [ ] All new code ruff-clean BEFORE commit (no fix-up formatting commits).
 - [ ] Commits on `feature/prp-NNN-slug` — never main. Conventional Commits format.
       No AI attribution of any kind in commit messages. Do not push — the user pushes.

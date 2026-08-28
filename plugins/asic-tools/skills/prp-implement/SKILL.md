@@ -152,10 +152,22 @@ flagged as questions, not silently planned in.
    - Tests for the task first when §7 defines them (write failing → implement → green).
    - Implement per §6; re-read the relevant §4.4 CRITICALs immediately before touching
      each file they concern.
-   - Run the task's VERIFY pairing before moving on. Red verify = fix now, not later. For a
-     **high-verify** task (A4), the VERIFY is not the happy path alone — construct the boundary
-     or edge case (a DST transition, concurrent access, an expired token) and confirm it before
-     moving on.
+   - **Run the task's gates before moving on.** A **runnable** gate (`CHECK:`/`EXPECT:`) runs as an
+     ordinary permission-gated Bash call — it is **met only when the command exits `0` AND `EXPECT`
+     matches its combined stdout+stderr**; a nonzero exit never passes because its error text
+     contains the token. A **manual** gate is met by reviewed judgment and recorded as manual. Red
+     gate = fix now, not later. There is no gate engine — the `CHECK:` string is untrusted data run
+     as a normal command, and the Bash permission prompt is the approval boundary.
+   - **High-verify tasks (A4) run the four-pass loop before their gate may pass:** (1) implement the
+     complete change, (2) reread as a domain expert and upgrade it, (3) hunt defects across
+     correctness / integration / boundary behaviour — this is where the boundary or edge case (a DST
+     transition, concurrent access, an expired token) is constructed and exercised — and (4) polish;
+     repeat passes 2-4 until a full pass finds nothing, then run the gate. Ordinary tasks skip the
+     loop (effort stays lopsided — a rename gets minutes, a ten-line timezone change gets the hour).
+   - **Legacy fallback.** A task from a pre-gate PRP (PRPs 001–010) that pairs with a prose `VERIFY:`
+     and carries no gate runs exactly as before — run its `VERIFY:` pairing and grade it as the
+     earlier prose instruction did. Gate execution applies only to tasks that carry gates; it never
+     strands a gate-less `VERIFY:` task with no instruction.
    - Surgical scope: only files in the PRP's summary table. Needed-but-unlisted change →
      stop, explain, get a decision. Noticed-but-unneeded work → log it under the scratchpad's
      "Discovered During Work" (or hold it in context if no scratchpad), don't do it.
@@ -193,7 +205,17 @@ flagged as questions, not silently planned in.
 ## Phase C — Close-out (part of execute, not optional)
 
 1. **Acceptance checklist** (§9): verify every box against reality; check them off in the
-   PRP file itself. The Phase B step 6 Snyk gate must have passed (no high/critical) — a blocked
+   PRP file itself — then **reconcile every §5 gate**: **re-run each runnable gate against the
+   current tree** as its evidence (re-running a gate is not re-running a task — the committed edits
+   are left untouched), so a resumed cross-session run classifies gates from live output rather than
+   results captured in a prior session, and classify each met / unmet / abandoned by qualified id
+   (`Task N:Gn`). A gate impossible to satisfy is recorded `ABANDON: Gn <reason>` and never counts as
+   met. A runnable `CHECK:` must be idempotent and stand on its own against a quiescent tree with no
+   external services — service-dependent or single-shot acceptance belongs on a manual gate or must
+   re-provision inside the `CHECK`, so re-running it never flips a genuinely-met gate to unmet.
+   **Never write `Status: Implemented` or a done report while any gate is unmet or abandoned.** That
+   state is a Stop condition (below), not a completion — hand it back to the user with the
+   unmet/abandoned ids. The Phase B step 6 Snyk gate must have passed (no high/critical) — a blocked
    gate means Phase C was never entered.
 2. **PRP front matter**: `Status: Implemented (YYYY-MM-DD)`, add `Branch:` if absent.
 3. **Apply §10 verbatim**: PLANNING.md merge, TASKS.md completion entry (dated, plus the
@@ -208,7 +230,9 @@ flagged as questions, not silently planned in.
    run aborted earlier at a documented STOP — B3 scope wall, B4 unrecoverable failure — the
    scratchpad is intentionally left on disk as resumable working memory and is named in the
    stop-state report; it is unstaged, so it never enters a commit.)
-5. **Final report**: acceptance checklist status, files touched vs the PRP's summary
+5. **Final report**: acceptance checklist status, **gate reconciliation — counts of met / unmet /
+   abandoned, with one line per gate (id, exit status, match result for runnable gates; 'manual —
+   reviewed' for manual gates)**, files touched vs the PRP's summary
    table (any difference is a finding, explain it), test/validation outputs (one line per
    level), **the Snyk gate result (scans run, findings by severity, pass)**, commits made, and
    what remains for the user — push + merge via GitKraken, plus any deferred items with where
@@ -218,7 +242,7 @@ flagged as questions, not silently planned in.
 
 Stale PRP (A3), unmet dependency (A2), scope wall (B3), unrecoverable validation failure
 (B4), **security gate block (B6: a high/critical Snyk finding, or Snyk unauthenticated/
-unavailable — fail-closed)**. Stopping with a precise state report is success; powering through the contract is
+unavailable — fail-closed)**, unmet or abandoned gate at close-out (C1). Stopping with a precise state report is success; powering through the contract is
 the failure mode. When a scratchpad was seeded, the stop-state report names the surviving
 `PRPs/.work/PRP-NNN-scratchpad.md` — it is intentionally retained as resumable working memory,
 unstaged so it never enters a commit; only a successful Phase C close-out deletes it.

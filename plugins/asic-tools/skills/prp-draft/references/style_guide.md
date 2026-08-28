@@ -36,6 +36,24 @@ the research phase was too shallow; go back.
 
 Never write a gotcha from memory of how a library "usually" works. Verified or absent.
 
+## Gate taxonomy (§5.2 task gates and §9.4)
+
+Each §5 task pairs with one or more gates — the machine-checkable form of acceptance.
+
+- **GATE Gn (runnable):** carries `CHECK:` (a shell command) and `EXPECT:` (a **plain substring**).
+  Met only when the command **exits 0 AND** `EXPECT` matches its combined stdout+stderr — a nonzero
+  process never passes because its error text contains the token. There is no regex EXPECT: when a
+  gate needs a pattern test, the `CHECK` runs it and prints a fixed token (e.g.
+  `grep -qE '<pattern>' file && echo present`) that `EXPECT` names verbatim.
+- **GATE Gn (manual):** carries neither `CHECK:` nor `EXPECT:`; names the human judgment it needs.
+  A gate with only one of `CHECK:`/`EXPECT:` is malformed.
+- **`ABANDON: Gn <reason>`:** marks a gate impossible to satisfy. Recorded at implement time;
+  abandonment never counts as done.
+
+Gate ids are unique within a task and referenced as `Task N:Gn` in the close-out reconciliation.
+Runnable gates execute as ordinary permission-gated commands — there is no gate engine and no
+approval subsystem to build; the tool-permission prompt is the approval boundary.
+
 ## Standing engineering rules (embed in every PRP)
 
 These are the author's global rules; the PRP restates the ones the feature touches so the
