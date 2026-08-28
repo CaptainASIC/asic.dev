@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [Unreleased]
+
+### Changed
+- **prp-draft / prp-implement: acceptance criteria are now runnable gates.** Each `§5` task pairs
+  with a runnable gate (`CHECK:` + `EXPECT:`, met only when the command exits 0 **and** `EXPECT`
+  matches its output) or an explicit manual gate; `prp-implement` runs runnable gates during its
+  task loop, runs a four-pass loop on high-verify tasks, and refuses a done report while any gate is
+  unmet or abandoned (close-out reconciliation re-runs each runnable gate; Stop condition `C1`). A
+  legacy `VERIFY:` fallback keeps PRPs 001–010 implementable. Adapted from
+  [unlazy](https://github.com/Leonxlnx/unlazy) (MIT).
+
 ## [0.19.1] - 2026-07-16
 
 ### Fixed
