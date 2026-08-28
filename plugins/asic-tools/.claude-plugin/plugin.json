@@ -1,7 +1,7 @@
 {
   "name": "asic-tools",
   "displayName": "Captain ASIC's Dev Toolbox",
-  "version": "0.19.1",
+  "version": "0.20.0",
   "description": "Agent-harness tooling for Claude Code. PRP lifecycle: idea-refine (upstream ideation one-pager), prp-draft (research-first PRP generator), prp-review (adversarial 8-lens review gate), and prp-implement (two-phase drift-checked executor). Plus asicdash (config + usage dashboard: audit visible and invisible config, Claude usage heatmap), scaffold (standards-enforced Python bootstrap), release (multi-location version bump + changelog), and sync-rules (deploy the bundled global engineering rules to ~/.claude/CLAUDE.md). Plus diagram (draw.io architecture/network/system diagram generator: NL→diagram, code-to-diagram, CLI export). Plus improve-repo (repo-wide standards-conformance auditor: audits version/scaffold/import/naming drift, ships category-scoped fix PRs). Plus okf (Open Knowledge Format: vendored spec, offline conformance validator, index generator for agent-readable knowledge bundles).",
   "author": {
     "name": "Captain ASIC",

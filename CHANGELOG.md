@@ -4,14 +4,7 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
-## [Unreleased]
-
-### Removed
-- **Warp support retired across the toolbox.** Claude Code is the sole harness: the `warp/` prompt
-  directory is deleted, `asicdash` no longer scans or reports Warp config (its `AGENTS.md` scan was
-  extracted into a Claude-scoped `scan_agents_md` so it keeps rendering), and packaging, README,
-  `install.sh`, and skill descriptions are Claude-Code-only. CHANGELOG history and the `no Warp`
-  commit-attribution guard are retained.
+## [0.20.0] - 2026-08-28
 
 ### Changed
 - **prp-draft / prp-implement: acceptance criteria are now runnable gates.** Each `§5` task pairs
@@ -21,6 +14,13 @@ All notable changes to this project are documented here. Format follows
   unmet or abandoned (close-out reconciliation re-runs each runnable gate; Stop condition `C1`). A
   legacy `VERIFY:` fallback keeps PRPs 001–010 implementable. Adapted from
   [unlazy](https://github.com/Leonxlnx/unlazy) (MIT).
+
+### Removed
+- **Warp support retired across the toolbox.** Claude Code is the sole harness: the `warp/` prompt
+  directory is deleted, `asicdash` no longer scans or reports Warp config (its `AGENTS.md` scan was
+  extracted into a Claude-scoped `scan_agents_md` so it keeps rendering), and packaging, README,
+  `install.sh`, and skill descriptions are Claude-Code-only. CHANGELOG history and the `no Warp`
+  commit-attribution guard are retained.
 
 ## [0.19.1] - 2026-07-16
 
