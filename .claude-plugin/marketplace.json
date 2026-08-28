@@ -1,6 +1,6 @@
 {
   "name": "asic-dev",
-  "description": "Captain ASIC's agent-harness tooling for Claude Code + Warp: config auditing and PRP generation.",
+  "description": "Captain ASIC's agent-harness tooling for Claude Code: config auditing and PRP generation.",
   "owner": {
     "name": "Captain ASIC",
     "url": "https://github.com/CaptainASIC"
