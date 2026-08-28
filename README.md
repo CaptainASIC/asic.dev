@@ -1,7 +1,6 @@
 # asic.dev
 
-Agent-harness tooling for Claude Code and Warp, shipped as a Claude Code plugin marketplace
-with Warp counterparts where they make sense.
+Agent-harness tooling for Claude Code, shipped as a Claude Code plugin marketplace.
 
 | Tool | What it does |
 |---|---|
@@ -59,12 +58,6 @@ Symlinks each skill under `plugins/asic-tools/skills/` into `~/.claude/skills/` 
 `/asicdash` and `/prp-draft` names, and edits in the repo are live without reinstalling.
 Don't combine both installs: you'd get duplicate skill registrations.
 
-### Warp
-
-`install.sh` copies `warp/asicdash.yaml` to `~/.warp/workflows/` (Warp watches real files,
-so a copy — rerun after editing). Each remaining `warp/*.md` is pasted into a Warp Drive
-prompt of the same name manually (Drive is cloud-stored).
-
 ### Global rules
 
 [plugins/asic-tools/rules/CLAUDE.global.md](plugins/asic-tools/rules/CLAUDE.global.md) is
@@ -77,8 +70,7 @@ plugin, so on any machine with the plugin installed:
 ```
 
 installs or updates `~/.claude/CLAUDE.md` — diff-aware, never silently clobbering local
-edits. Dev mode: `install.sh` does the same copy. The same file works as a Warp Drive
-global rule (paste once per Warp account). Always a copy, not a symlink — the desktop app
+edits. Dev mode: `install.sh` does the same copy. Always a copy, not a symlink — the desktop app
 skips symlinks in some loaders.
 
 ### Enforcement hooks
@@ -102,10 +94,10 @@ These hooks bind the agent, not you: a commit you make yourself in a terminal is
 
 ## asicdash
 
-Config + usage dashboard for Claude Code and Warp (formerly **agentdash**). Audits visible and
+Config + usage dashboard for Claude Code (formerly **agentdash**). Audits visible and
 invisible agent-harness config across global and project scope, and charts Claude usage from
-local session transcripts. One deterministic CLI; Claude skill and Warp workflow are thin
-wrappers around it.
+local session transcripts. One deterministic CLI; the Claude skill is a thin
+wrapper around it.
 
 ### Why
 
@@ -115,8 +107,8 @@ see by listing directories:
 - **Hook registrations** — commands firing invisibly on session events (flattened from
   `settings.json`, deduplicated, executable-existence checked)
 - **Plugin-injected surface** — skills, agents, commands, and hooks shipped by installed plugins
-- **Always-loaded context cost** — token estimates for `CLAUDE.md`, rules, memory, `WARP.md`,
-  `AGENTS.md` loaded into every session
+- **Always-loaded context cost** — token estimates for `CLAUDE.md`, rules, memory, `AGENTS.md`
+  loaded into every session
 - **Rot and shadowing** — hook scripts on disk that nothing references, project entries shadowing
   global ones, broken frontmatter, missing executables
 - **Claude Code usage** — per-day activity from `~/.claude/projects/**/*.jsonl` (every transcript
@@ -143,7 +135,6 @@ skill/agent chips, attention banners, the usage heatmap, a context-cost bar, and
 Light/Dark themes (follows the system scheme, toggle persisted in `localStorage`).
 
 In Claude Code: ask "show my config dashboard" (triggers the `asicdash` skill).
-In Warp: run the `asicdash` workflow.
 
 ### Coverage
 
@@ -156,13 +147,11 @@ In Warp: run the `asicdash` workflow.
 | `~/.claude/hooks/` | orphan detection | cross-ref vs registrations |
 | `CLAUDE.md`, `CLAUDE.local.md`, managed memory `MEMORY.md` | global + project | token estimate |
 | `.mcp.json`, `~/.claude.json` mcpServers | global + project | names + command |
-| `~/.warp/workflows/`, `.warp/workflows/`, `WARP.md`, `AGENTS.md` | global + project | YAML top-level parse |
+| `AGENTS.md` | project | token estimate |
 | `~/.claude/projects/**/*.jsonl` session transcripts | usage (HTML report) | per-day token/session aggregation |
 
 ### Known gaps, on purpose
 
-- **Warp Drive** (rules, workflows, profiles stored in Drive): cloud-synced SQLite with an
-  undocumented schema. Not parsed; reported as `n/a` instead of pretending coverage.
 - **Claude routines / scheduled cloud agents**: stored server-side, no local file. Reported as
   `n/a`; list with `/schedule` in Claude Code.
 - **claude.ai Chat usage**: web sessions leave no local transcript; the usage section labels
@@ -217,7 +206,7 @@ ideation lenses and evaluation criteria are inlined, no reference files.
 
 Turns a feature discussion (mid-chat "let's make this a PRP", or a pasted design summary) into
 a **Product Requirements Prompt** — a self-contained, implementation-ready instruction document
-that a coding agent (Claude Code or Warp) executes with no other context.
+that a coding agent (Claude Code) executes with no other context.
 
 ### Why
 
@@ -244,7 +233,6 @@ memory updates are the *implementing* agent's job, spelled out in the PRP's §10
 ### Usage
 
 In Claude Code: `/prp-draft`, or just say "turn this into a PRP" mid-conversation.
-In Warp: invoke the `prp-draft` Drive prompt (see [warp/prp-draft.md](warp/prp-draft.md)).
 
 Layout: [SKILL.md](plugins/asic-tools/skills/prp-draft/SKILL.md) is the workflow driver;
 [prp_template.md](plugins/asic-tools/skills/prp-draft/references/prp_template.md) and
@@ -274,7 +262,7 @@ before any implementation budget is spent — the cheap gate before the expensiv
 
 In Claude Code: `/asic-tools:prp-review PRP-NNN`, or `/prp-review` to target the newest
 ready PRP, or accept the hand-off `prp-draft` offers after a draft. Invoking it opts into the
-multi-agent Workflow. Claude Code only for now; Warp twin deferred.
+multi-agent Workflow. Claude Code only.
 
 Layout: [SKILL.md](plugins/asic-tools/skills/prp-review/SKILL.md) is the driver;
 [references/review_workflow.js](plugins/asic-tools/skills/prp-review/references/review_workflow.js)
@@ -308,8 +296,7 @@ ritual: acceptance checklist ticked against reality, PRP status flipped, §10 do
 applied (PLANNING/TASKS/CHANGELOG/Serena memory), and a final report of files-touched vs
 the PRP's own table.
 
-In Claude Code: `/asic-tools:prp-implement PRP-040`. In Warp: the `prp-implement` Drive
-prompt ([warp/prp-implement.md](warp/prp-implement.md)).
+In Claude Code: `/asic-tools:prp-implement PRP-040`.
 
 ---
 
@@ -326,8 +313,7 @@ demonstrating the expected/edge/failure pattern against real code. Four kinds: `
 (FastAPI), `agent` (canonical `agent.py`/`tools.py`/`prompts.py` split), `cli` (argparse +
 entry point), `library`. Git ends on `feature/initial-scaffold`, never main.
 
-In Claude Code: `/asic-tools:scaffold`. In Warp: the `scaffold` Drive prompt
-([warp/scaffold.md](warp/scaffold.md)). Templates:
+In Claude Code: `/asic-tools:scaffold`. Templates:
 [file_templates.md](plugins/asic-tools/skills/scaffold/references/file_templates.md),
 [kind_variants.md](plugins/asic-tools/skills/scaffold/references/kind_variants.md).
 
@@ -347,8 +333,7 @@ user's actions — the skill emits the post-merge checklist and a ready-to-paste
 body. It also re-greps the old version string after updating to catch locations the
 survey missed, and refuses to proceed if existing version locations already disagree.
 
-In Claude Code: `/asic-tools:release`. In Warp: the `release` Drive prompt
-([warp/release.md](warp/release.md)).
+In Claude Code: `/asic-tools:release`.
 
 ---
 

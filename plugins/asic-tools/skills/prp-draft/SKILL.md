@@ -1,6 +1,6 @@
 ---
 name: prp-draft
-description: Draft a Product Requirements Prompt (PRP) — an implementation-ready instruction document for an AI coding agent (Claude Code or Warp) to build a feature. Use when the user says "draft a PRP", "create a PRP", "turn this into a PRP", "make this a PRP", or invokes /prp-draft — typically mid-conversation after discussing a feature, or with a pasted design summary. Researches the target repo before writing; refuses with a missing-context list rather than drafting thin.
+description: Draft a Product Requirements Prompt (PRP) — an implementation-ready instruction document for an AI coding agent (Claude Code) to build a feature. Use when the user says "draft a PRP", "create a PRP", "turn this into a PRP", "make this a PRP", or invokes /prp-draft — typically mid-conversation after discussing a feature, or with a pasted design summary. Researches the target repo before writing; refuses with a missing-context list rather than drafting thin.
 ---
 
 # prp-draft

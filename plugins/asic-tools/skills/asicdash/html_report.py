@@ -23,7 +23,6 @@ SECTIONS = [
     ("CLAUDE CODE — GLOBAL", "Claude Code — global"),
     ("CLAUDE CODE — PROJECT", "Claude Code — project"),
     ("CLAUDE CODE — PLUGINS", "Claude Code — plugins"),
-    ("WARP", "Warp"),
 ]
 # Sections expanded by default; the rest open only when something needs attention.
 OPEN_BY_DEFAULT = {"CLAUDE CODE — GLOBAL", "CLAUDE CODE — PLUGINS"}

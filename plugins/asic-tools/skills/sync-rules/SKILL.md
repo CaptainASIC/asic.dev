@@ -39,8 +39,6 @@ Target: `~/.claude/CLAUDE.md`.
 ## After writing
 
 - Confirm the file, report its size, and remind: a restart / new session picks it up.
-- Mention the Warp side once: the same file content works as a Warp Drive global rule —
-  paste it there if this machine runs Warp too.
 
 ## Boundaries
 

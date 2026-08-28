@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""asicdash: config + usage dashboard for Claude Code and Warp.
+"""asicdash: config + usage dashboard for Claude Code.
 
-Scans global (~/.claude, ~/.warp) and project scope for skills, agents, commands,
-rules, hooks, plugins, memory files, MCP servers, and Warp workflows. Reports what
+Scans global (~/.claude) and project scope for skills, agents, commands,
+rules, hooks, plugins, memory files, and MCP servers. Reports what
 loads into every session (with token estimates), what is broken (missing
 executables, bad frontmatter), what is shadowed by a narrower scope, and what is
-not file-visible at all (Warp Drive, cloud routines) -- labeled honestly instead
+not file-visible at all (cloud routines) -- labeled honestly instead
 of silently skipped. The HTML report adds a Claude usage section built from
 local session transcripts (see usage.py).
 
@@ -61,11 +61,7 @@ def known_paths(project: Path) -> dict[str, Path]:
         "claude_proj_memory": project / "CLAUDE.md",
         "claude_proj_memory_local": project / "CLAUDE.local.md",
         "claude_proj_mcp": project / ".mcp.json",
-        "warp_global_workflows": HOME / ".warp" / "workflows",
-        "warp_proj_workflows": project / ".warp" / "workflows",
-        "warp_proj_rules": project / "WARP.md",
         "agents_md": project / "AGENTS.md",
-        "warp_app_support": HOME / "Library" / "Application Support" / "dev.warp.Warp-Stable",
     }
 
 
@@ -73,7 +69,7 @@ def known_paths(project: Path) -> dict[str, Path]:
 class Entry:
     """One discovered config item."""
 
-    tool: str  # claude | warp
+    tool: str  # claude
     kind: str  # skill | agent | command | rule | hook | hook-script | plugin | memory | mcp | workflow | permissions | env | routine
     name: str
     scope: str  # global | project | local | plugin:<name>
@@ -146,17 +142,6 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str | None]:
         else:
             fields[key] = value
     return fields, "unterminated frontmatter"
-
-
-def parse_yaml_top(text: str) -> dict[str, str]:
-    """Top-level `key: value` pairs from a YAML doc (Warp workflow files)."""
-    fields: dict[str, str] = {}
-    for line in text.splitlines():
-        if not line or line[0] in " \t#-" or ":" not in line:
-            continue
-        key, _, value = line.partition(":")
-        fields[key.strip().lower()] = value.strip().strip("\"'")
-    return fields
 
 
 def command_status(command: str, project: Path, plugin_root: Path | None = None) -> str:
@@ -467,61 +452,22 @@ def scan_mcp(paths: dict[str, Path], project: Path) -> list[Entry]:
     return entries
 
 
-def scan_warp(paths: dict[str, Path]) -> list[Entry]:
+def scan_agents_md(paths: dict[str, Path]) -> list[Entry]:
+    """Project AGENTS.md — the cross-tool agent-rules convention, read by Claude Code."""
     entries: list[Entry] = []
-    for scope, root in (
-        ("global", paths["warp_global_workflows"]),
-        ("project", paths["warp_proj_workflows"]),
-    ):
-        if not root.is_dir():
-            continue
-        for f in sorted(root.iterdir()):
-            if f.suffix not in (".yaml", ".yml"):
-                continue
-            fields = parse_yaml_top(read_text(f))
-            entries.append(
-                Entry(
-                    tool="warp",
-                    kind="workflow",
-                    name=fields.get("name", f.stem),
-                    scope=scope,
-                    source=short(f),
-                    desc=fields.get("description", ""),
-                )
+    p = paths["agents_md"]
+    if p.is_file():
+        entries.append(
+            Entry(
+                "claude",
+                "rule",
+                p.name,
+                "project",
+                short(p),
+                desc="agent rules file (AGENTS.md convention)",
+                tokens=est_tokens(p),
             )
-    for p, note in (
-        (paths["warp_proj_rules"], "Warp project rules, auto-loaded into agent context"),
-        (paths["agents_md"], "agent rules file (read by Warp and other tools)"),
-    ):
-        if p.is_file():
-            entries.append(
-                Entry("warp", "rule", p.name, "project", short(p), desc=note, tokens=est_tokens(p))
-            )
-    app = paths["warp_app_support"]
-    entries.append(
-        Entry(
-            tool="warp",
-            kind="rule",
-            name="Warp Drive (rules, workflows, profiles)",
-            scope="global",
-            source=short(app) if app.is_dir() else "—",
-            status="n/a: cloud-synced SQLite, not file-visible; check Warp Drive UI",
         )
-    )
-    mcp_dir = app / "mcp"
-    if mcp_dir.is_dir():
-        logs = [f.stem for f in sorted(mcp_dir.iterdir()) if f.is_file()]
-        if logs:
-            entries.append(
-                Entry(
-                    tool="warp",
-                    kind="mcp",
-                    name=f"mcp activity ({len(logs)} log file(s))",
-                    scope="global",
-                    source=short(mcp_dir),
-                    desc="server config lives in Warp settings; logs: " + ", ".join(logs[:6]),
-                )
-            )
     return entries
 
 
@@ -571,7 +517,7 @@ def collect(project: Path) -> list[Entry]:
     entries += scan_hook_scripts(paths["claude_global_hook_scripts"], registered)
     entries += scan_mcp(paths, project)
     entries.append(routine_placeholder())
-    entries += scan_warp(paths)
+    entries += scan_agents_md(paths)
     mark_shadowed(entries)
     return entries
 
@@ -581,8 +527,6 @@ def collect(project: Path) -> list[Entry]:
 
 
 def section_of(e: Entry) -> str:
-    if e.tool == "warp":
-        return "WARP"
     if e.kind == "plugin" or e.scope.startswith("plugin:"):
         return "CLAUDE CODE — PLUGINS"
     if e.scope == "global":
@@ -590,7 +534,7 @@ def section_of(e: Entry) -> str:
     return "CLAUDE CODE — PROJECT"
 
 
-SECTIONS = ["CLAUDE CODE — GLOBAL", "CLAUDE CODE — PROJECT", "CLAUDE CODE — PLUGINS", "WARP"]
+SECTIONS = ["CLAUDE CODE — GLOBAL", "CLAUDE CODE — PROJECT", "CLAUDE CODE — PLUGINS"]
 
 
 def paint(text: str, code: str, enabled: bool) -> str:
@@ -719,7 +663,7 @@ def to_json(entries: list[Entry], project: Path) -> str:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         prog="asicdash",
-        description="Config + usage dashboard for Claude Code + Warp."
+        description="Config + usage dashboard for Claude Code."
         " Default: themed HTML report opened in the browser.",
     )
     ap.add_argument("--project", type=Path, default=Path.cwd(), help="project root (default: cwd)")
