@@ -131,6 +131,12 @@ Before reporting done, audit the draft against this list — fix, don't excuse:
 - [ ] Git constraints embedded: feature branch, ruff-clean before commit, no AI attribution
       in commits, agent never pushes
 - [ ] No `SPECULATIVE` markers remain unannounced
+- [ ] Every §5 task carries at least one GATE; every runnable gate has BOTH `CHECK:` and `EXPECT:`
+      (a partial gate is malformed); every manual gate has neither, names what is reviewed, AND
+      justifies why no command can decide it. Flag any task whose gates are all manual, and flag a
+      PRP with no runnable gate at all — the "premature done-report is structurally impossible"
+      guarantee holds only for runnable gates, so an all-manual task or PRP falls back to
+      self-graded prose and must be a deliberate, justified choice, not a default.
 
 Then write the file (mkdir `PRPs/` if needed — the only file this skill writes) and report:
 path, size, open questions if any, and any SPECULATIVE markers with why.
