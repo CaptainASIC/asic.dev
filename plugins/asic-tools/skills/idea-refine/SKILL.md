@@ -70,6 +70,9 @@ writes). Co-located with `PRPs/` so the idea → PRP chain lives in one tree.
 ```markdown
 # <Idea Name>
 
+**Predicted tier:** <S|M|L|XL> — <n> tasks, <n> files (prediction on the two primary axes of
+`sizing.md`; `prp-draft` re-counts for real and reports disagreement)
+
 ## Problem Statement
 <one-sentence "How Might We" framing>
 
@@ -91,6 +94,14 @@ writes). Co-located with `PRPs/` so the idea → PRP chain lives in one tree.
 
 The **Not Doing** list is the most valuable section — focus is saying no to good ideas. Make
 the trade-offs explicit.
+
+Resolve the rubric to an absolute path before reading it: compute the skills directory from this
+`SKILL.md`'s location (it is `<…>/skills/idea-refine/SKILL.md`, so the skills dir is two levels
+up) and read `<asic-tools skills dir>/prp-draft/references/sizing.md`. Never use a relative path
+into `prp-draft/references/` — it resolves against the repo being worked on, not against this
+plugin. Read only its axes, boundaries and silent-failure modifier; the tier → knob table is not
+this skill's business. The prediction is a hint, not a commitment, and a prediction that is
+routinely wrong is evidence the rubric's boundaries need re-calibrating.
 
 ## Phase 4 — Hand off to prp-draft
 
