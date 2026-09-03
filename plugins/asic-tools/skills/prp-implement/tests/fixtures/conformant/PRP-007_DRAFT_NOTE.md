@@ -1,4 +1,4 @@
-# PRP-010: Case draft_awaiting
+# PRP-007: Draft With Note
 
 **Status:** Draft — awaiting review
 **Author:** Captain ASIC
