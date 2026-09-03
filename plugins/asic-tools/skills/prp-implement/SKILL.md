@@ -223,7 +223,7 @@ flagged as questions, not silently planned in.
      them under the PRP's surgical scope (new commits), and **re-run the gate** — it must return
      no high/critical before the loop may advance. `medium`/`low` → record as advisory in the
      final report and proceed.
-   - Gate result (scans run, counts by severity, pass/block) is reported in Phase C step 5 and,
+   - Gate result (scans run, counts by severity, pass/block) is reported in Phase C step 6 and,
      when it blocks, becomes a Stop condition.
 
 ## Phase C — Close-out (part of execute, not optional)
@@ -246,7 +246,28 @@ flagged as questions, not silently planned in.
    collected Discovered During Work items), CHANGELOG entry if mandated, serena memory
    `.serena/memories/prp/NNN_name.md` (serena MCP `write_memory` when connected, plain
    file otherwise).
-4. **Promote & retire the scratchpad** (when one was kept): fold its durable contents into the
+4. **Refresh the PRP registry**: `PRPs/STATUS.md` is generated, never hand-edited — the script
+   is the writer, you relay what it says.
+
+   ```bash
+   python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/prp-implement/scripts/prp_status.py" PRPs --write
+   ```
+
+   | Exit | Meaning |
+   |---|---|
+   | `0` | Every PRP conformant. `PRPs/STATUS.md` rewritten. |
+   | `1` | **A violation** — a status outside the five allowed values, a missing date or successor, a header with no `**Status:**` line, or a corpus breach (mis-named file, duplicate number). |
+   | `2` | Usage error — bad path, empty corpus, or an existing `STATUS.md` without the generated banner. Nothing was written. |
+   | `3` | **Indeterminate** — a PRP file is a symlink resolving outside the scanned directory. A script limitation, *not* a verdict. |
+
+   Run it **after** step 2 has stamped this PRP's own front matter, so the row it renders is the
+   one you just wrote. An exit `1` whose offender is **this PRP** is your defect: fix the header
+   and re-run. An exit `1` naming a **sibling** PRP is recorded in the final report and does not
+   stop close-out — Phase C's Stop conditions are about this PRP's own gates, and a sibling's
+   stale header is exactly what the repo-level CI gate exists to catch. Never edit a sibling's
+   status to make the exit code green.
+
+5. **Promote & retire the scratchpad** (when one was kept): fold its durable contents into the
    §10 artifacts just written — "Discovered During Work" items into the TASKS.md entry, the
    architectural map and Decisions into the serena memo — then delete
    `PRPs/.work/PRP-NNN-scratchpad.md`. It is working memory, not a deliverable; after a successful
@@ -254,7 +275,7 @@ flagged as questions, not silently planned in.
    run aborted earlier at a documented STOP — B3 scope wall, B4 unrecoverable failure — the
    scratchpad is intentionally left on disk as resumable working memory and is named in the
    stop-state report; it is unstaged, so it never enters a commit.)
-5. **Final report**: acceptance checklist status, **gate reconciliation — counts of met / unmet /
+6. **Final report**: acceptance checklist status, **gate reconciliation — counts of met / unmet /
    abandoned, with one line per gate (id, exit status, match result for runnable gates; 'manual —
    reviewed' for manual gates)**, files touched vs the PRP's summary
    table (any difference is a finding, explain it), test/validation outputs (one line per
