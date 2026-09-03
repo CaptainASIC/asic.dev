@@ -186,7 +186,38 @@ def test_duplicate_number_is_violation() -> None:
     """Failure: two files claiming one number would make the counts header lie."""
     result = run(case("duplicate"))
     assert result.returncode == 1
-    assert "duplicate number" in result.stderr
+    assert "duplicate designator" in result.stderr
+
+
+def test_lettered_children_are_distinct_prps() -> None:
+    """Expected: a split parent and its children each get a row; the letter is part of the id.
+
+    Keying uniqueness on the digits alone collided every child with its parent and dropped it from
+    the registry unlinted -- 13 of Airi's 77 PRPs, a silent drop caused by the anti-silent-drop rule.
+    """
+    result = run(FIXTURES / "children")
+    assert result.returncode == 0, result.stderr
+    assert "duplicate" not in result.stderr
+    for designator in ("| 058 |", "| 058a |", "| 058b |"):
+        assert designator in result.stdout
+    assert "**Total PRPs:** 3" in result.stdout
+
+
+def test_lettered_successor_resolves() -> None:
+    """Edge: `Superseded (by PRP-058a)` points at a child, which is the whole point of a split."""
+    result = run(FIXTURES / "children")
+    assert result.returncode == 0
+    assert "successor does not exist" not in result.stderr
+
+
+def test_repeated_full_designator_is_still_duplicate(tmp_path: Path) -> None:
+    """Failure: widening the id must not stop 058a appearing twice from being a duplicate."""
+    prps = tmp_path / "PRPs"
+    shutil.copytree(FIXTURES / "children", prps)
+    shutil.copy(prps / "PRP-058a_FIRST_CHILD.md", prps / "PRP-058a_COPY.md")
+    result = run(prps)
+    assert result.returncode == 1
+    assert "duplicate designator 058a" in result.stderr
 
 
 def test_empty_corpus_exits_two_and_writes_nothing() -> None:
