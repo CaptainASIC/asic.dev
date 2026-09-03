@@ -78,8 +78,13 @@ the verified `path:line` citation still comes from reading them.
   expected task and file counts stated in the feature ask. If neither gives a number, say so and
   use M — do not invent a count. Print it marked provisional, e.g.
   `SIZING: tasks=~6 files=~5 → M (provisional: one-pager prediction; re-counted at Phase 6)`.
-- Large surface area: fan-out is tier-sized per `sizing.md` — no fan-out at S, three Explore
-  agents at M, one per subsystem at L. When
+- Large surface area: fan-out is tier-sized per `sizing.md` — no fan-out at S, three agents at M,
+  one per subsystem at L, each one a `citation-scout`. **The tier sets the count; the agent type
+  sets the kind** — naming that shipped agent is what puts the fan-out on its own tier, and
+  without it the agents inherit the session model with nothing reporting it.
+  State the required return shape at this site — `{path, symbol, line, surprise}` per integration
+  point. There is no `schema:` on a main-thread delegation, so that prose plus the rejection rule
+  below *is* the shape mechanism, and the scout serves two shapes — it emits the one you name. When
   `graphify-out/graph.json` exists, each subagent's prompt must instruct graphify-first too —
   scope the subsystem with `graphify query`/`explain` before reading — since the directive applies
   to subagents, not only the main thread. Require each to
@@ -118,9 +123,60 @@ scope boundary (what is explicitly OUT), config-flag default state, migration vs
 naming. Recorded answers become §3 design-decision subsections. Skip this phase only when the
 conversation already settled every decision.
 
+## Phase 4.5 — Architecture panel
+
+Once Phase 4's design decisions are settled, delegate §3's architecture selection to **three**
+calls to the `architecture-judge` agent — naming that shipped agent is what puts these calls on
+Fable; a prose instruction to "use Fable" resolves to the session model and nothing reports it.
+
+Each call carries a distinct **angle**, and the angle clause is the *only* thing that differs
+between them: **MVP-first** (the smallest design satisfying §2.3), **risk-first** (what fails
+latest and most quietly, and what design avoids it), **constraint-first** (what the codebase's
+existing patterns and caps permit). Identical payload, identical return contract — so what you
+compare is answers, not briefs.
+
+**What each call must carry.** The judge is a subagent: it inherits **none** of this conversation.
+A call that names the agent and states the task alone ships a context-free judge on the most
+expensive recurring seat in the pipeline. Each delegation prompt therefore carries, explicitly:
+
+1. **The feature ask** — as settled at Phase 0/3, in full, not a summary.
+2. **The settled Phase 4 answers** — every design question the interview closed, with its answer.
+   These are constraints on the judge, not context for it to revisit.
+3. **The Phase 2 evidence records** — the `{path, symbol, line, surprise}` entries the scouts
+   returned, so the judge reasons about the real codebase and not a plausible one.
+4. **The repo path**, so it can read for itself; and the §1 non-goals, so it cannot propose past
+   them.
+
+**What each must return.** State the required shape in every call prompt —
+`{ decisions: [{ decision, why, alternative_rejected }] }` — and enforce it on receipt, the way
+Phase 2 enforces its evidence list: **a decision returned without `alternative_rejected` is
+rejected and the call re-run.** That field is how you see which part of the solution space each
+angle actually explored, rather than three confident answers with the discards invisible.
+
+The judge's brief is **goal-first** by design (it lives in the agent definition, not here): it
+states the goal and the constraints rather than a procedure, because that is what the model it
+runs on responds to. Do not restate it as steps in the delegation prompt.
+
+Score the three sets against the Phase 4 answers and the §1 non-goals, then **synthesise**: take
+the strongest set and graft the best individual decisions from the runners-up. The synthesis is
+the main thread's, not a fourth delegated call — you have the conversation and they do not. Where
+two angles disagree outright, that disagreement is the finding: record it in §3 as the decision it
+forced, with the rejected side named.
+
+**Cost, because it recurs.** Three calls at the most expensive tier in the pipeline on every PRP
+drafted. **Skip the panel** when Phase 4 settled every architectural question and §3 has nothing
+left to decide — three Fable calls over a foregone conclusion is an expensive restatement, and the
+skip matters more with a panel than it would with one call.
+
 ## Phase 5 — Draft
 
 Read all three reference files now. Then:
+
+**This phase runs on the session model.** The main-thread draft is not routable from a plugin —
+whatever `/model` is set to is what writes the PRP. Opus is the recommendation; there is no
+mechanism here to enforce it, and a routing table pretending otherwise would be worse than this
+note.
+
 
 - Filename: `PRPs/PRP-NNN_TITLE_IN_SNAKE_CAPS.md`. Branch named in front matter:
   `feature/prp-NNN-short-slug`.

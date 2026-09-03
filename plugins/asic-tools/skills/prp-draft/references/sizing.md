@@ -94,7 +94,7 @@ tier. Those lenses compare proposals against the repo files a PRP cites; zero ci
 | Tier | prp-draft Phase 2 | prp-review | prp-implement A3 | prp-implement A4 scratchpad |
 |---|---|---|---|---|
 | S | inline research, no fan-out | 1 round | inline drift check | no |
-| M | 3 Explore agents | 2 rounds | 3-agent fan-out | no |
+| M | 3 citation-scout agents | 2 rounds | 3-agent fan-out | no |
 | L | one agent per subsystem | 3 rounds | one agent per citation cluster | yes |
 | XL | L + adversarial refute pass | 3 rounds (same as L) | L + expert re-read | yes |
 

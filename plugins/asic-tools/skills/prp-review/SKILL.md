@@ -36,6 +36,10 @@ Confirm the file exists. Count tasks and files by the rubric's own rules, apply 
 Invoking this skill is the user's opt-in to multi-agent orchestration. Call the **Workflow**
 tool directly — do not ask again:
 
+**Ultracode.** Turning it on keeps that multi-agent opt-in standing across a multi-PRP session,
+rather than re-establishing it per invocation. It is the user's session-level choice and
+no skill invokes it — including this one.
+
 - `scriptPath`: the bundled `references/review_workflow.js` (this skill's directory).
 - `args`: `{ "prpPath": "<resolved PRP path>", "sizing": { "tier": "S|M|L|XL", "tasks": <int>,
   "files": <int>, "citedFileCount": <int>, "rounds": <int>, "styleLenses": 0 | 3,

@@ -8,6 +8,8 @@ Agent-harness tooling for Claude Code, shipped as a Claude Code plugin marketpla
 | [idea-refine](#idea-refine) | Refine a raw idea into a build-ready one-pager — upstream of prp-draft |
 | [prp-draft](#prp-draft) | Research-first generator for Product Requirements Prompts |
 | [prp-review](#prp-review) | Adversarial review gate: tier-sized Workflow hardens a PRP before implementation |
+| `citation-scout` (agent) | Read-only evidence extractor the PRP fan-outs delegate to — returns `path:line` records, never conclusions |
+| `architecture-judge` (agent) | Chooses a PRP's §3 architecture from a stated angle, returning each decision with the alternative it rejected |
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
@@ -55,8 +57,16 @@ claude plugin update asic-tools@asic-dev          # pull the new plugin version
 ```
 
 Symlinks each skill under `plugins/asic-tools/skills/` into `~/.claude/skills/` — bare
-`/asicdash` and `/prp-draft` names, and edits in the repo are live without reinstalling.
+`/asicdash` and `/prp-draft` names, and edits in the repo are live without reinstalling. It also
+symlinks each agent under `plugins/asic-tools/agents/` into `~/.claude/agents/`: auto-discovery
+covers the plugin install only, so without this the fan-outs fall back to generic subagents.
 Don't combine both installs: you'd get duplicate skill registrations.
+
+**Routing.** Delegated work is tiered rather than inheriting whatever model the session is on:
+the volume stages (review lenses, repo-audit checks, citation scouting) run on cheaper tiers at
+low effort, while adjudication and architecture selection take the strongest tier available.
+Main-thread work — drafting, planning, the implementation loop — follows the session model and is
+not routable from a plugin.
 
 ### Global rules
 

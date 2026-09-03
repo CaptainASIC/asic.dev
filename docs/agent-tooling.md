@@ -67,11 +67,11 @@ A conclusion that cannot be traced to one of those three is **not usable** and m
 | Step | Lane | Verified-context gate |
 |---|---|---|
 | `prp-draft` Ph1 context sweep | serena memory (read) + graphify wiki/orient | n/a (orientation) |
-| `prp-draft` Ph2 codebase research | **graphify CLI first**, then Read for the `path:line` | every §4 reference = `path:line` read this session; every Explore subagent returns `{path,symbol,line,surprise}`, prose rejected |
+| `prp-draft` Ph2 codebase research | **graphify CLI first**, then Read for the `path:line` | every §4 reference = `path:line` read this session; every citation-scout subagent returns `{path,symbol,line,surprise}`, prose rejected |
 | `prp-draft` Ph2 external libs | Ref | version recorded in PRP |
 | `prp-review` reviewers (style lenses) | **graphify CLI first**, then Read cited files | findings cite a PRP quote **or** a `file:line` the reviewer read; speculation rejected by adjudicator |
 | `prp-implement` A1 load | Read §4.1 MUST READ | — |
-| `prp-implement` A3 drift check | **graphify CLI first**, then Read; Explore fan-out graphify-first | every verdict carries `evidence = path:line` |
+| `prp-implement` A3 drift check | **graphify CLI first**, then Read; citation-scout fan-out graphify-first | every verdict carries `evidence = path:line` |
 | `prp-implement` A2.5 resume | git log (authority on done tasks) + serena memo | done-state from commits, never from prose |
 | `prp-implement` close-out | serena memory (write) | — |
 

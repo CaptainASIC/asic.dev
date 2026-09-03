@@ -6,6 +6,16 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- **Every delegated agent now runs on a chosen model and effort.** Both Workflow scripts declare a
+  named `ROUTING` block; the volume stages (review lenses, repo-audit checks, citation scouting)
+  drop to cheaper tiers at low effort while adjudication and architecture selection take the
+  strongest tier available. Two shipped agents back it — `citation-scout` for the three
+  main-thread fan-outs and `architecture-judge` for `prp-draft`'s new Phase 4.5 architecture
+  panel. Depth remains PRP-013's rubric: routing sets which model, never how much work. Stages
+  that cannot be routed from a plugin — drafting, planning, the implementation loop — are
+  documented as following the session model rather than given a table entry that does nothing.
+
 ### Changed
 - **One shared work-sizing rubric across the PRP stack.** `prp-draft`, `prp-implement` and
   `prp-review` now read `prp-draft/references/sizing.md` instead of paraphrasing scope three

@@ -11,6 +11,10 @@ phases, hard pause between them — plan first, execute only on the user's go.
 
 ## Phase A — Review & Plan (ends with a PAUSE)
 
+**Phase A's plan and Phase B's task loop run on the session model.** Neither is routable from a
+plugin — whatever `/model` is set to is what plans and what writes the code. Opus is the
+recommendation. Only the delegated fan-outs below carry a tier of their own.
+
 ### A1. Locate & load
 
 PRP from the argument (number or name) or the conversation; otherwise newest
@@ -77,8 +81,9 @@ while the run was paused. Resume is **change-aware** and stays read-only, like A
 3. **Targeted drift re-check (not the full A3 sweep).** Re-verify only: (a) PRP-cited files (§1
    table, §4) that appear in the **base-drift** set — those may have changed under the plan — and
    (b) the files the **remaining (undone)** tasks will touch. Reuse A3's read-only verdict shape
-   `{ citation, status: holds | drifted, evidence }` and its Explore fan-out, **sized by the tier**
-   computed in step 1 (`sizing.md`) over the narrowed file set.
+   `{ citation, status: holds | drifted, evidence }` and its `citation-scout` fan-out, **sized by
+   the tier** computed in step 1 (`sizing.md`) over the narrowed file set. State that shape in the
+   delegation prompt here too — the scout serves two, and emits the one it is asked for.
    Cited files outside the base-drift set have **no observable change since the fork** (git shows
    them unmodified between `$BASE` and `<base>`), so they are safe to trust without re-verifying —
    the skip is justified by git alone, not by any plan-time ledger.
@@ -116,9 +121,10 @@ in this same phase — one pass, not a second one. Apply `sizing.md`: max-wins a
 axes, then the silent-failure modifier one tier up with its triggering category stated. Print the
 `SIZING:` verdict block at the head of A3's drift report. Then take the sweep size from the tier →
 knob table: inline drift check at S, a 3-agent fan-out at M, **one agent per citation cluster at L**, plus an expert re-read at XL. A
-large PRP (subsystem scope, many §4 citations) fans out read-only subagents (Explore) —
-one per cited file or gotcha cluster — each returning a **structured verdict**, never
-prose: `{ citation, status: holds | drifted, evidence }` (`evidence` = the `path:line`
+large PRP (subsystem scope, many §4 citations) fans out read-only subagents — the shipped
+`citation-scout`, one per cited file or gotcha cluster — each returning a **structured verdict**,
+never prose: `{ citation, status: holds | drifted, evidence }`. Naming that agent is what puts the
+fan-out on its own tier, and the stated shape is what tells a two-shape scout which to emit (`evidence` = the `path:line`
 that proves it, or the mismatch found). When `graphify-out/graph.json` exists, each
 subagent's prompt must instruct **graphify-first** (orient with `graphify query`/`explain`/
 `path` before reading the cited file) — the directive applies to subagents, not only the main
