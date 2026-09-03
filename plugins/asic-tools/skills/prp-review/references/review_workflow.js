@@ -1,6 +1,6 @@
 export const meta = {
   name: 'prp-review',
-  description: 'Adversarial PRP review gate: 8-lens fan-out, adjudicate, apply fixes, re-review (capped 3 rounds)',
+  description: 'Adversarial PRP review gate: tier-sized lens fan-out, adjudicate, apply fixes, re-review (round cap from sizing)',
   phases: [
     { title: 'Review' },
     { title: 'Adjudicate' },
@@ -15,7 +15,18 @@ export const meta = {
 const ARGS = typeof args === 'string' ? JSON.parse(args) : args
 const PRP = ARGS && ARGS.prpPath
 if (!PRP) throw new Error('review_workflow: args.prpPath is required')
-const MAX_ROUNDS = 3
+// Depth comes from PRP-013's sizing rubric, computed by prp-review Phase 0 and passed in.
+// Defaults keep an un-migrated caller working: full depth, all lenses.
+// CRITICAL: no threshold lives in this file. If you find yourself writing a number here that
+// decides how much work happens, it belongs in references/sizing.md instead.
+// `sizing` is model-authored and may arrive with a string or an out-of-range round count, so it
+// is coerced and clamped rather than trusted: only an integer 1..3 is honoured. `|| 3` alone
+// would let "0" through as a truthy string (zero reviewers, a "clean" review) and a string "2"
+// through to a strict-equality test that never fires.
+const SIZING = (ARGS && ARGS.sizing) || {}
+const ROUNDS = Number(SIZING.rounds)
+const MAX_ROUNDS = Number.isInteger(ROUNDS) && ROUNDS >= 1 && ROUNDS <= 3 ? ROUNDS : 3
+const STYLE_LENSES = Number(SIZING.styleLenses) === 0 ? 0 : 3
 
 // Eight distinct lenses: 5 logic, 3 style. Style lenses compare the PRP against real repo code.
 const LENSES = [
@@ -233,13 +244,22 @@ function dedupe(valid) {
   return [...byGroup.values()]
 }
 
+// The five logic lenses always run; the three style lenses need cited repo files to compare
+// against, so citedFileCount === 0 drops them (PRP-013 §3.2). Definitions above are untouched.
+const ACTIVE_LENSES = LENSES.filter((l) => l.kind === 'logic' || STYLE_LENSES > 0)
+
+// Observability, not a threshold: `tier` and `rounds` arrive as independently model-authored
+// fields, so a correct tier carrying a wrong round count would otherwise produce a silently
+// shallow review whose audit trail reads correct.
+log(`Sizing: tier ${SIZING.tier || 'none (defaults)'} \u2192 ${MAX_ROUNDS} round(s), ${ACTIVE_LENSES.length} lens(es)`)
+
 const reviewLog = []
 let residual = []
 
 for (let round = 1; round <= MAX_ROUNDS; round++) {
   phase('Review')
-  log(`Round ${round}/${MAX_ROUNDS}: ${LENSES.length} reviewers`)
-  const reviews = await parallel(LENSES.map((lens) => () =>
+  log(`Round ${round}/${MAX_ROUNDS}: ${ACTIVE_LENSES.length} reviewers`)
+  const reviews = await parallel(ACTIVE_LENSES.map((lens) => () =>
     agent(reviewerPrompt(lens, round), {
       label: `review:${lens.key}`, phase: 'Review', schema: FINDINGS_SCHEMA,
     })
@@ -275,7 +295,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
   // Non-final rounds: applied fixes are re-reviewed by the next round, which recomputes residual.
   // Final round: no re-review follows, so verify the applied fixes actually landed in the file and
   // surface ONLY the genuinely-unresolved ones — not every applied blocker (that was the mislabel).
-  if (round === MAX_ROUNDS) {
+  if (round >= MAX_ROUNDS) {
     phase('Verify')
     log(`Round ${round}: verifying ${blockers.length} final-round fix(es) landed`)
     const check = await agent(verifyPrompt(blockers),

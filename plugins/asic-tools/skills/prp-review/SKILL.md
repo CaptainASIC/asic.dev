@@ -1,13 +1,13 @@
 ---
 name: prp-review
-description: Adversarial review gate for a drafted PRP — fans out eight distinct-lens reviewers (five on logic, three on style/convention drift against the real target repo) via a Workflow, adjudicates their findings to drop false positives, applies blocker/major fixes to the PRP in place, and re-reviews up to three rounds before appending a review-log. Use when the user says "review this PRP", "harden the PRP", "adversarial review", "stress-test PRP-NNN", or invokes /prp-review — after prp-draft and before prp-implement. Sits between prp-draft and prp-implement in the pipeline.
+description: Adversarial review gate for a drafted PRP — fans out tier-sized distinct-lens reviewers (five on logic, three on style/convention drift against the real target repo, gated on citations) via a Workflow, adjudicates their findings to drop false positives, applies blocker/major fixes to the PRP in place, and re-reviews up to the tier's round cap before appending a review-log. Use when the user says "review this PRP", "harden the PRP", "adversarial review", "stress-test PRP-NNN", or invokes /prp-review — after prp-draft and before prp-implement. Sits between prp-draft and prp-implement in the pipeline.
 ---
 
 # prp-review
 
 The gate between a drafted PRP and its implementation. `prp-implement` trusts the PRP
 completely — a flawed spec yields confident wrong code. This skill runs an independent
-adversarial pass over a PRP before any implementation budget is spent: eight reviewers each with
+adversarial pass over a PRP before any implementation budget is spent: tier-sized reviewers each with
 a distinct lens, an adjudicator that filters false positives, and a bounded fix-and-re-review
 loop. It edits the PRP in place and appends a review-log. It writes no code and runs nothing
 the PRP describes.
@@ -23,20 +23,31 @@ Otherwise pick the newest `Status: Ready for execution` PRP in `PRPs/` — confi
 Read the PRP fully. If it does not exist or is not a PRP, stop and say so. Note the repo files
 it cites in §4.1/§4.2 — those are the style reviewers' ground truth.
 
+**Then size the review.** That citation note is the same read that produces `citedFileCount` — do
+not add a second pass. Compute the skills directory from this `SKILL.md`'s location (it is
+`<…>/skills/prp-review/SKILL.md`, so the skills dir is two levels up) and read
+`<asic-tools skills dir>/prp-draft/references/sizing.md`. Never use a relative path into
+`prp-draft/references/` — it resolves against the repo being reviewed, not against this plugin.
+Confirm the file exists. Count tasks and files by the rubric's own rules, apply it, and emit the
+`SIZING:` verdict block. The tier sets the round cap; `citedFileCount` sets the style lenses.
+
 ## Phase 1 — Run the review Workflow
 
 Invoking this skill is the user's opt-in to multi-agent orchestration. Call the **Workflow**
 tool directly — do not ask again:
 
 - `scriptPath`: the bundled `references/review_workflow.js` (this skill's directory).
-- `args`: `{ "prpPath": "<resolved PRP path>" }`.
+- `args`: `{ "prpPath": "<resolved PRP path>", "sizing": { "tier": "S|M|L|XL", "tasks": <int>,
+  "files": <int>, "citedFileCount": <int>, "rounds": <int>, "styleLenses": 0 | 3,
+  "note": "<escalation reason, or empty>" } }` — the verdict computed in Phase 0.
 
-The script fans out eight reviewers in parallel (5 logic: requirements-coverage,
-architecture-soundness, over-build, edge-cases & verifiability, silent-failure; 3 style: naming, structure,
-conventions —
-each reading the cited repo files), adjudicates, applies blocker/major fixes to the PRP in
-place, and repeats up to three rounds, exiting early when a round yields no blocker/major
-findings. It returns `{ reviewLog, residual }`.
+The script fans out <n> lenses in parallel. The five logic lenses always run
+(requirements-coverage, architecture-soundness, over-build, edge-cases & verifiability,
+silent-failure). The three style lenses (naming, structure, conventions — each reading the cited
+repo files) run only when `citedFileCount > 0`, since a PRP citing no repo files gives them
+nothing to compare against. It adjudicates, applies blocker/major fixes to the PRP in place, and
+repeats up to the tier's round cap, exiting early when a round yields no blocker/major findings.
+It returns `{ reviewLog, residual }`.
 
 ## Phase 2 — Append the review-log
 
@@ -48,7 +59,7 @@ blocker/major findings if any survived three rounds.
 ```markdown
 ## Review Log
 
-Reviewed YYYY-MM-DD by prp-review (8 lenses, N round(s)).
+Reviewed YYYY-MM-DD by prp-review (<n> lenses, N round(s), tier <T> — converged | stopped at cap).
 
 - Round 1: 14 raw → 6 valid → 4 blocker/major applied.
 - Round 2: 3 raw → 1 valid → 1 applied.
@@ -59,6 +70,14 @@ Reviewed YYYY-MM-DD by prp-review (8 lenses, N round(s)).
 ```
 
 (Use today's date from the environment context — do not invent one.)
+
+`<n>` is the lens count that actually ran and `<T>` the tier, both from the Phase 0 verdict.
+Write **`converged`** when the loop broke early — a round produced no findings, or none at
+blocker/major — and **`stopped at cap`** when the final round was still producing blocker/major
+findings when the tier's cap was reached. A capped run is an accepted cost, but a reader must be
+able to tell a clean review from a truncated one without inferring it from the size of the
+residual section. A residual section routinely populated at M is the evidence that M's cap
+should move in `sizing.md`.
 
 ## Phase 3 — Report & hand off
 

@@ -39,7 +39,11 @@ started. A2.5 runs **in place of A3**, not before it: it is the resume drift che
 sweep does not also run on a resume. Do not re-run from scratch and do not assume the codebase froze
 while the run was paused. Resume is **change-aware** and stays read-only, like A3:
 
-1. **Orient.** The **branch commit log is the authority on which §5 tasks are done** — but a commit
+1. **Orient.** Compute the sizing tier here as A3 does (resolve and read
+   `<asic-tools skills dir>/prp-draft/references/sizing.md`, count tasks, files and
+   `citedFileCount`, apply the rubric, print the `SIZING:` block). A2.5 runs in place of A3, so
+   this is the only place the tier is computed on a resume, and A4's scratchpad decision needs it.
+   The **branch commit log is the authority on which §5 tasks are done** — but a commit
    need not map 1:1 to a §5 task (per the commit policy, commits are logical groups, typically per
    task or per §6 file-section). First resolve the merge-base `BASE` exactly as step 2 does
    (`BASE=$(git merge-base HEAD <base>)`, the resumer naming `<base>`), then match
@@ -73,7 +77,8 @@ while the run was paused. Resume is **change-aware** and stays read-only, like A
 3. **Targeted drift re-check (not the full A3 sweep).** Re-verify only: (a) PRP-cited files (§1
    table, §4) that appear in the **base-drift** set — those may have changed under the plan — and
    (b) the files the **remaining (undone)** tasks will touch. Reuse A3's read-only verdict shape
-   `{ citation, status: holds | drifted, evidence }` and its Explore fan-out, scaled to the count.
+   `{ citation, status: holds | drifted, evidence }` and its Explore fan-out, **sized by the tier**
+   computed in step 1 (`sizing.md`) over the narrowed file set.
    Cited files outside the base-drift set have **no observable change since the fork** (git shows
    them unmodified between `$BASE` and `<base>`), so they are safe to trust without re-verifying —
    the skip is justified by git alone, not by any plan-time ledger.
@@ -98,7 +103,19 @@ three axes:
   fine; *semantics changed* is not.
 - Dependency versions §4.1 cites vs the lockfile now.
 
-Scale the sweep to the PRP. A contained PRP (a handful of citations) checks inline. A
+**Size the sweep from the rubric.** Resolve it to an absolute path before reading: `prp-implement`
+runs against an arbitrary repo, so a relative path into `prp-draft/references/` resolves against
+*that* repo, not against this plugin. Compute the skills directory from this `SKILL.md`'s location
+(it is `<…>/skills/prp-implement/SKILL.md`, so the skills dir is two levels up) and read
+`<asic-tools skills dir>/prp-draft/references/sizing.md`. Confirm the file exists.
+
+A3 computes the tier before it sizes the sweep: count the `Task N:` lines in §5.2 (scoped
+`## 5.`->`## 6.`, per `sizing.md`), count the §1 `**Total:**` file count with parentheticals
+stripped first, and count `citedFileCount` from the §4.1/§4.2 citations it is **already resolving**
+in this same phase — one pass, not a second one. Apply `sizing.md`: max-wins across the two primary
+axes, then the silent-failure modifier one tier up with its triggering category stated. Print the
+`SIZING:` verdict block at the head of A3's drift report. Then take the sweep size from the tier →
+knob table: inline drift check at S, a 3-agent fan-out at M, **one agent per citation cluster at L**, plus an expert re-read at XL. A
 large PRP (subsystem scope, many §4 citations) fans out read-only subagents (Explore) —
 one per cited file or gotcha cluster — each returning a **structured verdict**, never
 prose: `{ citation, status: holds | drifted, evidence }` (`evidence` = the `path:line`
@@ -122,8 +139,9 @@ surface *late and quietly* — time/timezone/DST, concurrency, auth/expiry, pars
 rarely-run paths — as **high-verify** so Phase B scrutinises them harder; effort is lopsided (a
 repo-wide rename gets minutes, a ten-line timezone change gets the hour), and loud build-caught
 tasks need no flag. Include a **scratchpad decision**: whether this run keeps a working
-scratchpad during execution (Phase B). A multi-task or subsystem PRP does; a trivial one- or
-two-task PRP that finishes inside one context window does not — scale it to scope as A3 does.
+scratchpad during execution (Phase B). The tier from `sizing.md` decides:
+**S and M keep none, L and XL keep one.**
+Print the `SIZING:` verdict block in the plan A4 presents.
 Keep it a plan, not a re-architecture — deviations from the PRP get
 flagged as questions, not silently planned in.
 
