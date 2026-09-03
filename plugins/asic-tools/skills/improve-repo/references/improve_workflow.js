@@ -96,6 +96,28 @@ const CHECKS = [
            'primary key changes a database contract, so this check is propose-only — never auto.' },
 ]
 
+// Model/effort routing (PRP-014). Depth is NOT here — no number belongs in this block.
+// The three mechanical checks (walk a table, shell ruff/mypy and group output, detect
+// within-file import drift) drop to haiku/low; the three generative ones (propose a shared
+// module, reason about kind-specific layout, judge naming against the standing rules) stay at
+// sonnet/medium. The split follows the auto-vs-propose line the CHECKS table already draws in
+// its own `safety` field, so it is inspectable rather than arbitrary.
+// The name `ROUTING` and the { model, effort } entry shape are what PRP-014's gates extract.
+const ROUTING = {
+  'version-consolidation':    { model: 'haiku',  effort: 'low' },
+  'standards-surface':        { model: 'haiku',  effort: 'low' },
+  'import-hygiene':           { model: 'haiku',  effort: 'low' },
+  'scaffold-conformance':     { model: 'sonnet', effort: 'medium' },
+  'shared-import-extraction': { model: 'sonnet', effort: 'medium' },
+  'naming-conventions':       { model: 'sonnet', effort: 'medium' },
+}
+
+// Fail fast if a CHECKS key has no ROUTING entry, in the shape of this file's own REPO guard.
+// No default and no `||` fallback: a default would route a mis-keyed check to the wrong tier
+// forever with nothing to notice, which is the silent-fallback class this routing removes.
+const UNROUTED = CHECKS.filter((c) => !ROUTING[c.key]).map((c) => c.key)
+if (UNROUTED.length) throw new Error(`unrouted CHECKS keys: ${UNROUTED.join(', ')}`)
+
 // A check runs when its tier is universal, or when any of its '+'-joined language tiers is present
 // in the profile. New standards extend CHECKS without touching this filter (OCP).
 function enabledChecks(profile) {
@@ -168,7 +190,9 @@ const active = enabledChecks(PROFILE)
 log(`Auditing ${active.length} check(s): ${active.map((c) => c.key).join(', ')}`)
 
 const results = await parallel(active.map((check) => () =>
-  agent(checkPrompt(check), { label: `audit:${check.key}`, phase: 'Audit', schema: FINDINGS_SCHEMA })
+  agent(checkPrompt(check), {
+    label: `audit:${check.key}`, phase: 'Audit', schema: FINDINGS_SCHEMA, ...ROUTING[check.key],
+  })
     .then((r) => ({ check, result: r }))
 ))
 
