@@ -4,6 +4,19 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) on the `asic-tools` plugin version.
 
+## [Unreleased]
+
+### Changed
+- **One shared work-sizing rubric across the PRP stack.** `prp-draft`, `prp-implement` and
+  `prp-review` now read `prp-draft/references/sizing.md` instead of paraphrasing scope three
+  different ways; `prp-review` takes its round cap and lens set from an incoming `sizing`
+  argument rather than module constants, so review depth finally scales with PRP size. Tiers are
+  computed from two countable axes (§5-scoped task count, §1 `**Total:**` file count) with byte
+  size demoted to an advisory corroborator after it was measured escalating four of twelve PRPs
+  on its own. The three style lenses are gated on whether the PRP cites repo files at all, since
+  a PRP citing none gives them nothing to compare against. `idea-refine` emits a predicted tier
+  for `prp-draft` to check its real count against.
+
 ## [0.20.0] - 2026-08-28
 
 ### Changed
