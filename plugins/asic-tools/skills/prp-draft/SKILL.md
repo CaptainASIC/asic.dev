@@ -22,6 +22,7 @@ lanes are fixed: graphify CLI (structure) → serena (symbols/memory) → Ref (e
 Reference files (read when you reach the phase that needs them):
 - `references/prp_template.md` — canonical section skeleton with per-section guidance
 - `references/style_guide.md` — voice, formatting, and the user's standing engineering rules
+- `references/sizing.md` — the shared work-sizing rubric: two primary axes, boundaries, counting rules, tier → knob table
 
 ## Phase 0 — Inputs
 
@@ -41,6 +42,11 @@ Read, in parallel, tolerating absence:
 4. `PRPs/` — determine next number (max numeric NNN + 1, zero-padded to 3; letter suffixes
    like `028a` only when the user explicitly extends an existing PRP). Read the 1–2 most
    recent PRPs to absorb project-local conventions.
+   Also glob `PRPs/ideas/*.md` for the `idea-refine` one-pager covering this feature and read its
+   **Predicted tier** line. Selection, in order: the one-pager the user named; else the one whose
+   filename slug or `# <Idea Name>` heading matches the feature ask; else none — say so and fall
+   through to the feature ask's own stated counts. Two plausible candidates and no user choice is
+   not a guess: list them and ask.
 5. Tooling detection: `pyproject.toml` / `package.json` / lockfiles / `docker-compose.yml` /
    CI config. Pin actual dependency versions from the lockfile — never from memory.
 
@@ -65,7 +71,15 @@ the verified `path:line` citation still comes from reading them.
 
 - Verify external library claims against the installed version's docs (Ref MCP if connected,
   else WebFetch/WebSearch). Record the verified version in the PRP.
-- Large surface area: fan out read-only subagents (Explore) per subsystem. When
+- **Size the sweep first.** Read `references/sizing.md` now — this is the first phase that needs
+  it — and take the S/M/L boundaries and both counting rules from that file; never restate them
+  here. Phase 2 *is* the sweep, so it cannot be its own input: take the provisional counts from
+  (1) the `PRPs/ideas/` one-pager's **Predicted tier** line found in Phase 1, else (2) the
+  expected task and file counts stated in the feature ask. If neither gives a number, say so and
+  use M — do not invent a count. Print it marked provisional, e.g.
+  `SIZING: tasks=~6 files=~5 → M (provisional: one-pager prediction; re-counted at Phase 6)`.
+- Large surface area: fan-out is tier-sized per `sizing.md` — no fan-out at S, three Explore
+  agents at M, one per subsystem at L. When
   `graphify-out/graph.json` exists, each subagent's prompt must instruct graphify-first too —
   scope the subsystem with `graphify query`/`explain` before reading — since the directive applies
   to subagents, not only the main thread. Require each to
@@ -106,14 +120,18 @@ conversation already settled every decision.
 
 ## Phase 5 — Draft
 
-Read both reference files now. Then:
+Read all three reference files now. Then:
 
 - Filename: `PRPs/PRP-NNN_TITLE_IN_SNAKE_CAPS.md`. Branch named in front matter:
   `feature/prp-NNN-short-slug`.
 - Build in canonical section order (template §1–§12). Outline first, then flesh out
   section-by-section — long PRPs written in one breath go thin in §6.
-- Depth scales with scope: a contained fix can run ~8–15 KB with §5/§6 merged; a subsystem
-  PRP runs 40–70 KB. Never pad — every sentence must carry implementation weight.
+- Depth scales with the tier from `references/sizing.md` — resolved absolutely from the plugin
+  root (`<asic-tools skills dir>/prp-draft/references/sizing.md`), never as a relative `../`
+  path, which resolves against the target repo rather than the plugin. Byte ranges (a contained
+  fix ~8–15 KB with §5/§6 merged; a subsystem PRP 40–70 KB) are an **advisory corroborator**
+  only: they may justify a stated escalation, never a tier on their own. Never pad — every
+  sentence must carry implementation weight.
 - For files >~25 KB, write the file in multiple passes (Write the front half, append the
   rest with Edit) rather than one giant emission.
 
@@ -122,6 +140,10 @@ Read both reference files now. Then:
 Before reporting done, audit the draft against this list — fix, don't excuse:
 
 - [ ] Every referenced path exists (re-check with ls/glob — catches typos)
+- [ ] The `SIZING:` verdict block was emitted, with counted inputs beside the tier — re-counted
+      from the written PRP using `sizing.md`'s own rules, not the Phase 2 provisional estimate
+- [ ] Where a `PRPs/ideas/` one-pager exists, its **Predicted tier** was compared against the
+      real count and any disagreement reported
 - [ ] Every line number was read this session
 - [ ] Every shell command is copy-pasteable and uses the detected tooling (`uv run …`)
 - [ ] Dependency PRPs named with hard/soft designation
