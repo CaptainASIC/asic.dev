@@ -11,6 +11,7 @@ Agent-harness tooling for Claude Code, shipped as a Claude Code plugin marketpla
 | `citation-scout` (agent) | Read-only evidence extractor the PRP fan-outs delegate to — returns `path:line` records, never conclusions |
 | `architecture-judge` (agent) | Chooses a PRP's §3 architecture from a stated angle, returning each decision with the alternative it rejected |
 | [prp-implement](#prp-implement) | Two-phase PRP executor: drift-checked plan → pause → verified execution + close-out |
+| `prp_status.py` (script) | Lints every PRP's `**Status:**` against the five-value standard and generates `PRPs/STATUS.md` |
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
 | [improve-repo](#improve-repo) | Repo-wide standards-conformance auditor: finds version/scaffold/import/naming drift, ships category-scoped fix PRs |
@@ -306,6 +307,17 @@ long runs, then promoted into the close-out artifacts and deleted. Phase C is th
 ritual: acceptance checklist ticked against reality, PRP status flipped, §10 doc updates
 applied (PLANNING/TASKS/CHANGELOG/Serena memory), and a final report of files-touched vs
 the PRP's own table.
+
+Close-out also regenerates the PRP registry. `prp_status.py` holds the status standard in its
+module docstring — five values, who writes each, and the exit codes that lint them — and renders
+`PRPs/STATUS.md` from the corpus, deriving the in-flight badge from live git refs so no PRP stores
+a state git already answers. **`STATUS.md` is generated: regenerate it, never hand-edit it.** The
+script refuses to overwrite a `STATUS.md` that lacks its generated banner, so a hand-written file
+is never clobbered.
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/prp-implement/scripts/prp_status.py" PRPs --write
+```
 
 In Claude Code: `/asic-tools:prp-implement PRP-040`.
 
