@@ -28,6 +28,22 @@ const ROUNDS = Number(SIZING.rounds)
 const MAX_ROUNDS = Number.isInteger(ROUNDS) && ROUNDS >= 1 && ROUNDS <= 3 ? ROUNDS : 3
 const STYLE_LENSES = Number(SIZING.styleLenses) === 0 ? 0 : 3
 
+// Model/effort routing (PRP-014). Depth is NOT here — every count lives in
+// prp-draft/references/sizing.md and arrives via `sizing` (PRP-013).
+// CRITICAL: no number belongs in this block. A number here decides how much work happens,
+// which is the rubric's job, not routing's.
+// The name `ROUTING` and the { model, effort } entry shape are what PRP-014's gates extract
+// by sed range — keep both stable.
+// `apply` and `verify` name opus explicitly rather than omitting model: omitting it does not
+// mean a sensible default, it means whatever /model happens to be.
+const ROUTING = {
+  reviewLogic: { model: 'sonnet', effort: 'medium' },
+  reviewStyle: { model: 'haiku',  effort: 'low' },
+  adjudicate:  { model: 'fable',  effort: 'high' },
+  apply:       { model: 'opus',   effort: 'medium' },
+  verify:      { model: 'opus',   effort: 'medium' },
+}
+
 // Eight distinct lenses: 5 logic, 3 style. Style lenses compare the PRP against real repo code.
 const LENSES = [
   { key: 'requirements', kind: 'logic',
@@ -262,6 +278,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
   const reviews = await parallel(ACTIVE_LENSES.map((lens) => () =>
     agent(reviewerPrompt(lens, round), {
       label: `review:${lens.key}`, phase: 'Review', schema: FINDINGS_SCHEMA,
+      ...(lens.kind === 'style' ? ROUTING.reviewStyle : ROUTING.reviewLogic),
     })
   ))
   const raw = reviews.filter(Boolean).flatMap((r) => r.findings || [])
@@ -274,6 +291,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
   phase('Adjudicate')
   const adj = await agent(adjudicatePrompt(raw), {
     label: 'adjudicate', phase: 'Adjudicate', schema: ADJUDICATION_SCHEMA,
+    ...ROUTING.adjudicate,
   })
   const valid = dedupe((adj && adj.findings ? adj.findings : []).filter((f) => f.valid))
   const blockers = valid.filter((f) => f.severity === 'blocker' || f.severity === 'major')
@@ -288,7 +306,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
   phase('Apply')
   log(`Round ${round}: applying ${blockers.length} blocker/major fix(es)`)
   const result = await agent(applyPrompt(blockers),
-    { label: 'apply', phase: 'Apply', schema: APPLY_SCHEMA })
+    { label: 'apply', phase: 'Apply', schema: APPLY_SCHEMA, ...ROUTING.apply })
   reviewLog.push({ round, raw: raw.length, valid: valid.length, applied: blockers.length,
     applied_findings: blockers, summary: result ? result.summary : '(apply returned no summary)' })
 
@@ -299,7 +317,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
     phase('Verify')
     log(`Round ${round}: verifying ${blockers.length} final-round fix(es) landed`)
     const check = await agent(verifyPrompt(blockers),
-      { label: 'verify', phase: 'Verify', schema: VERIFY_SCHEMA })
+      { label: 'verify', phase: 'Verify', schema: VERIFY_SCHEMA, ...ROUTING.verify })
     const verdicts = new Map(
       (check && check.verdicts ? check.verdicts : []).map((v) => [v.dedup_group, v]))
     // Unresolved, or unverifiable (no verdict returned) → surface to the human.
