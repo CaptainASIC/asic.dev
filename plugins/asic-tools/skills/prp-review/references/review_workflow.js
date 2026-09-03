@@ -206,22 +206,33 @@ function reviewerPrompt(lens, round) {
     `sound on your lens.`
 }
 
+// GOAL-FIRST PROMPT (PRP-014 §3.5). This runs on Fable, and Anthropic's migration guidance is
+// that prompts written for prior models are often too prescriptive for it and reduce output
+// quality — state the goal and constraints, not the steps. Do not normalise this back to the
+// step-first style of the surrounding file: the divergence is deliberate.
 function adjudicatePrompt(findings) {
-  return `You are the adjudicator for an adversarial PRP review of ${PRP}. Reviewers over-` +
-    `report; your job is to filter. Here are all raw findings as JSON:\n\n` +
-    `${JSON.stringify(findings, null, 2)}\n\n` +
-    `For each finding: set valid=false (with a reason) if it is a false positive, a style ` +
-    `preference, out of scope, or already handled by the PRP — otherwise valid=true. Collapse ` +
-    `duplicates/overlaps by giving them the same dedup_group (unique string per distinct ` +
-    `issue). ` +
-    `Weight severity by SILENCE: a defect that would surface only in production or on a rarely-` +
-    `run path (boundary, time/timezone, concurrency, auth/expiry) outranks one the build or ` +
-    `tests catch loudly — never let a loud-but-trivial finding outrank a silent-but-costly one. ` +
-    `This silence-weighting only RE-RANKS findings whose severity is otherwise justified; it does ` +
-    `NOT lift the reviewer's counterexample cap — a runtime-defect claim that arrived with no ` +
-    `constructed failing case stays capped at minor even when its failure surface is silent. ` +
-    `Keep severity honest. Read the PRP and cited files as needed to judge. Return ` +
-    `every finding via the schema with valid/reason/dedup_group set.`
+  return `You are the adjudicator for an adversarial PRP review of ${PRP}.\n\n` +
+    `Your goal is to leave behind only the findings that are real. Reviewers over-report by ` +
+    `design — that is the panel working — so the value you add is subtraction, and a finding you ` +
+    `let through wrongly costs more than one you cut wrongly, because everything downstream ` +
+    `treats survivors as true.\n\n` +
+    `Here are all raw findings as JSON:\n\n${JSON.stringify(findings, null, 2)}\n\n` +
+    `Constraints on that judgement:\n\n` +
+    `- A finding is not real if it is a false positive, a style preference, out of scope, or ` +
+    `already handled by the PRP. Mark those valid=false and say why in reason.\n` +
+    `- Findings describing one underlying issue share a dedup_group — a unique string per ` +
+    `distinct issue, not per reviewer who noticed it.\n` +
+    `- Severity is weighted by SILENCE. A defect surfacing only in production or on a rarely-run ` +
+    `path (boundary, time/timezone, concurrency, auth/expiry) outranks one the build or tests ` +
+    `catch loudly. Never let a loud-but-trivial finding outrank a silent-but-costly one.\n` +
+    `- Silence-weighting RE-RANKS findings whose severity is already justified. It does not lift ` +
+    `the reviewer's counterexample cap: a runtime-defect claim that arrived with no constructed ` +
+    `failing case stays capped at minor however silent its failure surface would be.\n` +
+    `- Severity stays honest in both directions. Inflating a minor finding to force a fix is the ` +
+    `same defect as dismissing a real blocker.\n` +
+    `- Read the PRP and the cited files wherever the judgement needs them. An adjudication made ` +
+    `without opening the file a finding cites is a guess.\n\n` +
+    `Return every finding via the schema with valid/reason/dedup_group set.`
 }
 
 function applyPrompt(toApply) {
