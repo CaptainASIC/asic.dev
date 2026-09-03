@@ -3,9 +3,8 @@
 ## 1. Purpose
 
 One shared definition of "how big is this work", read by `prp-draft`, `prp-implement` and
-`prp-review`, and predicted against by `idea-refine`. It yields a **depth verdict only** — how many
-agents fan out, how many review rounds run, whether a scratchpad is kept. It never names a model or
-an effort level: that seam belongs to PRP-014. Tier in, depth out.
+`prp-review`, predicted against by `idea-refine`. A **depth verdict only** — how many agents fan
+out, how many rounds run, whether a scratchpad is kept. Never a model or effort level (PRP-014).
 
 ## 2. The two primary axes
 
@@ -47,9 +46,9 @@ with `-le` is shell-dependent and would print a tier anyway.
 ## 3. Advisory corroborators
 
 **Byte size** and the **>500-line cited-file** check are advisory corroborators: each may justify
-a *stated* escalation, never a tier on its own. Over PRPs 001–012, byte size alone escalated
-**four of twelve** (001, 002, 007, 009) to L while both work axes said M, on a knife edge —
-PRP-002 at 41 KB scored L against PRP-011 at 40 KB scoring M. Bytes track verbosity, not work.
+a *stated* escalation, never a tier alone. Over PRPs 001–012 byte size alone escalated **four of
+twelve** (001, 002, 007, 009) to L while both work axes said M — PRP-002 at 41 KB scored L against
+PRP-011 at 40 KB scoring M. Bytes track verbosity, not work.
 
 ## 4. Tier table and the silent-failure modifier
 
@@ -76,15 +75,17 @@ is **one-way**: a skill may raise a tier and must say why; it may never lower on
 
 ## 5. The citation axis
 
-`citedFileCount` sets exactly one knob — whether the three style lenses run — and does **not** vote
-on the tier. Those lenses compare a PRP's proposals against the repo files it cites, so zero
-citations means zero style lenses at every tier.
+`citedFileCount` sets one knob — whether the three style lenses run — and does **not** vote on the
+tier. Those lenses compare proposals against the repo files a PRP cites; zero citations, zero lenses.
 
 - **Count:** distinct repo-relative paths appearing as `- file:` entries in the §4.1 MUST READ
-  block, unioned with the file leaves of the §4.2 tree.
-- **De-duplicate** by resolved path — a file cited in both §4.1 and §4.2 counts once.
+  block. §4.1 is the authoritative source.
+- **De-duplicate** by resolved path — a file cited twice counts once.
 - **Exclude:** `- url:` and `- docfile:` entries, paths under `PRPs/` (context, not comparable repo
   code), and any path absent from the target repo.
+- `# GOTCHA: §4.2 counts ONLY lines carrying a complete repo-relative path. Its tree renders`
+  `# bare filenames on indented branches ("└── sizing.md") that resolve against nothing — on`
+  `# PRP-014 all six leaves came back nonexistent. Never rebuild a path from the indentation.`
 - `# GOTCHA: a PRP citing only external doc URLs counts 0 and correctly runs no style lenses.`
   `# That is the axis working, not a miscount — do not floor it at 1.`
 
@@ -115,6 +116,5 @@ its face, since any reader can recompute the row from them. Auditable, not enfor
 Scored over PRPs 001–012 with the rules above: **9 M, 3 L, 0 S**. The three L verdicts are
 PRP-005 (31 files), PRP-010 (11 tasks, 10 files) and PRP-012 (14 files).
 
-S is empty here **by observation, not by design** — no PRP in this repo was written for a contained
-one-file fix. It stays defined so the tier exists when one is, and §7's emitted inputs make a wrong
-S visible at once. Re-score if the corpus grows materially.
+S is empty here **by observation, not by design** — no PRP here was written for a contained
+one-file fix. It stays defined so the tier exists when one is. Re-score if the corpus grows.
