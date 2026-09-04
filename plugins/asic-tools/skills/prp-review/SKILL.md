@@ -40,7 +40,9 @@ tool directly — do not ask again:
 rather than re-establishing it per invocation. It is the user's session-level choice and
 no skill invokes it — including this one.
 
-- `scriptPath`: the bundled `references/review_workflow.js` (this skill's directory).
+- `scriptPath`: `${CLAUDE_PLUGIN_ROOT}/workflows/review_workflow.js` — the plugin's workflows
+  directory. (The workflow is also a command, `/asic-tools:prp-review-fanout`; invoking it by
+  name from here is gated on PRP-017 Task 4 and not yet established.)
 - `args`: `{ "prpPath": "<resolved PRP path>", "sizing": { "tier": "S|M|L|XL", "tasks": <int>,
   "files": <int>, "citedFileCount": <int>, "rounds": <int>, "styleLenses": 0 | 3,
   "note": "<escalation reason, or empty>" } }` — the verdict computed in Phase 0.

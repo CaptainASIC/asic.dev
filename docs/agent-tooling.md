@@ -93,7 +93,8 @@ A conclusion that cannot be traced to one of those three is **not usable** and m
 
 These spots retrieved without a lane discipline and are corrected by the Phase 3 edits:
 
-- `prp-review/references/review_workflow.js` — reviewer prompts told subagents to "Read the
+- `workflows/review_workflow.js` (then at `prp-review/references/`) — reviewer prompts told
+  subagents to "Read the
   repo files" with **no graphify-first instruction**. Fixed: style-lens prompts now orient via
   graphify CLI before reading.
 - `prp-implement` A3 Explore fan-out — prompt did not mandate graphify-first for subagents.

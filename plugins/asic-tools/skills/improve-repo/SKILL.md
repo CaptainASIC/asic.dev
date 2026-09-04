@@ -13,7 +13,8 @@ conformance, import hygiene, structural/naming drift — and **composes** the re
 bug-hunting to `code-review` and cleanup to `simplify` rather than re-implementing them. It edits
 code only on a feature branch, only after you pick a category, and never pushes.
 
-Reference file: `references/improve_workflow.js` — the audit fan-out (one agent per enabled check).
+Reference file: `workflows/improve_workflow.js` (the `improve-repo-audit` plugin workflow) — the
+audit fan-out (one agent per enabled check).
 
 ## Phase 0 — Resolve the target
 
@@ -77,7 +78,9 @@ When `graphify-out/graph.json` exists in the target, orient with `graphify query
 Invoking this skill is your opt-in to multi-agent orchestration. Call the **Workflow** tool
 directly — do not ask again:
 
-- `scriptPath`: the bundled `references/improve_workflow.js`.
+- `scriptPath`: `${CLAUDE_PLUGIN_ROOT}/workflows/improve_workflow.js` — the plugin's workflows
+  directory. (Also a command, `/asic-tools:improve-repo-audit`; by-name invocation from here is
+  gated on PRP-017 Task 4.)
 - `args`: `{ "repoPath": "<resolved path>", "profile": { "python": <bool>, "frontend": <bool>, "repoType": "single|multi", "kind": "api|agent|cli|library|unknown", "ruff": <bool>, "mypy": <bool>, "versionLocationsPath": "<abs path>", "scaffoldSpecPaths": ["<abs file_templates.md>", "<abs kind_variants.md>", "<abs scaffold SKILL.md>"] } }`.
 
 The script fans out one agent per *enabled* check (enabled when its tier matches the profile), each
