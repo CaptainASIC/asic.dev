@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'prp-review',
+  name: 'prp-review-fanout',
   description: 'Adversarial PRP review gate: tier-sized lens fan-out, adjudicate, apply fixes, re-review (round cap from sizing)',
   phases: [
     { title: 'Review' },
