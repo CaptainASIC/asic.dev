@@ -14,6 +14,8 @@ instruction set for an AI agent to [1–3 sentences: what gets built, on top of 
 explicitly untouched].
 
 **Status:** Ready for execution
+[One of the five values in the PRP status standard — stated once, in the module docstring
+of `prp-implement/scripts/prp_status.py`, which is also the linter. Prose may follow an em dash.]
 **Author:** [author]
 **Date:** YYYY-MM-DD
 **Branch:** `feature/prp-NNN-short-slug`
