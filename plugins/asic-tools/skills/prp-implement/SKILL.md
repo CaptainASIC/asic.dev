@@ -218,11 +218,30 @@ flagged as questions, not silently planned in.
      - `mcp__Snyk__snyk_iac_scan` — only if IaC is present (terraform, k8s manifests,
        CloudFormation).
      - `mcp__Snyk__snyk_container_scan` — only if a Dockerfile / image build is present.
-   - **Block condition.** Any finding of severity **high or critical** → **BLOCK**: do not enter
-     Phase C, do not check off acceptance. Present the findings (rule, file:line, severity), fix
-     them under the PRP's surgical scope (new commits), and **re-run the gate** — it must return
-     no high/critical before the loop may advance. `medium`/`low` → record as advisory in the
-     final report and proceed.
+   - **Block condition — scoped to what this PRP touched.** A **high or critical** finding
+     **BLOCKS** when its `filePath`, **or any file in its `dataflow`**, is one this PRP changed
+     (`git diff --name-only $(git merge-base HEAD <base>) HEAD`). The dataflow half is
+     load-bearing: a taint introduced in a touched file whose sink lands in an untouched one is
+     this PRP's defect, and a `filePath`-only test would wave it through. On a block: do not enter
+     Phase C, do not check off acceptance; present the findings (rule, file:line, severity, the
+     touched file that implicates them), fix under the PRP's surgical scope (new commits), and
+     **re-run the gate**.
+   - **Report every high/critical, blocking or not.** A high/critical in no touched file is
+     **pre-existing debt**, not this PRP's defect — it does not block, and it is **still named in
+     the final report** under its own count, so debt stays visible and cannot grow silently.
+     Never fix one outside the PRP's surgical scope to make a count go green; record it and, when
+     it warrants work, raise it as its own PRP.
+     - `# GOTCHA: the scope rule is why this gate is usable at all. A repo may hold high findings`
+       `# BY DESIGN — this one carries seeded vulnerable fixtures whose whole purpose is to make`
+       `# Snyk report HIGH (evals/fixtures/vulnerable_app.py says so in its own docstring), plus a`
+       `# real-shaped test key at evals/run_evals.py:199 proving redaction works. An unscoped`
+       `# "any high blocks" rule blocks every PRP in such a repo forever, and "fixing" the fixtures`
+       `# breaks the evals that prove the gate works. Snyk Code does NOT support per-finding .snyk`
+       `# ignores (only whole-file exclusion), so the scope rule is the mechanism, not a policy.`
+     - The judgment the rule cannot make: if this PRP made a **pre-existing** finding newly
+       reachable without touching its file, say so and treat it as blocking. Scope is the default,
+       not a licence to stop thinking.
+   - `medium`/`low` → record as advisory in the final report and proceed.
    - Gate result (scans run, counts by severity, pass/block) is reported in Phase C step 7 and,
      when it blocks, becomes a Stop condition.
 
@@ -239,8 +258,9 @@ flagged as questions, not silently planned in.
    re-provision inside the `CHECK`, so re-running it never flips a genuinely-met gate to unmet.
    **Never write `Status: Implemented` or a done report while any gate is unmet or abandoned.** That
    state is a Stop condition (below), not a completion — hand it back to the user with the
-   unmet/abandoned ids. The Phase B step 6 Snyk gate must have passed (no high/critical) — a blocked
-   gate means Phase C was never entered.
+   unmet/abandoned ids. The Phase B step 6 Snyk gate must have passed — no **blocking**
+   high/critical per its scope rule; pre-existing debt in untouched files does not block, and is
+   reported rather than fixed. A blocked gate means Phase C was never entered.
 2. **PRP front matter**: `Status: Implemented (YYYY-MM-DD)`, add `Branch:` if absent.
 3. **Apply §10 verbatim**: PLANNING.md merge, TASKS.md completion entry (dated, plus the
    collected Discovered During Work items), CHANGELOG entry if mandated, serena memory
@@ -313,8 +333,9 @@ flagged as questions, not silently planned in.
 ## Stop conditions (anywhere)
 
 Stale PRP (A3), unmet dependency (A2), scope wall (B3), unrecoverable validation failure
-(B4), **security gate block (B6: a high/critical Snyk finding, or Snyk unauthenticated/
-unavailable — fail-closed)**, unmet or abandoned gate at close-out (C1). Stopping with a precise state report is success; powering through the contract is
+(B4), **security gate block (B6: a high/critical Snyk finding in a file this PRP touched or in
+its dataflow, or Snyk unauthenticated/unavailable — fail-closed)**, unmet or abandoned gate at
+close-out (C1). Stopping with a precise state report is success; powering through the contract is
 the failure mode. When a scratchpad was seeded, the stop-state report names the surviving
 `PRPs/.work/PRP-NNN-scratchpad.md` — it is intentionally retained as resumable working memory,
 unstaged so it never enters a commit; only a successful Phase C close-out deletes it.
