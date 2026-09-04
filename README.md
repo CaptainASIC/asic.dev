@@ -48,8 +48,11 @@ Without them: `prp-draft` cannot verify a library claim, and `prp-implement` sto
 gate — which is fail-closed by design, so an absent Snyk blocks rather than silently passing.
 
 Skills are namespaced: `/asic-tools:asicdash`, `/asic-tools:idea-refine`,
-`/asic-tools:prp-draft`, `/asic-tools:prp-implement`, `/asic-tools:scaffold`,
-`/asic-tools:release`, `/asic-tools:sync-rules`, `/asic-tools:diagram`. Plugin skills show up in the desktop app's customize page;
+`/asic-tools:prp-draft`, `/asic-tools:prp-review`, `/asic-tools:prp-implement`,
+`/asic-tools:scaffold`, `/asic-tools:release`, `/asic-tools:sync-rules`,
+`/asic-tools:improve-repo`, `/asic-tools:diagram`, `/asic-tools:okf`. Two workflow commands
+sit in the same namespace — `/asic-tools:prp-review-fanout` and `/asic-tools:improve-repo-audit`,
+the raw fan-outs behind `prp-review` and `improve-repo` (see below). Plugin skills show up in the desktop app's customize page;
 filesystem personal skills currently do not
 ([claude-code#66998](https://github.com/anthropics/claude-code/issues/66998)).
 
@@ -138,6 +141,10 @@ Config + usage dashboard for Claude Code (formerly **agentdash**). Audits visibl
 invisible agent-harness config across global and project scope, and charts Claude usage from
 local session transcripts. One deterministic CLI; the Claude skill is a thin
 wrapper around it.
+
+That includes the config that costs money: each agent's `model` and `effort`, a flag on any agent
+that declares **neither** — an absent `model:` is not a default, it is whatever the session happens
+to be — and the model/effort each routing role in a plugin workflow sets.
 
 ### Why
 
