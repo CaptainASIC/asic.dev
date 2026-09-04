@@ -7,6 +7,14 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **asicdash audits the config that costs money.** Agent entries now carry their `model` and
+  `effort`, and an agent that declares neither is flagged — an absent `model:` is not a default, it
+  is whatever the session happens to be, which is the resolution order that makes accidental Opus
+  agents. A new scanner reads plugin `workflows/`, reporting the model and effort each routing role
+  sets, so the eleven roles behind up to thirty-seven agent spawns per run are visible in the
+  default output. No new flag, no new field: the detail rides in the existing description column.
+  `asicdash.py` split into `asicdash.py` + `scanners.py`, both under the 500-line cap, verified by
+  running the pre-split module and the split side by side and diffing their JSON.
 - **PRP status is a controlled vocabulary with a linter behind it.** Five values — `Draft`,
   `Ready for execution`, `Implemented (YYYY-MM-DD)`, `Blocked`, `Superseded (by PRP-NNN)` — with
   free prose allowed after an em dash and never linted. A stdlib `prp_status.py` does one parse of

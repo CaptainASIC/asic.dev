@@ -1,0 +1,492 @@
+"""asicdash scanners: every filesystem probe, and the shapes they return.
+
+Split out of asicdash.py (PRP-018) once that module passed the 500-line cap. Holds `Entry`,
+the small helpers, and the eight `scan_*` functions.
+
+**Dependency direction is one-way: this module never imports asicdash.py.** Every helper a
+scanner touches lives here, including the ones asicdash.py also uses -- it imports them back.
+Leaving one behind creates asicdash -> scanners -> asicdash, which raises
+`ImportError: cannot import name 'scan_...' from partially initialized module`.
+
+Stdlib only.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shlex
+import shutil
+from dataclasses import dataclass
+from pathlib import Path
+
+HOME = Path.home()
+CHARS_PER_TOKEN = 4  # crude but stable estimate for always-loaded cost
+
+
+@dataclass
+class Entry:
+    """One discovered config item."""
+
+    tool: str  # claude
+    kind: str  # skill | agent | command | rule | hook | hook-script | plugin | memory | mcp | workflow | permissions | env | routine
+    name: str
+    scope: str  # global | project | local | plugin:<name>
+    source: str  # origin path, ~-shortened
+    desc: str = ""
+    status: str = "ok"  # ok | shadowed by project | unregistered | broken: ... | n/a: ...
+    tokens: int = 0  # estimated tokens if loaded into every session, else 0
+
+
+# ---------------------------------------------------------------------------
+# small helpers
+
+
+def short(path: Path | str) -> str:
+    s = str(path)
+    home = str(HOME)
+    return "~" + s[len(home) :] if s.startswith(home) else s
+
+
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def est_tokens(path: Path) -> int:
+    try:
+        return max(1, path.stat().st_size // CHARS_PER_TOKEN)
+    except OSError:
+        return 0
+
+
+def load_json(path: Path) -> dict:
+    try:
+        data = json.loads(read_text(path) or "{}")
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def parse_frontmatter(text: str) -> tuple[dict[str, str], str | None]:
+    """Tolerant YAML frontmatter reader.
+
+    Handles top-level `key: value` pairs plus folded/literal blocks (`key: >`)
+    well enough to extract name and description. Returns (fields, error).
+    """
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}, "no frontmatter"
+    fields: dict[str, str] = {}
+    block_key: str | None = None
+    for line in lines[1:]:
+        stripped = line.strip()
+        if stripped in ("---", "..."):
+            return fields, None
+        if block_key is not None:
+            if line[:1] in (" ", "\t") or not stripped:
+                fields[block_key] = (fields[block_key] + " " + stripped).strip()
+                continue
+            block_key = None
+        if not line or line[0] in " \t" or ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        key = key.strip().lower()
+        value = value.strip().strip("\"'")
+        if value in (">", "|", ">-", "|-", ">+", "|+"):
+            fields[key] = ""
+            block_key = key
+        else:
+            fields[key] = value
+    return fields, "unterminated frontmatter"
+
+
+def command_status(command: str, project: Path, plugin_root: Path | None = None) -> str:
+    """Check that a hook command's executable actually exists on this machine."""
+    cmd = command.replace("${CLAUDE_PROJECT_DIR}", str(project))
+    cmd = cmd.replace("$CLAUDE_PROJECT_DIR", str(project))
+    if plugin_root is not None:
+        cmd = cmd.replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))
+        cmd = cmd.replace("$CLAUDE_PLUGIN_ROOT", str(plugin_root))
+    try:
+        head = shlex.split(cmd)[0]
+    except (ValueError, IndexError):
+        return "broken: unparseable command"
+    head = os.path.expanduser(head)
+    if "/" in head:
+        return "ok" if Path(head).exists() else f"broken: missing {short(head)}"
+    return "ok" if shutil.which(head) else f"broken: {head!r} not on PATH"
+
+
+def command_label(command: str) -> str:
+    """Compact display name for a hook command: basenames of binary and path args."""
+    try:
+        parts = shlex.split(command)
+    except ValueError:
+        return command[:48]
+    if not parts:
+        return command[:48]
+    return " ".join(Path(p).name if "/" in p else p for p in parts[:3])
+
+
+def flatten_hooks(hooks_obj: dict) -> dict[str, list[str]]:
+    """Flatten Claude's hooks structure into {command: [event[matcher], ...]}."""
+    by_command: dict[str, list[str]] = {}
+    for event, matchers in hooks_obj.items():
+        if not isinstance(matchers, list):
+            continue
+        for m in matchers:
+            if not isinstance(m, dict):
+                continue
+            label = event + (f"[{m.get('matcher')}]" if m.get("matcher") else "")
+            for h in m.get("hooks", []):
+                cmd = (h.get("command") or "").strip() if isinstance(h, dict) else ""
+                if cmd:
+                    by_command.setdefault(cmd, []).append(label)
+    return by_command
+
+
+# ---------------------------------------------------------------------------
+# scanners
+
+
+def scan_skills(root: Path, scope: str) -> list[Entry]:
+    entries: list[Entry] = []
+    if not root.is_dir():
+        return entries
+    for sub in sorted(root.iterdir()):
+        manifest = sub / "SKILL.md"
+        if not sub.is_dir() or not manifest.is_file():
+            continue
+        fm, err = parse_frontmatter(read_text(manifest))
+        entries.append(
+            Entry(
+                tool="claude",
+                kind="skill",
+                name=fm.get("name", sub.name),
+                scope=scope,
+                source=short(manifest),
+                desc=fm.get("description", ""),
+                status=f"broken: {err}" if err else "ok",
+            )
+        )
+    return entries
+
+
+def scan_md_dir(root: Path, kind: str, scope: str, autoloaded: bool = False) -> list[Entry]:
+    entries: list[Entry] = []
+    if not root.is_dir():
+        return entries
+    for f in sorted(root.rglob("*.md")):
+        fm, err = parse_frontmatter(read_text(f))
+        rel = str(f.relative_to(root).with_suffix(""))
+        desc = fm.get("description", "")
+        if kind == "agent":
+            # Reason: model/effort are PREPENDED, not appended. Two reasons, both load-bearing:
+            # clip() would cut an appended value off a 200+ char agent description in the CLI
+            # table, and `model: ` at position 0 is an anchor no free-text prose can occupy --
+            # which is what attention_of()'s unset-model flag tests with startswith().
+            bits = [f"model: {fm[k]}" for k in ("model",) if fm.get(k)]
+            bits += [f"effort: {fm[k]}" for k in ("effort",) if fm.get(k)]
+            if bits:
+                joined = " · ".join(bits)
+                desc = f"{joined} — {desc}" if desc else joined
+        entries.append(
+            Entry(
+                tool="claude",
+                kind=kind,
+                name=fm.get("name", rel),
+                scope=scope,
+                source=short(f),
+                desc=desc,
+                # agents require frontmatter; commands and rules may be plain markdown
+                status=f"broken: {err}" if err and kind == "agent" else "ok",
+                tokens=est_tokens(f) if autoloaded else 0,
+            )
+        )
+    return entries
+
+
+def scan_memory_files(paths: dict[str, Path]) -> list[Entry]:
+    candidates = [
+        ("global", paths["claude_global_memory"]),
+        ("global", paths["claude_managed_memory"]),
+        ("project", paths["claude_proj_memory"]),
+        ("local", paths["claude_proj_memory_local"]),
+    ]
+    return [
+        Entry(
+            tool="claude",
+            kind="memory",
+            name=p.name if p.name != "MEMORY.md" else "MEMORY.md (managed memory index)",
+            scope=scope,
+            source=short(p),
+            desc="auto-loaded into every session in this project",
+            tokens=est_tokens(p),
+        )
+        for scope, p in candidates
+        if p.is_file()
+    ]
+
+
+def scan_settings(path: Path, scope: str, project: Path, registered: list[str]) -> list[Entry]:
+    entries: list[Entry] = []
+    if not path.is_file():
+        return entries
+    data = load_json(path)
+    if not data:
+        entries.append(
+            Entry("claude", "hook", path.name, scope, short(path), status="broken: invalid JSON")
+        )
+        return entries
+    for cmd, events in sorted(flatten_hooks(data.get("hooks") or {}).items()):
+        registered.append(cmd)
+        entries.append(
+            Entry(
+                tool="claude",
+                kind="hook",
+                name=command_label(cmd),
+                scope=scope,
+                source=short(path),
+                desc=f"{len(events)} event(s): " + ", ".join(events),
+                status=command_status(cmd, project),
+            )
+        )
+    status_line = data.get("statusLine")
+    if isinstance(status_line, dict) and status_line.get("command"):
+        cmd = status_line["command"]
+        registered.append(cmd)
+        entries.append(
+            Entry(
+                tool="claude",
+                kind="hook",
+                name="statusLine: " + command_label(cmd),
+                scope=scope,
+                source=short(path),
+                desc="renders the status line every prompt",
+                status=command_status(cmd, project),
+            )
+        )
+    perms = data.get("permissions") or {}
+    n_allow, n_ask, n_deny = (len(perms.get(k) or []) for k in ("allow", "ask", "deny"))
+    if n_allow or n_ask or n_deny:
+        preview = ", ".join((perms.get("allow") or [])[:4])
+        entries.append(
+            Entry(
+                tool="claude",
+                kind="permissions",
+                name=f"{n_allow} allow / {n_ask} ask / {n_deny} deny",
+                scope=scope,
+                source=short(path),
+                desc=preview,
+            )
+        )
+    env = data.get("env") or {}
+    if env:
+        entries.append(
+            Entry(
+                tool="claude",
+                kind="env",
+                name=f"{len(env)} var(s)",
+                scope=scope,
+                source=short(path),
+                desc=", ".join(sorted(env)[:6]),
+            )
+        )
+    return entries
+
+
+def scan_plugins(paths: dict[str, Path], project: Path, registered: list[str]) -> list[Entry]:
+    entries: list[Entry] = []
+    data = load_json(paths["claude_installed_plugins"])
+    for full_name, installs in sorted((data.get("plugins") or {}).items()):
+        name = full_name.split("@")[0]
+        scope = f"plugin:{name}"
+        install = installs[0] if isinstance(installs, list) and installs else {}
+        root = Path(install.get("installPath", "/nonexistent"))
+        meta = load_json(root / ".claude-plugin" / "plugin.json")
+        entries.append(
+            Entry(
+                tool="claude",
+                kind="plugin",
+                name=full_name,
+                scope=install.get("scope", "user"),
+                source=short(root),
+                desc=meta.get("description", ""),
+                status="ok" if root.is_dir() else "broken: install path missing",
+            )
+        )
+        if not root.is_dir():
+            continue
+        entries += scan_skills(root / "skills", scope)
+        for e in scan_md_dir(root / "agents", "agent", scope):
+            entries.append(e)
+        for e in scan_md_dir(root / "commands", "command", scope):
+            entries.append(e)
+        entries += scan_workflows(root / "workflows", scope)
+        hooks_file = root / "hooks" / "hooks.json"
+        for cmd, events in sorted(flatten_hooks(load_json(hooks_file).get("hooks") or {}).items()):
+            registered.append(cmd.replace("${CLAUDE_PLUGIN_ROOT}", str(root)))
+            entries.append(
+                Entry(
+                    tool="claude",
+                    kind="hook",
+                    name=command_label(cmd),
+                    scope=scope,
+                    source=short(hooks_file),
+                    desc=f"{len(events)} event(s): " + ", ".join(events),
+                    status=command_status(cmd, project, plugin_root=root),
+                )
+            )
+    return entries
+
+
+# A plugin workflow's model/effort lives in a named ROUTING block (PRP-014). Read that block with
+# a regex over one agreed convention -- never a JS parser.
+# CRITICAL: the two shipped blocks use DIFFERENT key shapes. review_workflow.js writes bare
+# identifiers (`reviewLogic:`), improve_workflow.js writes quoted keys
+# (`'version-consolidation':`). The optional ["']? is what accepts both; a regex matching only one
+# reports 0 roles on a file that plainly has six, silently.
+ROUTING_BLOCK = re.compile(r"const\s+ROUTING\s*=\s*\{(.*?)\n\}", re.DOTALL)
+ROUTING_ROLE = re.compile(
+    r"""["']?(?P<role>[\w-]+)["']?\s*:\s*\{[^}]*?model:\s*['"](?P<model>[\w-]+)['"]"""
+    r"""(?:[^}]*?effort:\s*['"](?P<effort>[\w-]+)['"])?""",
+    re.DOTALL,
+)
+META_NAME = re.compile(r"name:\s*['\"]([\w-]+)['\"]")
+
+
+def scan_workflows(root: Path, scope: str) -> list[Entry]:
+    """Plugin workflows, with the model/effort each routing role sets.
+
+    Reports the role COUNT alongside the models so a block that parsed to nothing shows
+    `0 routing roles` next to a file that plainly has them -- a loud discrepancy, not a blank.
+    """
+    entries: list[Entry] = []
+    if not root.is_dir():
+        return entries
+    for f in sorted(root.glob("*.js")):
+        text = read_text(f)
+        block = ROUTING_BLOCK.search(text)
+        roles = ROUTING_ROLE.findall(block.group(1)) if block else []
+        name_m = META_NAME.search(text)
+        combos: dict[str, int] = {}
+        for _role, model, effort in roles:
+            key = f"{model}·{effort}" if effort else model
+            combos[key] = combos.get(key, 0) + 1
+        detail = ", ".join(f"{k} ×{v}" for k, v in sorted(combos.items()))
+        plural = "" if len(roles) == 1 else "s"
+        desc = f"{len(roles)} routing role{plural}" + (f": {detail}" if detail else "")
+        entries.append(
+            Entry(
+                tool="claude",
+                kind="workflow",
+                name=name_m.group(1) if name_m else f.stem,
+                scope=scope,
+                source=short(f),
+                desc=desc,
+            )
+        )
+    return entries
+
+
+def scan_hook_scripts(root: Path, registered: list[str]) -> list[Entry]:
+    """Files in ~/.claude/hooks that nothing references: likely rot.
+
+    References checked: hook registrations (settings + plugins) and sibling
+    scripts in the same directory (a registered hook may require/source others).
+    """
+    entries: list[Entry] = []
+    if not root.is_dir():
+        return entries
+    skip = {"package.json", "package-lock.json", "node_modules", ".DS_Store"}
+    files = [f for f in sorted(root.iterdir()) if f.is_file() and f.name not in skip]
+    for f in files:
+        blob = "\n".join(registered) + "\n".join(
+            read_text(sibling) for sibling in files if sibling != f
+        )
+        # stem too: node scripts get required extensionless (require('./caveman-config'))
+        referenced = f.name in blob or f.stem in blob
+        entries.append(
+            Entry(
+                tool="claude",
+                kind="hook-script",
+                name=f.name,
+                scope="global",
+                source=short(f),
+                desc=""
+                if referenced
+                else "not referenced by hook registrations or sibling scripts; may be skill-invoked",
+                status="ok" if referenced else "unregistered",
+            )
+        )
+    return entries
+
+
+def scan_mcp(paths: dict[str, Path], project: Path) -> list[Entry]:
+    entries: list[Entry] = []
+
+    def mcp_desc(cfg: object) -> str:
+        if not isinstance(cfg, dict):
+            return ""
+        return str(cfg.get("command") or cfg.get("url") or cfg.get("type") or "")
+
+    proj_mcp = load_json(paths["claude_proj_mcp"])
+    for name, cfg in sorted((proj_mcp.get("mcpServers") or {}).items()):
+        entries.append(
+            Entry(
+                "claude",
+                "mcp",
+                name,
+                "project",
+                short(paths["claude_proj_mcp"]),
+                desc=mcp_desc(cfg),
+            )
+        )
+    state = load_json(paths["claude_user_state"])
+    for name, cfg in sorted((state.get("mcpServers") or {}).items()):
+        entries.append(
+            Entry(
+                "claude",
+                "mcp",
+                name,
+                "global",
+                short(paths["claude_user_state"]),
+                desc=mcp_desc(cfg),
+            )
+        )
+    proj_state = (state.get("projects") or {}).get(str(project)) or {}
+    for name, cfg in sorted((proj_state.get("mcpServers") or {}).items()):
+        entries.append(
+            Entry(
+                "claude",
+                "mcp",
+                name,
+                "project",
+                short(paths["claude_user_state"]),
+                desc=mcp_desc(cfg),
+            )
+        )
+    return entries
+
+
+def scan_agents_md(paths: dict[str, Path]) -> list[Entry]:
+    """Project AGENTS.md — the cross-tool agent-rules convention, read by Claude Code."""
+    entries: list[Entry] = []
+    p = paths["agents_md"]
+    if p.is_file():
+        entries.append(
+            Entry(
+                "claude",
+                "rule",
+                p.name,
+                "project",
+                short(p),
+                desc="agent rules file (AGENTS.md convention)",
+                tokens=est_tokens(p),
+            )
+        )
+    return entries
