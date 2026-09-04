@@ -7,6 +7,13 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **PRP status is a controlled vocabulary with a linter behind it.** Five values — `Draft`,
+  `Ready for execution`, `Implemented (YYYY-MM-DD)`, `Blocked`, `Superseded (by PRP-NNN)` — with
+  free prose allowed after an em dash and never linted. A stdlib `prp_status.py` does one parse of
+  every PRP header and emits both a tiered-exit lint and a generated `STATUS.md`; `prp-implement`
+  Phase C regenerates it at close-out. In-flight work is derived from git at render time, never
+  stored, so a resumed run's `Ready for execution` precondition still holds. A PRP designator is
+  three digits plus an optional letter, so a split parent and its children each hold their own row.
 - **Every delegated agent now runs on a chosen model and effort.** Both Workflow scripts declare a
   named `ROUTING` block; the volume stages (review lenses, repo-audit checks, citation scouting)
   drop to cheaper tiers at low effort while adjudication and architecture selection take the
