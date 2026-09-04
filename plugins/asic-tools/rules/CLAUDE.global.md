@@ -442,7 +442,7 @@ this table names the lanes, that document says how to choose between them.
 |---|---|---|
 | Structure | `graphify` CLI (`query` / `explain` / `path`) | cross-file relationships, orientation |
 | Symbols / memory | **Serena** MCP | symbol nav, LSP-accurate edits, cross-session memory |
-| External docs | **Ref** MCP | versioned library/framework/API truth — never a remembered API |
+| External docs | **Ref** MCP | versioned library/framework/API truth |
 
 Not lanes, and not routed by that document:
 
