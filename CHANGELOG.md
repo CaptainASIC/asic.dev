@@ -24,6 +24,15 @@ All notable changes to this project are documented here. Format follows
   documented as following the session model rather than given a table entry that does nothing.
 
 ### Changed
+- **Both multi-agent fan-outs are now first-class plugin workflows.** `review_workflow.js` and
+  `improve_workflow.js` move to `plugins/asic-tools/workflows/`, declared by the manifest's
+  `workflows` field, under names distinct from the skill commands — `prp-review-fanout` and
+  `improve-repo-audit` — because a plugin workflow shares the `/asic-tools:` namespace with the
+  skills. The scripts moved verbatim: exactly one line changed in each. The skills resolve them at
+  `${CLAUDE_PLUGIN_ROOT}/workflows/`, the form the installed plugin can actually resolve; invoking
+  them by name is undocumented for skills and is not yet claimed. The skills remain the supported
+  entry points — the raw fan-outs skip their setup phases. The README install flow now names the
+  three MCP servers the skills depend on, and the dual-install stale-cache symptom.
 - **The retrieval contract is now true at the one point that mattered.** `prp-implement` close-out
   refreshes the knowledge graph after the last task commit — AST-only, ~0.5s, and explicitly a
   cache warm rather than a gate: a missing binary or absent graph degrades to one reported line and

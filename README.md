@@ -29,9 +29,23 @@ New machine, start to finish:
 /plugin marketplace add CaptainASIC/asic.dev      # 1. add the marketplace
 /plugin install asic-tools@asic-dev               # 2. install the plugin
                                                   # 3. restart Claude Code (skills register at startup)
-/asic-tools:sync-rules                            # 4. optional: deploy the global engineering
+                                                  # 4. wire the MCP servers the skills need
+                                                  #    (see below)
+/asic-tools:sync-rules                            # 5. optional: deploy the global engineering
                                                   #    rules to ~/.claude/CLAUDE.md (diff-aware)
 ```
+
+**Prerequisites — three MCP servers.** These are install-time requirements, not routing rules;
+`docs/agent-tooling.md` says which lane owns what.
+
+| Server | Used by | Needs |
+|---|---|---|
+| **Serena** | `prp-draft` Phase 1 reads `.serena/memories/prp/`; `prp-implement` close-out writes one | project activation (`activate_project`) |
+| **Ref** | `prp-draft` Phase 2 verifies external APIs against versioned docs | an account/API key |
+| **Snyk** | `prp-implement`'s fail-closed security gate | `SNYK_TOKEN` |
+
+Without them: `prp-draft` cannot verify a library claim, and `prp-implement` stops at its security
+gate — which is fail-closed by design, so an absent Snyk blocks rather than silently passing.
 
 Skills are namespaced: `/asic-tools:asicdash`, `/asic-tools:idea-refine`,
 `/asic-tools:prp-draft`, `/asic-tools:prp-implement`, `/asic-tools:scaffold`,
@@ -61,7 +75,22 @@ Symlinks each skill under `plugins/asic-tools/skills/` into `~/.claude/skills/` 
 `/asicdash` and `/prp-draft` names, and edits in the repo are live without reinstalling. It also
 symlinks each agent under `plugins/asic-tools/agents/` into `~/.claude/agents/`: auto-discovery
 covers the plugin install only, so without this the fan-outs fall back to generic subagents.
-Don't combine both installs: you'd get duplicate skill registrations.
+Don't combine both installs: you'd get duplicate skill registrations. It is worse than duplication
+— the plugin cache is pinned to an installed version, so a skill invoked through the plugin can run
+a script many versions behind this repo, and a change you just made appears to have no effect.
+Check which is live:
+
+```bash
+grep -A2 asic-tools ~/.claude/plugins/installed_plugins.json   # installed version
+grep '"version"' plugins/asic-tools/.claude-plugin/plugin.json  # repo version
+```
+
+**Workflow commands.** The plugin also ships `/asic-tools:prp-review-fanout` and
+`/asic-tools:improve-repo-audit` — the raw multi-agent fan-outs. The skills
+(`/asic-tools:prp-review`, `/asic-tools:improve-repo`) are the supported entry points. Calling a
+fan-out directly skips the skill's setup: for review, PRP resolution and sizing (Phase 0) and the
+review-log append (Phase 2); for the audit, the repo profile (Phase 1) that resolves the absolute
+reference-spec paths the audit agents read.
 
 **Routing.** Delegated work is tiered rather than inheriting whatever model the session is on:
 the volume stages (review lenses, repo-audit checks, citation scouting) run on cheaper tiers at
@@ -277,7 +306,7 @@ ready PRP, or accept the hand-off `prp-draft` offers after a draft. Invoking it 
 multi-agent Workflow. Claude Code only.
 
 Layout: [SKILL.md](plugins/asic-tools/skills/prp-review/SKILL.md) is the driver;
-[references/review_workflow.js](plugins/asic-tools/skills/prp-review/references/review_workflow.js)
+[workflows/review_workflow.js](plugins/asic-tools/workflows/review_workflow.js)
 is the fan-out/adjudicate/apply/re-review Workflow script.
 
 ---

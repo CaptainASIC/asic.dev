@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'improve-repo',
+  name: 'improve-repo-audit',
   description: 'Audit a repo for ASIC-standard drift across enabled checks; return findings grouped by category',
   phases: [
     { title: 'Audit' },
