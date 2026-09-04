@@ -6,6 +6,12 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-04
+
+First stable release. The toolbox now decides how much machine a job deserves, states its own
+retrieval and status contracts, and audits the config that costs money — the four gaps the v2.0
+field audit opened against v0.20.0.
+
 ### Added
 - **asicdash audits the config that costs money.** Agent entries now carry their `model` and
   `effort`, and an agent that declares neither is flagged — an absent `model:` is not a default, it
@@ -37,9 +43,10 @@ All notable changes to this project are documented here. Format follows
   `workflows` field, under names distinct from the skill commands — `prp-review-fanout` and
   `improve-repo-audit` — because a plugin workflow shares the `/asic-tools:` namespace with the
   skills. The scripts moved verbatim: exactly one line changed in each. The skills resolve them at
-  `${CLAUDE_PLUGIN_ROOT}/workflows/`, the form the installed plugin can actually resolve; invoking
-  them by name is undocumented for skills and is not yet claimed. The skills remain the supported
-  entry points — the raw fan-outs skip their setup phases. The README install flow now names the
+  `${CLAUDE_PLUGIN_ROOT}/workflows/` and then, once measured, invoke them **by name** — a skill can
+  pass `name` and structured `args` to a plugin workflow, which the docs do not state and PRP-017
+  established empirically. The skills remain the supported entry points — the raw fan-outs skip
+  their setup phases. The README install flow now names the
   three MCP servers the skills depend on, and the dual-install stale-cache symptom.
 - **The retrieval contract is now true at the one point that mattered.** `prp-implement` close-out
   refreshes the knowledge graph after the last task commit — AST-only, ~0.5s, and explicitly a
