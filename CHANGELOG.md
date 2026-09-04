@@ -6,6 +6,12 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Changed
+- The global rules name the `graphify` **skill** alongside the graphify **CLI**. The lane table
+  covers the CLI as the structure-retrieval lane; the skill is the ingestion side — any input into
+  a knowledge graph — and `/graphify` now has a stated trigger in the rules rather than living as a
+  hand-added local edit on one machine.
+
 ## [1.0.0] - 2026-09-04
 
 First stable release. The toolbox now decides how much machine a job deserves, states its own

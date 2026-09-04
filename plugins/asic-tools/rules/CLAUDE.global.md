@@ -451,6 +451,10 @@ Not lanes, and not routed by that document:
 - **Serena — activate the project first** (`activate_project`): the memory tools fail with
   `No active project` when the repo has never been registered, and fall back silently to nothing.
   Read relevant memories at session start; write significant decisions and patterns back.
+- **graphify** is two things and the table row is only one of them. The CLI above is the retrieval
+  lane; the **`graphify` skill** (`/graphify`) is the ingestion side — any input, code or not,
+  into a knowledge graph. When the user types `/graphify`, invoke the Skill tool with
+  `skill: "graphify"` before doing anything else.
 
 ## Self-test — before sending any non-trivial answer
 
