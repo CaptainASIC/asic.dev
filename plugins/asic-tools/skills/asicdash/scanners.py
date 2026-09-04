@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import shutil
 from dataclasses import dataclass
@@ -182,6 +183,17 @@ def scan_md_dir(root: Path, kind: str, scope: str, autoloaded: bool = False) -> 
     for f in sorted(root.rglob("*.md")):
         fm, err = parse_frontmatter(read_text(f))
         rel = str(f.relative_to(root).with_suffix(""))
+        desc = fm.get("description", "")
+        if kind == "agent":
+            # Reason: model/effort are PREPENDED, not appended. Two reasons, both load-bearing:
+            # clip() would cut an appended value off a 200+ char agent description in the CLI
+            # table, and `model: ` at position 0 is an anchor no free-text prose can occupy --
+            # which is what attention_of()'s unset-model flag tests with startswith().
+            bits = [f"model: {fm[k]}" for k in ("model",) if fm.get(k)]
+            bits += [f"effort: {fm[k]}" for k in ("effort",) if fm.get(k)]
+            if bits:
+                joined = " · ".join(bits)
+                desc = f"{joined} — {desc}" if desc else joined
         entries.append(
             Entry(
                 tool="claude",
@@ -189,7 +201,7 @@ def scan_md_dir(root: Path, kind: str, scope: str, autoloaded: bool = False) -> 
                 name=fm.get("name", rel),
                 scope=scope,
                 source=short(f),
-                desc=fm.get("description", ""),
+                desc=desc,
                 # agents require frontmatter; commands and rules may be plain markdown
                 status=f"broken: {err}" if err and kind == "agent" else "ok",
                 tokens=est_tokens(f) if autoloaded else 0,
@@ -314,6 +326,7 @@ def scan_plugins(paths: dict[str, Path], project: Path, registered: list[str]) -
             entries.append(e)
         for e in scan_md_dir(root / "commands", "command", scope):
             entries.append(e)
+        entries += scan_workflows(root / "workflows", scope)
         hooks_file = root / "hooks" / "hooks.json"
         for cmd, events in sorted(flatten_hooks(load_json(hooks_file).get("hooks") or {}).items()):
             registered.append(cmd.replace("${CLAUDE_PLUGIN_ROOT}", str(root)))
@@ -328,6 +341,55 @@ def scan_plugins(paths: dict[str, Path], project: Path, registered: list[str]) -
                     status=command_status(cmd, project, plugin_root=root),
                 )
             )
+    return entries
+
+
+# A plugin workflow's model/effort lives in a named ROUTING block (PRP-014). Read that block with
+# a regex over one agreed convention -- never a JS parser.
+# CRITICAL: the two shipped blocks use DIFFERENT key shapes. review_workflow.js writes bare
+# identifiers (`reviewLogic:`), improve_workflow.js writes quoted keys
+# (`'version-consolidation':`). The optional ["']? is what accepts both; a regex matching only one
+# reports 0 roles on a file that plainly has six, silently.
+ROUTING_BLOCK = re.compile(r"const\s+ROUTING\s*=\s*\{(.*?)\n\}", re.DOTALL)
+ROUTING_ROLE = re.compile(
+    r"""["']?(?P<role>[\w-]+)["']?\s*:\s*\{[^}]*?model:\s*['"](?P<model>[\w-]+)['"]"""
+    r"""(?:[^}]*?effort:\s*['"](?P<effort>[\w-]+)['"])?""",
+    re.DOTALL,
+)
+META_NAME = re.compile(r"name:\s*['\"]([\w-]+)['\"]")
+
+
+def scan_workflows(root: Path, scope: str) -> list[Entry]:
+    """Plugin workflows, with the model/effort each routing role sets.
+
+    Reports the role COUNT alongside the models so a block that parsed to nothing shows
+    `0 routing roles` next to a file that plainly has them -- a loud discrepancy, not a blank.
+    """
+    entries: list[Entry] = []
+    if not root.is_dir():
+        return entries
+    for f in sorted(root.glob("*.js")):
+        text = read_text(f)
+        block = ROUTING_BLOCK.search(text)
+        roles = ROUTING_ROLE.findall(block.group(1)) if block else []
+        name_m = META_NAME.search(text)
+        combos: dict[str, int] = {}
+        for _role, model, effort in roles:
+            key = f"{model}·{effort}" if effort else model
+            combos[key] = combos.get(key, 0) + 1
+        detail = ", ".join(f"{k} ×{v}" for k, v in sorted(combos.items()))
+        plural = "" if len(roles) == 1 else "s"
+        desc = f"{len(roles)} routing role{plural}" + (f": {detail}" if detail else "")
+        entries.append(
+            Entry(
+                tool="claude",
+                kind="workflow",
+                name=name_m.group(1) if name_m else f.stem,
+                scope=scope,
+                source=short(f),
+                desc=desc,
+            )
+        )
     return entries
 
 

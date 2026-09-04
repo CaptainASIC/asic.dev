@@ -203,6 +203,20 @@ def attention_of(entries: list[Entry]) -> list[tuple[Entry, str]]:
         m = re.match(r"(\d+) event", e.desc)
         if m and int(m.group(1)) >= 10:
             flagged.append((e, f"fires on {m.group(1)} events; spawns a process each time"))
+    # An agent with no `model:` is not on a default -- it runs at whatever the session is
+    # (per-invocation -> frontmatter -> env -> session). scan_md_dir PREPENDS `model: ` when the
+    # key exists, so position 0 is the anchor: startswith, never a substring search over prose.
+    for e in entries:
+        if e.kind == "agent" and not e.desc.startswith("model: "):
+            flagged.append(
+                (
+                    e,
+                    (
+                        "no model set — runs at the session's model "
+                        "(per-invocation → frontmatter → env → session)"
+                    ),
+                )
+            )
     flagged += [
         (e, e.status)
         for e in entries
