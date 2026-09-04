@@ -20,9 +20,15 @@ problem, and say no to good-but-distracting ideas out loud.
 ## Phase 0 — Inputs
 
 The idea comes from the argument, the conversation, or a pasted note. If invoked with no
-discernible idea, ask for one — do not run the engine on nothing. If running inside a repo,
-the existing architecture is both constraint and opportunity: use `Glob`/`Grep`/`Read` to
-ground every variation in what actually exists, and cite real paths when relevant.
+discernible idea, ask for one — do not run the engine on nothing. If running inside a repo, the
+existing architecture is both constraint and opportunity: **orient through the graphify CLI
+first** — `graphify query "<area>"` or `graphify explain "<concept>"` — and cite real paths when
+relevant. When `graphify-out/graph.json` does not exist, the lane collapses to direct `Read` and
+the output must say so ("no graph; oriented by direct read of …").
+
+**Orient only.** Stop as soon as you can name the area and cite a real path. Do not open files to
+characterise behaviour, do not sweep, do not build a picture of how something works — that is
+`prp-draft` Phase 2, and spending that budget here is exactly what this skill exists to avoid.
 
 ## Phase 1 — Understand & Expand (divergent)
 

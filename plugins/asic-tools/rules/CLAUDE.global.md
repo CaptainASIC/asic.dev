@@ -435,15 +435,22 @@ Closes #123
 
 ## MCP usage
 
-- **Serena** — project memory and symbol-level navigation. **Activate the project first**
-  (`activate_project`): the memory tools fail with `No active project` when the repo has never been
-  registered, and fall back silently to nothing. Read relevant memories at session start; write
-  significant decisions and patterns back.
-- **Ref** — verify library/framework APIs against official documentation before coding
-  against them; never code against a remembered API. Cross-check critical implementation
-  details and match docs to the installed version.
-- **Firecrawl** — web scraping/extraction (respect rate limits; validate extracted data).
-- **BrowserMCP** — browser automation and UI testing.
+Retrieval routes through three named lanes. **The routing rules live in `docs/agent-tooling.md`** —
+this table names the lanes, that document says how to choose between them.
+
+| Lane | Tool | Use for |
+|---|---|---|
+| Structure | `graphify` CLI (`query` / `explain` / `path`) | cross-file relationships, orientation |
+| Symbols / memory | **Serena** MCP | symbol nav, LSP-accurate edits, cross-session memory |
+| External docs | **Ref** MCP | versioned library/framework/API truth — never a remembered API |
+
+Not lanes, and not routed by that document:
+
+- `WebFetch` / `WebSearch` — the fallback when none of the three lanes applies.
+- **Snyk** MCP — a pre-commit security gate, not a retrieval lane.
+- **Serena — activate the project first** (`activate_project`): the memory tools fail with
+  `No active project` when the repo has never been registered, and fall back silently to nothing.
+  Read relevant memories at session start; write significant decisions and patterns back.
 
 ## Self-test — before sending any non-trivial answer
 
