@@ -40,9 +40,9 @@ tool directly — do not ask again:
 rather than re-establishing it per invocation. It is the user's session-level choice and
 no skill invokes it — including this one.
 
-- `scriptPath`: `${CLAUDE_PLUGIN_ROOT}/workflows/review_workflow.js` — the plugin's workflows
-  directory. (The workflow is also a command, `/asic-tools:prp-review-fanout`; invoking it by
-  name from here is gated on PRP-017 Task 4 and not yet established.)
+- `name`: `asic-tools:prp-review-fanout` — the plugin workflow, invoked by name. There is no path
+  to resolve. (It is also a command; the skill is the supported entry point, because invoking the
+  fan-out directly skips Phase 0's PRP resolution and sizing and Phase 2's review-log append.)
 - `args`: `{ "prpPath": "<resolved PRP path>", "sizing": { "tier": "S|M|L|XL", "tasks": <int>,
   "files": <int>, "citedFileCount": <int>, "rounds": <int>, "styleLenses": 0 | 3,
   "note": "<escalation reason, or empty>" } }` — the verdict computed in Phase 0.

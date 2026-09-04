@@ -78,9 +78,9 @@ When `graphify-out/graph.json` exists in the target, orient with `graphify query
 Invoking this skill is your opt-in to multi-agent orchestration. Call the **Workflow** tool
 directly — do not ask again:
 
-- `scriptPath`: `${CLAUDE_PLUGIN_ROOT}/workflows/improve_workflow.js` — the plugin's workflows
-  directory. (Also a command, `/asic-tools:improve-repo-audit`; by-name invocation from here is
-  gated on PRP-017 Task 4.)
+- `name`: `asic-tools:improve-repo-audit` — the plugin workflow, invoked by name. (It is also a
+  command; the skill is the supported entry point, because invoking the audit directly skips
+  Phase 1's profile, which resolves the absolute reference-spec paths the audit agents read.)
 - `args`: `{ "repoPath": "<resolved path>", "profile": { "python": <bool>, "frontend": <bool>, "repoType": "single|multi", "kind": "api|agent|cli|library|unknown", "ruff": <bool>, "mypy": <bool>, "versionLocationsPath": "<abs path>", "scaffoldSpecPaths": ["<abs file_templates.md>", "<abs kind_variants.md>", "<abs scaffold SKILL.md>"] } }`.
 
 The script fans out one agent per *enabled* check (enabled when its tier matches the profile), each
