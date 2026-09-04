@@ -188,9 +188,14 @@ In Claude Code: ask "show my config dashboard" (triggers the `asicdash` skill).
 | `CLAUDE.md`, `CLAUDE.local.md`, managed memory `MEMORY.md` | global + project | token estimate |
 | `.mcp.json`, `~/.claude.json` mcpServers | global + project | names + command |
 | `AGENTS.md` | project | token estimate |
+| plugin `workflows/*.js` | plugin | routing block: model + effort per role |
 | `~/.claude/projects/**/*.jsonl` session transcripts | usage (HTML report) | per-day token/session aggregation |
 
 ### Known gaps, on purpose
+
+- **`output-styles/`, `monitors/`, `.lsp.json`, `bin/`** — zero occurrences across every
+  installed plugin, so a scanner for them would be code that never fires and a maintenance
+  cost across Claude Code layout changes. Revisit when one actually appears.
 
 - **Claude routines / scheduled cloud agents**: stored server-side, no local file. Reported as
   `n/a`; list with `/schedule` in Claude Code.
