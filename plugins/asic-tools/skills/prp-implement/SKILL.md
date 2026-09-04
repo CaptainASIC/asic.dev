@@ -223,7 +223,7 @@ flagged as questions, not silently planned in.
      them under the PRP's surgical scope (new commits), and **re-run the gate** — it must return
      no high/critical before the loop may advance. `medium`/`low` → record as advisory in the
      final report and proceed.
-   - Gate result (scans run, counts by severity, pass/block) is reported in Phase C step 6 and,
+   - Gate result (scans run, counts by severity, pass/block) is reported in Phase C step 7 and,
      when it blocks, becomes a Stop condition.
 
 ## Phase C — Close-out (part of execute, not optional)
@@ -267,7 +267,33 @@ flagged as questions, not silently planned in.
    stale header is exactly what the repo-level CI gate exists to catch. Never edit a sibling's
    status to make the exit code green.
 
-5. **Promote & retire the scratchpad** (when one was kept): fold its durable contents into the
+5. **Refresh the knowledge graph** (best-effort, after the last task commit):
+
+   ```bash
+   if test -d graphify-out; then graphify update .; else echo 'graph skipped — no graphify-out/'; fi
+   ```
+
+   AST-only, no API cost, ~0.5s on a repo this size, and it re-extracts **code files only** —
+   document nodes are refreshed by the semantic `/graphify --update`, not by this step. The
+   `test -d` guard is load-bearing: without it, `graphify update .` in a repo with no graph builds
+   one from scratch and leaves an untracked `graphify-out/` behind rather than skipping. It is
+   written as an `if`, not `test -d … && …`: the `&&` form exits **1** on the skip path, which is
+   indistinguishable from a real failure, so a graphless repo would report `graph refresh failed`
+   every close-out and train the reader to ignore the line.
+   **This never blocks close-out.** Report its outcome as exactly one line in the final report:
+
+   | Outcome | Line |
+   |---|---|
+   | Updated | `graph refreshed (code nodes; document nodes need /graphify --update)` |
+   | No `graphify-out/` — guard skipped the command | `graph skipped — no graphify-out/ in this repo` |
+   | Command missing or failed | `graph refresh failed — <reason>` |
+
+   A cache that would not rebuild is **not** an unmet gate and never enters the Stop conditions
+   below. If `graphify-out/` is tracked in this repo rather than gitignored, the refresh still
+   runs; say so in the report and leave the changes **unstaged** — the close-out never stages a
+   regenerable artifact.
+
+6. **Promote & retire the scratchpad** (when one was kept): fold its durable contents into the
    §10 artifacts just written — "Discovered During Work" items into the TASKS.md entry, the
    architectural map and Decisions into the serena memo — then delete
    `PRPs/.work/PRP-NNN-scratchpad.md`. It is working memory, not a deliverable; after a successful
@@ -275,11 +301,12 @@ flagged as questions, not silently planned in.
    run aborted earlier at a documented STOP — B3 scope wall, B4 unrecoverable failure — the
    scratchpad is intentionally left on disk as resumable working memory and is named in the
    stop-state report; it is unstaged, so it never enters a commit.)
-6. **Final report**: acceptance checklist status, **gate reconciliation — counts of met / unmet /
+7. **Final report**: acceptance checklist status, **gate reconciliation — counts of met / unmet /
    abandoned, with one line per gate (id, exit status, match result for runnable gates; 'manual —
    reviewed' for manual gates)**, files touched vs the PRP's summary
    table (any difference is a finding, explain it), test/validation outputs (one line per
-   level), **the Snyk gate result (scans run, findings by severity, pass)**, commits made, and
+   level), **the Snyk gate result (scans run, findings by severity, pass)**, **the graph refresh
+   outcome line**, commits made, and
    what remains for the user — push + merge via GitKraken, plus any deferred items with where
    they're recorded.
 

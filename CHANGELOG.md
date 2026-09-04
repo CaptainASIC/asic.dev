@@ -24,6 +24,15 @@ All notable changes to this project are documented here. Format follows
   documented as following the session model rather than given a table entry that does nothing.
 
 ### Changed
+- **The retrieval contract is now true at the one point that mattered.** `prp-implement` close-out
+  refreshes the knowledge graph after the last task commit — AST-only, ~0.5s, and explicitly a
+  cache warm rather than a gate: a missing binary or absent graph degrades to one reported line and
+  never blocks a validated implementation. It refreshes **code nodes only**; document nodes need the
+  semantic `/graphify --update`, and the reported line names that scope rather than claiming the
+  whole graph is current. `idea-refine` Phase 0 grounds variations through the graphify CLI instead
+  of `Glob`/`Grep`/`Read`, with an orient-only stop rule that keeps the seam with `prp-draft` intact.
+  The global rules' MCP section is now a lane table pointing at `docs/agent-tooling.md` for routing,
+  with Firecrawl and BrowserMCP retired — no skill, workflow, agent or hook referenced either.
 - **One shared work-sizing rubric across the PRP stack.** `prp-draft`, `prp-implement` and
   `prp-review` now read `prp-draft/references/sizing.md` instead of paraphrasing scope three
   different ways; `prp-review` takes its round cap and lens set from an incoming `sizing`

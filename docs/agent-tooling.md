@@ -50,6 +50,20 @@ contract the skills implement.
 5. **No graph present → graphify lane collapses to direct Read**, and that must be stated
    explicitly in the skill output ("no graph; oriented by direct read of …").
 
+6. **`prp-implement` close-out refreshes the graph.** After the last task commit of a PRP,
+   `prp-implement` close-out runs `graphify update .` — AST-only, no API cost, measured at ~0.5s
+   on this repo. It re-extracts **code files only**; document nodes need the semantic
+   `/graphify --update` and are not refreshed here, so the reported line names its scope rather
+   than claiming the whole graph is current. The step is guarded by an existing `graphify-out/`:
+   in a repo without one the command would *build* a graph rather than skip, and close-out never
+   creates a graph a repo never had. This is a **cache warm, never a gate**: a missing binary, an
+   absent `graphify-out/`, or a failed update degrades to one reported line in the final report and
+   close-out continues. Rule 5 already makes "no graph" a legitimate state; refusing to close out a
+   validated, committed implementation because a convenience cache would not rebuild inverts the
+   cost of being wrong. `graphify-out/` is gitignored in the repos in play, so the refresh cannot
+   dirty a tracked tree; where it is not, the changes are reported and left **unstaged**. Other
+   code-writing skills do not refresh the graph today; generalising the rule is future work.
+
 ## Verified-context rule (enforced per PRP step)
 
 **No claim, decision, or gotcha enters a PRP — or advances a PRP step — without a cited
@@ -73,7 +87,7 @@ A conclusion that cannot be traced to one of those three is **not usable** and m
 | `prp-implement` A1 load | Read §4.1 MUST READ | — |
 | `prp-implement` A3 drift check | **graphify CLI first**, then Read; citation-scout fan-out graphify-first | every verdict carries `evidence = path:line` |
 | `prp-implement` A2.5 resume | git log (authority on done tasks) + serena memo | done-state from commits, never from prose |
-| `prp-implement` close-out | serena memory (write) | — |
+| `prp-implement` close-out | serena memory (write) + **graphify refresh** (`graphify update .`, code nodes only) | refresh outcome reported as one line; never blocking |
 
 ## Blind-file-scan flags (fixed in this release)
 
