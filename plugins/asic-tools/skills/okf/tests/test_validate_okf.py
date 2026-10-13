@@ -1,8 +1,9 @@
 """Tests for the OKF conformance validator and index generator.
 
-The scripts are standalone CLI tools invoked as ``python3 <path> <args>`` (the `diagram` skill's
-precedent), not an importable package, so these tests drive the CLI by subprocess and assert on
-returncode and stderr. That tests exactly the contract ``SKILL.md`` tells the agent to run.
+The scripts are standalone CLI tools invoked as ``python3 <path> <args>`` (the toolbox's
+stdlib-script convention), not an importable package, so these tests drive the CLI by subprocess
+and assert on returncode and stderr. That tests exactly the contract ``SKILL.md`` tells the agent
+to run.
 
 Exit contract: 0 conformant, 1 non-conformant, 2 usage/IO error, 3 indeterminate (frontmatter
 outside the parseable subset — a validator limitation, never a non-conformance verdict).
