@@ -36,7 +36,7 @@ empty PRP.
 Read, in parallel, tolerating absence:
 
 1. `README.md`, `PLANNING.md`, `TASKS.md`, `CHANGELOG.md`
-2. `WARP.md`, `CLAUDE.md` (repo-level rules)
+2. `CLAUDE.md` (repo-level rules)
 3. `.serena/memories/` — list all; read entries relevant to the feature area, and
    `.serena/memories/prp/` for prior-PRP status memos
 4. `PRPs/` — determine next number (max numeric NNN + 1, zero-padded to 3; letter suffixes
