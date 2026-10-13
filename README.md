@@ -116,22 +116,40 @@ installs or updates `~/.claude/CLAUDE.md` — diff-aware, never silently clobber
 edits. Dev mode: `install.sh` does the same copy. Always a copy, not a symlink — the desktop app
 skips symlinks in some loaders.
 
+The same command then offers to merge
+[plugins/asic-tools/rules/settings.fragment.json](plugins/asic-tools/rules/settings.fragment.json)
+into `~/.claude/settings.json`: `attribution` with empty `commit`/`pr` and `sessionUrl: false`, a
+`permissions.deny` rule for `git push`, and `autoMode.hard_deny` rules (keeping `"$defaults"`) for
+push, attribution, and hook bypass. It shows a diff first, only adds, reports conflicts instead of
+overwriting them, and keeps `settings.json.sync-rules.bak`. Auto mode reads `autoMode` only from
+user settings, never from a repo's `.claude/` files.
+
 ### Enforcement hooks
 
 `asic-tools` ships `hooks/hooks.json`, registered automatically when the plugin is enabled. It binds
-three standing rules that prose alone could not:
+the standing git rules that prose alone could not:
 
 | Rule | Behaviour |
 |---|---|
-| AI attribution in a commit message | **denied** — no escape. AI is a tool, not an author. |
-| `git push` | **denied** — the user pushes and merges via GitKraken. |
+| AI attribution in a commit message or PR (incl. `Claude-Session:` trailer) | **denied** — no escape. AI is a tool, not an author. |
+| `git push`, in any form (`bash -c`, `/usr/bin/git`, `$(…)`, quoted) | **denied** — the user pushes and merges via GitKraken. |
+| Hook bypass (`--no-verify`, `commit -n`, `core.hooksPath`, `SKIP=`, `HUSKY=`) | **denied** — the hooks run ruff before every commit. |
+| `git reset --hard`, `git clean -f`, `git branch -D` | **asks** — work that cannot be recovered. |
 | `git commit` on `main` / `master` | **asks** — you approve or reject in a permission dialog. |
+| A push or commit the guard cannot classify (`G=git; $G push`, quoted options) | **asks**. |
 
 `ask` is the escape hatch by design: an env var or flag file would be forgeable by the agent, a
 permission dialog is not. Hooks load at session start — **restart Claude Code after updating the
 plugin**, then confirm with `/hooks` (source: `Plugin`).
 
 These hooks bind the agent, not you: a commit you make yourself in a terminal is untouched.
+
+The guard fails closed: an unreadable payload, a crash, or a timeout blocks the command. Text
+inspection cannot see through git aliases or script files, which is why `/asic-tools:sync-rules`
+also installs a `permissions.deny` rule and auto-mode `hard_deny` rules — three layers, each
+covering the others' blind spots. Narrow allow rules such as `Bash(git reset *)` in a repo's
+`.claude/settings.local.json` run before the auto-mode classifier; remove them if you do not want
+those commands unreviewed.
 
 ---
 
