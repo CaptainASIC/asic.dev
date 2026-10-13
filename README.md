@@ -103,17 +103,24 @@ not routable from a plugin.
 
 ### Global rules
 
-[plugins/asic-tools/rules/CLAUDE.global.md](plugins/asic-tools/rules/CLAUDE.global.md) is
-the consolidated engineering rule set the skills assume (structure caps, uv-only, test
-trio, git constraints, naming standards, canonical code examples). It ships inside the
-plugin, so on any machine with the plugin installed:
+The engineering rule set the skills assume ships inside the plugin in two parts:
+
+- [`rules/CLAUDE.global.md`](plugins/asic-tools/rules/CLAUDE.global.md) — the core (precedence,
+  philosophy, decision ladder, surgical changes, git, MCP lanes, self-test). Installed as
+  `~/.claude/CLAUDE.md` and loaded every session.
+- [`rules/scoped/`](plugins/asic-tools/rules/scoped/) — Python, Pydantic, configuration, testing,
+  structure and DB/API rules with canonical code examples. Installed as
+  `~/.claude/rules/asic-*.md`; each loads only when Claude touches a matching file.
+
+On any machine with the plugin installed:
 
 ```
 /asic-tools:sync-rules
 ```
 
-installs or updates `~/.claude/CLAUDE.md` — diff-aware, never silently clobbering local
-edits. Dev mode: `install.sh` does the same copy. Always a copy, not a symlink — the desktop app
+installs or updates all of them — diff-aware, never silently clobbering local edits, and never
+touching a `~/.claude/rules/` file that is not named `asic-*.md`. Dev mode: `install.sh` does the
+same copies and reports retired files as STALE. Always copies, not symlinks — the desktop app
 skips symlinks in some loaders.
 
 The same command then offers to merge

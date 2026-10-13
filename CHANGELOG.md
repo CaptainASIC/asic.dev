@@ -7,6 +7,13 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Changed
+- **BREAKING: the global rules ship as a core plus path-scoped files.** `~/.claude/CLAUDE.md` now
+  holds only the language-agnostic core (~177 lines, down from 471); Python, Pydantic,
+  configuration, testing, structure and DB/API rules move verbatim to `~/.claude/rules/asic-*.md`
+  and load only when Claude touches a matching file. Saves ~2.4k tokens in every non-Python
+  context. Re-run `/asic-tools:sync-rules` after upgrading: it explains the migration, installs
+  the scoped files, and never touches rules files not named `asic-*.md`. A one-line stop-or-ask
+  rule joins "Before writing code".
 - The global rules name the `graphify` **skill** alongside the graphify **CLI**. The lane table
   covers the CLI as the structure-retrieval lane; the skill is the ingestion side — any input into
   a knowledge graph — and `/graphify` now has a stated trigger in the rules rather than living as a

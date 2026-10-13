@@ -1,6 +1,6 @@
 ---
 name: sync-rules
-description: Install or update Captain ASIC's global engineering rules (~/.claude/CLAUDE.md) and merge the plugin's guardrail settings (attribution off, push deny rule, auto-mode hard_deny) into ~/.claude/settings.json, from files bundled with the asic-tools plugin. Use when the user says "sync my rules", "install the global rules", "update my CLAUDE.md rules", "get my rules on this machine", or invokes /sync-rules — typically right after installing the plugin on a new machine, or after a plugin update changed the rule set. Never clobbers local edits silently.
+description: Install or update Captain ASIC's global engineering rules (~/.claude/CLAUDE.md and ~/.claude/rules/asic-*.md) and merge the plugin's guardrail settings (attribution off, push deny rule, auto-mode hard_deny) into ~/.claude/settings.json, from files bundled with the asic-tools plugin. Use when the user says "sync my rules", "install the global rules", "update my CLAUDE.md rules", "get my rules on this machine", or invokes /sync-rules — typically right after installing the plugin on a new machine, or after a plugin update changed the rule set. Never clobbers local edits silently.
 ---
 
 # sync-rules
@@ -21,11 +21,19 @@ In order, first hit wins:
 3. A repo checkout's `plugins/asic-tools/rules/CLAUDE.global.md` if the cwd is the
    asic.dev repo (dev mode).
 
+The scoped rule files ship beside the core in `rules/scoped/asic-*.md`; resolve that directory
+with the same three tiers (first hit wins) and stop if it is missing alongside a found core —
+a core without its scoped files would drop rules.
+
 None found → report that the plugin isn't installed and stop.
 
 ## Compare and act
 
 Target: `~/.claude/CLAUDE.md`.
+
+If the target still contains `## Python environment`, it is the pre-2.0 single-file rule set.
+Say so before the diff: those sections now ship as `~/.claude/rules/asic-*.md`, and keeping the
+old file while installing the scoped files loads the Python rules twice.
 
 - **Absent** → copy source to target. Report installed + remind: takes effect next
   session.
@@ -36,6 +44,18 @@ Target: `~/.claude/CLAUDE.md`.
   2. **Keep local** — no change; note the target has diverged from the shipped rules.
   3. **Merge** — apply the source's changes while preserving the user's local additions;
      show the merged result before writing.
+
+## Scoped rule files
+
+Target: `~/.claude/rules/` (create it if absent). These files load only when Claude touches a
+file matching their `paths:` frontmatter. This phase runs after every CLAUDE.md outcome above —
+"already current" and Keep local included.
+
+- For each bundled `asic-*.md`, apply the same absent / identical / differs flow as
+  `~/.claude/CLAUDE.md` above, one file at a time.
+- **Stale:** list every `~/.claude/rules/asic-*.md` with no bundled counterpart. Delete one only
+  after the user says yes to that file; otherwise leave it and say it still loads.
+- Never read, change or delete a file in `~/.claude/rules/` whose name does not start with `asic-`.
 
 ## After writing
 
@@ -64,7 +84,8 @@ After the rules step, merge the bundled guardrail settings — attribution off (
 
 ## Boundaries
 
-- This skill writes exactly two files — `~/.claude/CLAUDE.md` and `~/.claude/settings.json` —
-  plus the backup `~/.claude/settings.json.sync-rules.bak`. It never edits the bundled sources,
+- This skill writes `~/.claude/CLAUDE.md`, `~/.claude/rules/asic-*.md` (create, update, and delete
+  stale ones on explicit yes; no other file in that directory is ever touched) and
+  `~/.claude/settings.json`, plus the backup `~/.claude/settings.json.sync-rules.bak`. It never edits the bundled sources,
   never touches project-level CLAUDE.md or `.claude/settings*.json`, never removes a settings key,
   and never pushes anything.
