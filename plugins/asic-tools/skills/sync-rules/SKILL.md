@@ -122,6 +122,6 @@ grep -o '"version": *"[^"]*"' "$f" 2>/dev/null || echo "archify: not installed"
   never touches project-level CLAUDE.md or `.claude/settings*.json`, never removes a settings key,
   and never pushes anything.
 - One exception to the files-written list: the archify step reads `skill-release.json` and, only
-  on an explicit yes, runs the third-party `skills` CLI, which may install or replace
-  `~/.agents/skills/archify` and its `~/.claude/skills/archify` link. Without that yes it writes
+  on an explicit yes, runs the third-party `skills` CLI, which installs a copy at
+  `~/.claude/skills/archify` (replacing any older copy or link there). Without that yes it writes
   nothing.
