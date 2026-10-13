@@ -270,7 +270,7 @@ flagged as questions, not silently planned in.
    is the writer, you relay what it says.
 
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/prp-implement/scripts/prp_status.py" PRPs --write
+   python3 "${CLAUDE_SKILL_DIR}/scripts/prp_status.py" PRPs --write
    ```
 
    | Exit | Meaning |

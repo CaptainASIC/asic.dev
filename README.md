@@ -357,7 +357,8 @@ script refuses to overwrite a `STATUS.md` that lacks its generated banner, so a 
 is never clobbered.
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/prp-implement/scripts/prp_status.py" PRPs --write
+# <asic.dev> = your clone of this repo
+python3 <asic.dev>/plugins/asic-tools/skills/prp-implement/scripts/prp_status.py PRPs --write
 ```
 
 In Claude Code: `/asic-tools:prp-implement PRP-040`.
@@ -471,7 +472,8 @@ exit `1`. `type: ""`, `type: null`, and `type: ~` are an empty `type`, not conte
 ### Usage
 
 ```bash
-S="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/okf"
+# <asic.dev> = your clone of this repo
+S=<asic.dev>/plugins/asic-tools/skills/okf
 python3 "$S/scripts/validate_okf.py" ./my-bundle
 python3 "$S/scripts/okf_index.py" ./my-bundle/tables --write
 ```
