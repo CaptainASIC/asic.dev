@@ -469,13 +469,14 @@ In Claude Code: `/asic-tools:improve-repo`.
 
 ## okf
 
-Adopts Google's [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog)
-v0.1 as the standard shape for knowledge bundles and LLM-wikis — a directory of markdown with YAML
+Adopts Google's [Open Knowledge Format](https://github.com/GoogleCloudPlatform/open-knowledge-format)
+v0.2 as the standard shape for knowledge bundles and LLM-wikis — a directory of markdown with YAML
 frontmatter, one required field (`type`), two reserved filenames (`index.md`, `log.md`). The spec is
 vendored offline and pinned (Apache-2.0, see `NOTICE.md`), so the skill needs no network and adds no
-dependency: stdlib `python3` only.
+dependency: stdlib `python3` only. v0.1 bundles still validate, with migration warnings for the two
+fields v0.2 superseded.
 
-The value is the **validator**. OKF §9 conformance is mechanically checkable, and nothing else
+The value is the **validator**. OKF §11 conformance is mechanically checkable, and nothing else
 checks it.
 
 | Exit | Meaning |
@@ -483,10 +484,10 @@ checks it.
 | `0` | Conformant (recommendation warnings may print; `--quiet` silences them) |
 | `1` | Non-conformant — each violation named by path |
 | `2` | Usage/IO error |
-| `3` | Indeterminate — frontmatter outside the parseable subset; a validator limitation, not a verdict |
+| `3` | Indeterminate — a frontmatter line the parser cannot place (quoted or merge key, tab indentation); nested maps and lists are parsed. A validator limitation, not a verdict. |
 
 It deliberately **never fails** a bundle for missing optional fields, unknown `type` values, unknown
-extra keys, broken cross-links, or a missing `index.md` — §9 forbids consumers from rejecting on
+extra keys, broken cross-links, or a missing `index.md` — §11 forbids consumers from rejecting on
 those, so over-strictness would be a defect. It equally never *silently accepts*: a line it cannot
 read surfaces as exit `3`, never a skip, and a missing or empty `type` behind such a line is still
 exit `1`. `type: ""`, `type: null`, and `type: ~` are an empty `type`, not content.
@@ -501,7 +502,7 @@ python3 "$S/scripts/okf_index.py" ./my-bundle/tables --write
 ```
 
 `okf_index.py --write` preserves frontmatter already present, so regenerating the bundle-root
-`index.md` never destroys its `okf_version` declaration (§11).
+`index.md` never destroys its `okf_version` declaration (§12).
 
 ## License
 
