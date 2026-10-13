@@ -60,9 +60,9 @@ def _contained(path: Path, directory: Path) -> bool:
         True when the resolved child stays within ``directory``.
 
     Reason: a symlinked entry can point outside the directory, and ``describe()`` would read it —
-    CWE-23 path traversal, the class Snyk flagged in this repo's sibling `diagram/scripts` (PRP-008).
-    ``validate_okf.iter_markdown`` guards its walk the same way; the generator must not be the soft
-    spot.
+    CWE-23 path traversal, the class Snyk flagged in the former `diagram/scripts` (PRP-008;
+    retired by PRP-021). ``validate_okf.iter_markdown`` guards its walk the same way; the generator
+    must not be the soft spot.
     """
     return path.resolve().is_relative_to(directory)
 

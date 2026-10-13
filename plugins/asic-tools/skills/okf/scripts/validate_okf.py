@@ -227,7 +227,7 @@ def iter_markdown(root: Path) -> list[tuple[Path, str]]:
     """Return ``(resolved path, bundle-relative posix path)`` for every safe ``.md`` under root.
 
     Reason: a symlink resolving outside the bundle root is skipped, never read — CWE-23 path
-    traversal, the class Snyk flagged in this repo's sibling `diagram/scripts` (PRP-008).
+    traversal, the class Snyk flagged in the former `diagram/scripts` (PRP-008; retired by PRP-021).
     """
     found: list[tuple[Path, str]] = []
     for path in sorted(root.rglob("*.md")):

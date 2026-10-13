@@ -34,6 +34,15 @@ All notable changes to this project are documented here. Format follows
   `~/.claude/settings.json` through a stdlib script: dry-run diff first, additive only, conflicts
   reported rather than overwritten, previous file kept as `settings.json.sync-rules.bak`.
 
+### Removed
+- **BREAKING: the `diagram` skill is gone; archify is the diagram tool.** `/asic-tools:diagram`,
+  its eleven scripts, ~724 KB of vendored shape data and the draw.io desktop-CLI prerequisite are
+  removed. Diagrams now come from [archify](https://github.com/tt-a1i/archify) (MIT, third-party),
+  which renders validated interactive HTML/SVG. The two skills claimed the same "architecture /
+  workflow / network" triggers, so keeping both left the choice to chance. `sync-rules` now checks
+  archify's version and offers the install or upgrade, running it only on an explicit yes. Existing
+  `.drawio` files still open in draw.io; dev-mode installs should `rm ~/.claude/skills/diagram`.
+
 ## [1.0.0] - 2026-09-04
 
 First stable release. The toolbox now decides how much machine a job deserves, states its own
