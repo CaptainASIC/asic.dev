@@ -13,8 +13,9 @@ updated plugin) gets current law without a repo checkout.
 
 In order, first hit wins:
 
-1. `${CLAUDE_PLUGIN_ROOT}/rules/CLAUDE.global.md` — set when running as an installed
-   plugin; this is the normal path.
+1. `${CLAUDE_SKILL_DIR}/../../rules/CLAUDE.global.md` — the bundled copy beside this skill;
+   this is the normal path. Claude Code substitutes `${CLAUDE_SKILL_DIR}` in skill text; the
+   shell never has `CLAUDE_PLUGIN_ROOT` set.
 2. `~/.claude/plugins/marketplaces/asic-dev/plugins/asic-tools/rules/CLAUDE.global.md` —
    marketplace clone fallback.
 3. A repo checkout's `plugins/asic-tools/rules/CLAUDE.global.md` if the cwd is the
