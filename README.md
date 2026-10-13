@@ -16,7 +16,6 @@ Agent-harness tooling for Claude Code, shipped as a Claude Code plugin marketpla
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
 | [improve-repo](#improve-repo) | Repo-wide standards-conformance auditor: finds version/scaffold/import/naming drift, ships category-scoped fix PRs |
 | [sync-rules](#global-rules) | Deploy the bundled global engineering rules to `~/.claude/CLAUDE.md` on any machine |
-| [diagram](#diagram) | Generate editable draw.io architecture/network/system diagrams from a description, or visualize a repo |
 | [okf](#okf) | Open Knowledge Format: vendored spec, offline conformance validator, index generator |
 
 ## Install
@@ -50,11 +49,29 @@ gate — which is fail-closed by design, so an absent Snyk blocks rather than si
 Skills are namespaced: `/asic-tools:asicdash`, `/asic-tools:idea-refine`,
 `/asic-tools:prp-draft`, `/asic-tools:prp-review`, `/asic-tools:prp-implement`,
 `/asic-tools:scaffold`, `/asic-tools:release`, `/asic-tools:sync-rules`,
-`/asic-tools:improve-repo`, `/asic-tools:diagram`, `/asic-tools:okf`. Two workflow commands
+`/asic-tools:improve-repo`, `/asic-tools:okf`. Two workflow commands
 sit in the same namespace — `/asic-tools:prp-review-fanout` and `/asic-tools:improve-repo-audit`,
 the raw fan-outs behind `prp-review` and `improve-repo` (see below). Plugin skills show up in the desktop app's customize page;
 filesystem personal skills currently do not
 ([claude-code#66998](https://github.com/anthropics/claude-code/issues/66998)).
+
+### Companion skill: archify
+
+Diagrams are [archify](https://github.com/tt-a1i/archify)'s job (MIT, third-party). It turns a
+description, a repo, or pasted Mermaid into a validated, interactive standalone HTML/SVG diagram.
+`asic-tools` no longer ships a diagram skill: 2.0.0 removed the earlier `diagram` skill.
+
+```
+npx skills add tt-a1i/archify -g      # needs Node.js 18+
+```
+
+`/asic-tools:sync-rules` checks the installed version and offers this install or upgrade; it never
+runs it without asking. archify checks for new stable releases during delivery; set
+`ARCHIFY_UPDATE_CHECK_DISABLED=1` to turn that off.
+
+**Upgrading from 1.x:** legacy diagram sources made with the earlier skill still open in their
+original desktop editor; nothing converts them. On a dev-mode (symlink) install, remove the stale
+link once: `cd ~/.claude/skills && rm diagram`.
 
 ### Updating
 
@@ -447,26 +464,6 @@ body, while generative or contract-changing fixes go to a human checklist. Like 
 pushes.
 
 In Claude Code: `/asic-tools:improve-repo`.
-
-## diagram
-
-Turns a natural-language description — or an existing repo's structure — into an editable
-`.drawio` file plus a rendered image, via the native draw.io desktop CLI. Diagrams become
-version-controllable artifacts: the editable source is committed beside the picture under
-`docs/diagrams/`. Picks one of six types (ERD, UML class, sequence, architecture, ML/DL,
-flowchart), resolves vendor-correct AWS/Azure/GCP/Kubernetes icons and AI/LLM brand logos via a
-10k+-shape search index, applies a semantic color system, vision-self-checks the render for
-overlaps/clipping, iterates with you, then exports PNG/SVG/PDF and offers to embed the result into
-a PRP or README. Also visualizes a Python/JS-TS/Go/Rust repo's import graph or a Python class
-hierarchy (Graphviz auto-layout). Ported and adapted (MIT) from
-[Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill).
-
-**Prerequisite:** the draw.io desktop CLI — `brew install --cask drawio`. Optional Graphviz
-(`brew install graphviz`) enables auto-layout for large code-structure graphs. When the CLI is
-absent the skill fails fast with the install command and falls back to a diagrams.net browser URL.
-
-In Claude Code: ask "draw a diagram of …" / "visualize this module structure" (triggers the
-`diagram` skill), or `/asic-tools:diagram`.
 
 ---
 
