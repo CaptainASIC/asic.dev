@@ -32,19 +32,28 @@ None found → report that the plugin isn't installed and stop.
 
 Target: `~/.claude/CLAUDE.md`.
 
+Part of it may belong to another tool: today, the `# graphify` skill-registration section that
+`graphify install` writes and refreshes. Never compare against or write the bare source.
+Compose it first, so tool-owned sections survive at EOF:
+
+    python3 "${CLAUDE_SKILL_DIR}/scripts/owned_blocks.py" compose <source> ~/.claude/CLAUDE.md > <scratchpad>/CLAUDE.composed.md
+
+`<source>` is the core file found above; `<scratchpad>` is this session's scratchpad directory.
+The composed file is what you compare and what you write.
+
 If the target still contains `## Python environment`, it is the pre-2.0 single-file rule set.
 Say so before the diff: those sections now ship as `~/.claude/rules/asic-*.md`, and keeping the
 old file while installing the scoped files loads the Python rules twice.
 
-- **Absent** → copy source to target. Report installed + remind: takes effect next
+- **Absent** → write the composed file to target. Report installed + remind: takes effect next
   session.
-- **Identical** (byte-compare) → report "already current", then proceed to the scoped rule files step.
+- **Identical** (byte-compare target vs composed) → report "already current", then proceed to the scoped rule files step.
 - **Differs** → never overwrite silently. Show the user a readable diff
-  (`diff -u target source`), then ask which way to resolve:
-  1. **Overwrite** — plugin version wins (local edits lost; say so explicitly).
+  (`diff -u target composed`), then ask which way to resolve:
+  1. **Overwrite** — composed version wins (local edits lost; say so explicitly; tool-owned sections are kept).
   2. **Keep local** — no change to the file; note the target has diverged from the shipped rules,
      then proceed to the scoped rule files step.
-  3. **Merge** — apply the source's changes while preserving the user's local additions;
+  3. **Merge** — apply the composed file's changes while preserving the user's local additions;
      show the merged result before writing.
 
 ## Scoped rule files
