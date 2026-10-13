@@ -62,7 +62,7 @@ def test_retrieval_routing() -> None:
     # The wrong-graph MCP is explicitly forbidden, and routed to the CLI.
     check(
         "a3 graphify-airi MCP forbidden",
-        "mcp__graphify-airi__" in text and "Never call" in text or "never call" in text.lower(),
+        "mcp__graphify-airi__" in text and "never call" in text.lower(),
     )
     # The dead MCP is actually gone from the live config.
     cfg = Path.home() / ".claude.json"
@@ -76,7 +76,7 @@ def test_retrieval_routing() -> None:
     except (OSError, ValueError) as exc:
         skip("a4 graphify-airi removed from ~/.claude.json", f"cannot read config: {exc}")
     # Style reviewers and the drift fan-out are graphify-first (no blind scan).
-    wf = _read(SKILLS / "prp-review" / "references" / "review_workflow.js")
+    wf = _read(SKILLS.parent / "workflows" / "review_workflow.js")
     check("a5 review reviewers graphify-first", "graphify" in wf and "orient" in wf.lower())
     impl = _read(SKILLS / "prp-implement" / "SKILL.md")
     check("a6 drift fan-out graphify-first", "graphify-first" in impl)
