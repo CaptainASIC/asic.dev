@@ -11,6 +11,21 @@ All notable changes to this project are documented here. Format follows
   covers the CLI as the structure-retrieval lane; the skill is the ingestion side — any input into
   a knowledge graph — and `/graphify` now has a stated trigger in the rules rather than living as a
   hand-added local edit on one machine.
+- **The git guard closes its bypasses and fails closed.** `git push` is denied however it is
+  spelled — `bash -c "…"`, `/usr/bin/git`, `$(…)`, backticks, quoted `git` or `'push'`; a push or
+  commit built through a variable or `eval` asks. Attribution is screened on any `git`/`gh` command,
+  including the `Claude-Session:` trailer and claude.ai session links. Hook bypass (`--no-verify`,
+  `commit -n`, `core.hooksPath`, `SKIP=`, `HUSKY=`) is denied; `reset --hard`, `clean -f` and forced
+  branch deletes ask. An unparseable payload exits 2 and the hook sets `onFailure: "block"`, so a
+  crash or timeout blocks instead of passing. Non-git commands no longer spawn python. **Breaking:**
+  commands the guard used to allow are now denied or asked.
+
+### Added
+- **`/sync-rules` merges guardrail settings.** A bundled `rules/settings.fragment.json` —
+  `attribution` off (`commit`/`pr` empty, `sessionUrl: false`), a `permissions.deny` rule for
+  `git push`, and `autoMode.hard_deny` rules alongside `"$defaults"` — merges into
+  `~/.claude/settings.json` through a stdlib script: dry-run diff first, additive only, conflicts
+  reported rather than overwritten, previous file kept as `settings.json.sync-rules.bak`.
 
 ## [1.0.0] - 2026-09-04
 

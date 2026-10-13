@@ -1,6 +1,6 @@
 ---
 name: sync-rules
-description: Install or update Captain ASIC's global engineering rules (~/.claude/CLAUDE.md) from the asic-tools plugin's bundled rules file. Use when the user says "sync my rules", "install the global rules", "update my CLAUDE.md rules", "get my rules on this machine", or invokes /sync-rules — typically right after installing the plugin on a new machine, or after a plugin update changed the rule set. Never clobbers local edits silently.
+description: Install or update Captain ASIC's global engineering rules (~/.claude/CLAUDE.md) and merge the plugin's guardrail settings (attribution off, push deny rule, auto-mode hard_deny) into ~/.claude/settings.json, from files bundled with the asic-tools plugin. Use when the user says "sync my rules", "install the global rules", "update my CLAUDE.md rules", "get my rules on this machine", or invokes /sync-rules — typically right after installing the plugin on a new machine, or after a plugin update changed the rule set. Never clobbers local edits silently.
 ---
 
 # sync-rules
@@ -41,7 +41,30 @@ Target: `~/.claude/CLAUDE.md`.
 
 - Confirm the file, report its size, and remind: a restart / new session picks it up.
 
+## Settings fragment
+
+After the rules step, merge the bundled guardrail settings — attribution off (`commit`/`pr` empty,
+`sessionUrl` false), `permissions.deny` for `git push`, and `autoMode.hard_deny` rules — into
+`~/.claude/settings.json`. The script is the only writer; never hand-edit the JSON.
+
+1. Dry-run (writes nothing):
+   `python3 "${CLAUDE_SKILL_DIR}/scripts/merge_settings.py" --fragment "${CLAUDE_SKILL_DIR}/../../rules/settings.fragment.json" --target ~/.claude/settings.json`
+2. Read the `STATUS:` line.
+   - **current** → report "settings already current", done.
+   - **pending** → show the diff, say in one line what each added entry does, and ask:
+     **Apply** (re-run step 1 with `--write`) or **Skip**.
+   - **conflict** → show each `CONFLICT:` line and the diff, and ask:
+     1. **Keep mine** — re-run with `--write`: applies only the non-conflicting additions.
+     2. **Take plugin's** — re-run with `--write --prefer-fragment` (say which values are replaced).
+     3. **Skip** — no change.
+3. Exit code 2 → report the `ERROR:` line verbatim and stop. Do not repair the file yourself.
+4. Never chain the dry-run and `--write` in one command — the user's choice sits between them.
+5. After a write: report the backup path (`~/.claude/settings.json.sync-rules.bak`) and that a new
+   session picks the settings up. `claude auto-mode config` shows the effective `hard_deny` list.
+
 ## Boundaries
 
-- This skill writes exactly one file: `~/.claude/CLAUDE.md`. It never edits the bundled
-  source, never touches project-level CLAUDE.md files, and never pushes anything.
+- This skill writes exactly two files — `~/.claude/CLAUDE.md` and `~/.claude/settings.json` —
+  plus the backup `~/.claude/settings.json.sync-rules.bak`. It never edits the bundled sources,
+  never touches project-level CLAUDE.md or `.claude/settings*.json`, never removes a settings key,
+  and never pushes anything.

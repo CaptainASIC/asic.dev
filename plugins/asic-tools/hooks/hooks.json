@@ -1,5 +1,5 @@
 {
-  "description": "Captain ASIC hard-rule enforcement: deny AI-attributed commits and pushes, ask before committing to main, and restate rule precedence each turn.",
+  "description": "Captain ASIC hard-rule enforcement: deny AI-attributed commits, pushes in any form, and hook bypass; ask before destructive git and before committing to main; restate rule precedence each turn.",
   "hooks": {
     "PreToolUse": [
       {
@@ -8,7 +8,8 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/git-guard.sh\"",
-            "timeout": 10
+            "timeout": 10,
+            "onFailure": "block"
           }
         ]
       }
