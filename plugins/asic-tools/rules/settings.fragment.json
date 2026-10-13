@@ -16,5 +16,35 @@
       "Never create a git commit or pull request whose message carries AI attribution: a Co-Authored-By trailer naming an AI, a 'Generated with' line, a Claude-Session trailer, or a claude.ai session link.",
       "Never bypass git hooks: no --no-verify, no -n on git commit, no core.hooksPath override, and no SKIP= or HUSKY= environment override."
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-guard search",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-guard read",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "$retire": {
+    "hooks.PreToolUse": [
+      "graphify-grep-guard.sh",
+      "graphify-read-guard.sh"
+    ]
   }
 }

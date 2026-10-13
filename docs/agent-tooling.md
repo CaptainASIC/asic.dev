@@ -99,7 +99,8 @@ These spots retrieved without a lane discipline and are corrected by the Phase 3
   graphify CLI before reading.
 - `prp-implement` A3 Explore fan-out — prompt did not mandate graphify-first for subagents.
   Fixed: A3/A2.5 fan-out prompts now carry the graphify-first rule.
-- The graphify guard hooks (`graphify-{read,grep}-guard.sh`) are **advisory only** — they
-  inject `additionalContext`, they never `exit 2`/deny. The verified-context rule above is
-  therefore enforced **in the skill prompts**, not by the hook. Do not rely on the hook to
-  block a blind scan; it cannot.
+- The graphify guard hooks (`graphify hook-guard search|read`, user scope, delivered by
+  `/sync-rules`) are **advisory only**: they inject `additionalContext` a few times per agent at
+  most, skip files outside the project, soften when the graph is stale, and never deny (strict mode
+  is off). The verified-context rule above is therefore enforced **in the skill prompts**, not by
+  the hook. Do not rely on the hook to block a blind scan; it cannot.

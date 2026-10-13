@@ -77,8 +77,10 @@ file matching their `paths:` frontmatter. This phase runs after every CLAUDE.md 
 ## Settings fragment
 
 After the rules step, merge the bundled guardrail settings — attribution off (`commit`/`pr` empty,
-`sessionUrl` false), `permissions.deny` for `git push`, and `autoMode.hard_deny` rules — into
-`~/.claude/settings.json`. The script is the only writer; never hand-edit the JSON.
+`sessionUrl` false), `permissions.deny` for `git push`, `autoMode.hard_deny` rules, and the
+graphify guard hooks (`graphify hook-guard search|read`) — into `~/.claude/settings.json`. The
+script is the only writer; never hand-edit the JSON. Hook entries named in the fragment's
+`$retire` list are removed — the diff and `RETIRED:` lines show each one before Apply.
 
 1. Dry-run (writes nothing):
    `python3 "${CLAUDE_SKILL_DIR}/scripts/merge_settings.py" --fragment "${CLAUDE_SKILL_DIR}/../../rules/settings.fragment.json" --target ~/.claude/settings.json`
@@ -128,8 +130,10 @@ grep -o '"version": *"[^"]*"' "$f" 2>/dev/null || echo "archify: not installed"
 - This skill writes `~/.claude/CLAUDE.md`, `~/.claude/rules/asic-*.md` (create, update, and delete
   stale ones on explicit yes; no other file in that directory is ever touched) and
   `~/.claude/settings.json`, plus the backup `~/.claude/settings.json.sync-rules.bak`. It never edits the bundled sources,
-  never touches project-level CLAUDE.md or `.claude/settings*.json`, never removes a settings key,
-  and never pushes anything.
+  never touches project-level CLAUDE.md or `.claude/settings*.json`,
+  never removes a settings key, except hook entries the fragment's `$retire` list names,
+  and never pushes anything. It never deletes hook scripts; retiring a `~/.claude/hooks/*.sh` file
+  is the user's call.
 - One exception to the files-written list: the archify step reads `skill-release.json` and, only
   on an explicit yes, runs the third-party `skills` CLI, which installs a copy at
   `~/.claude/skills/archify` (replacing any older copy or link there). Without that yes it writes
