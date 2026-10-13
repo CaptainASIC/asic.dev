@@ -10,11 +10,12 @@ Deterministic scanner. Do not assemble the inventory yourself — run the script
 ## Run
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/asicdash/asicdash.py"
+python3 "${CLAUDE_SKILL_DIR}/asicdash.py"
 ```
 
-(`CLAUDE_PLUGIN_ROOT` is set when installed as a plugin; the fallback covers the symlinked
-personal-skill dev install — both roots contain `skills/asicdash/`.)
+(Claude Code substitutes `${CLAUDE_SKILL_DIR}` with this skill's directory for both the plugin
+install and the symlinked personal-skill dev install. Do not use a `${VAR:-default}` form: only
+the bare `${CLAUDE_*}` token is substituted, and the shell never has `CLAUDE_PLUGIN_ROOT` set.)
 
 Default mode writes a self-contained themed HTML report (collapsible sections, Claude usage
 heatmap with per-day modals, ASIC light/dark) to the system temp dir and opens it in the
