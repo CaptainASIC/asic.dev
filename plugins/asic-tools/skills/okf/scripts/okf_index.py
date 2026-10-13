@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Generate a spec-shaped OKF ``index.md`` for one directory of a bundle.
 
-The output follows spec §6: heading-grouped sections of
+The output follows spec §8: heading-grouped sections of
 ``* [Title](relative-url) - description`` entries, and **no frontmatter**. Descriptions come from
-each concept's frontmatter ``description`` when present (§6: "Entries SHOULD include the
+each concept's frontmatter ``description`` when present (§8: "Entries SHOULD include the
 description from the linked concept's frontmatter").
 
 Prints to stdout by default; ``--write`` writes ``index.md`` into the directory.
@@ -18,7 +18,8 @@ from pathlib import Path
 
 # Reason: reuse the validator's parser so the generator and the checker agree on the subset.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from validate_okf import (  # noqa: E402
+from validate_okf import (
+    BLOCK_SCALAR,
     RESERVED,
     FrontmatterError,
     SubsetError,
@@ -46,7 +47,14 @@ def describe(path: Path) -> tuple[str, str]:
     except (OSError, UnicodeDecodeError, FrontmatterError, SubsetError) as exc:
         logger.warning("WARN  %s: %s — using filename", path.name, exc)
         data = {}
-    return data.get("title") or path.stem, data.get("description", "")
+    title, description = data.get("title", ""), data.get("description", "")
+    # Reason: a block scalar (`description: >`) keeps its text on indented lines the parser
+    # consumes but does not collect; printing the bare indicator would corrupt the §8 entry.
+    if BLOCK_SCALAR.match(title):
+        title = ""
+    if BLOCK_SCALAR.match(description):
+        description = ""
+    return title or path.stem, description
 
 
 def _contained(path: Path, directory: Path) -> bool:
@@ -68,7 +76,7 @@ def _contained(path: Path, directory: Path) -> bool:
 
 
 def render(directory: Path) -> str:
-    """Render the §6 index body for one directory."""
+    """Render the §8 index body for one directory."""
     lines: list[str] = ["# Contents", ""]
     for child in sorted(p for p in directory.iterdir() if p.is_dir()):
         if not _contained(child, directory):
@@ -93,13 +101,13 @@ def _preserve_frontmatter(target: Path, body: str) -> str:
 
     Args:
         target: The ``index.md`` about to be overwritten.
-        body: The freshly rendered, frontmatter-free §6 body.
+        body: The freshly rendered, frontmatter-free §8 body.
 
     Returns:
         ``body`` unchanged, or ``body`` with the existing frontmatter block restored on top.
 
     Reason: render() emits no frontmatter, so overwriting an existing index.md would silently
-    destroy a bundle-root ``okf_version`` declaration (§11) — the one place frontmatter is legal
+    destroy a bundle-root ``okf_version`` declaration (§12) — the one place frontmatter is legal
     in an index, and a loss the validator cannot surface (a frontmatter-free root index still
     passes, exit 0). Preserving the existing block keeps regeneration non-destructive; the
     validator still adjudicates whether that frontmatter is legal where it sits.
@@ -117,7 +125,7 @@ def _preserve_frontmatter(target: Path, body: str) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     """Entry point. Returns the process exit code."""
-    parser = argparse.ArgumentParser(description="Generate an OKF §6 index.md for a directory.")
+    parser = argparse.ArgumentParser(description="Generate an OKF §8 index.md for a directory.")
     parser.add_argument("directory", help="directory within an OKF bundle")
     parser.add_argument("--write", action="store_true", help="write index.md into the directory")
     args = parser.parse_args(argv)
@@ -135,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.write:
         target = directory / "index.md"
         # Reason: preserve any existing frontmatter so regenerating a bundle-root index.md does
-        # not silently destroy its `okf_version` declaration (§11) — render() emits none.
+        # not silently destroy its `okf_version` declaration (§12) — render() emits none.
         body = _preserve_frontmatter(target, body)
         target.write_text(body, encoding="utf-8")
         logger.info("wrote %s", target)

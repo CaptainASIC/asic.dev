@@ -11,3 +11,7 @@ custom_extension_key: anything
 
 Links to a [nonexistent concept](/tables/does-not-exist.md) — a broken cross-link, which §9 says
 consumers MUST NOT reject.
+
+# Citations
+
+1. Example source — https://example.com/thing

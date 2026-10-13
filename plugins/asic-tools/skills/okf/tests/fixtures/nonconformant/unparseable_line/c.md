@@ -1,7 +1,6 @@
 ---
 type: Metric
-owner:
-  name: alice
+"owner name": alice
 ---
 
 Body.
