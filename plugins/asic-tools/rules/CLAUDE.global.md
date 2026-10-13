@@ -141,7 +141,7 @@ Closes #123
 
 ## MCP usage
 
-Retrieval routes through three named lanes. **The routing rules live in `docs/agent-tooling.md`** —
+Retrieval routes through three named lanes. **The routing rules live in the asic.dev repo's `docs/agent-tooling.md`** (absent in other projects) —
 this table names the lanes, that document says how to choose between them.
 
 | Lane | Tool | Use for |
