@@ -21,12 +21,13 @@ Both helper scripts run on the ambient `python3` (no project venv, no dependenci
 path:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/okf/scripts/<name>.py" …
+python3 "${CLAUDE_SKILL_DIR}/scripts/<name>.py" …
 ```
 
-`CLAUDE_PLUGIN_ROOT` is set on plugin install; the `$HOME/.claude` fallback covers the dev-mode
-symlink. Both roots contain `skills/okf/`. Use this one form — never hardcode two paths. In the
-commands below `<S>` stands for `"${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/skills/okf"`.
+Claude Code substitutes `${CLAUDE_SKILL_DIR}` with this skill's directory for both the plugin
+install and the dev-mode symlink. Never use a `${VAR:-default}` form: only the bare `${CLAUDE_*}`
+token is substituted, and the shell never has `CLAUDE_PLUGIN_ROOT` set. In the commands below
+`<S>` stands for `"${CLAUDE_SKILL_DIR}"`.
 
 ## Validate a bundle
 
