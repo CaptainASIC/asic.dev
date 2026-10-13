@@ -1,6 +1,6 @@
 {
   "name": "asic-dev",
-  "description": "Captain ASIC's agent-harness tooling for Claude Code: config auditing and PRP generation.",
+  "description": "Captain ASIC's agent-harness tooling for Claude Code: PRP lifecycle, config and usage auditing, project scaffolding, releases, and standards audits.",
   "owner": {
     "name": "Captain ASIC",
     "url": "https://github.com/CaptainASIC"
@@ -9,7 +9,6 @@
     {
       "name": "asic-tools",
       "source": "./plugins/asic-tools",
-      "description": "Agent-harness tooling: idea-refine + prp-draft + prp-review + prp-implement PRP lifecycle, asicdash config + usage dashboard, scaffold project bootstrap, release cutter, diagram draw.io generator, improve-repo standards auditor",
       "author": {
         "name": "Captain ASIC"
       }
