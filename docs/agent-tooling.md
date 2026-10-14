@@ -37,7 +37,8 @@ contract the skills implement.
    the first retrieval action is `graphify query`/`explain`/`path`. Raw `Read`/`grep` is
    allowed **only after** graphify has oriented you, or to read/modify specific lines a graph
    node already pointed you to. This applies to **subagents too** — every subagent prompt that
-   explores code must carry the graphify-first instruction.
+   explores code must carry the graphify-first instruction,
+   or carry the caller's graphify result when the subagent has no `Bash` (`citation-scout`).
 2. **"Where is this symbol / who calls it / rename it" → serena.** Use `find_symbol`,
    `find_referencing_symbols`, `replace_symbol_body`. Do not grep for symbol definitions when
    the LSP can answer exactly.

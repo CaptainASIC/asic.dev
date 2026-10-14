@@ -85,9 +85,12 @@ the verified `path:line` citation still comes from reading them.
   State the required return shape at this site — `{path, symbol, line, surprise}` per integration
   point. There is no `schema:` on a main-thread delegation, so that prose plus the rejection rule
   below *is* the shape mechanism, and the scout serves two shapes — it emits the one you name. When
-  `graphify-out/graph.json` exists, each subagent's prompt must instruct graphify-first too —
-  scope the subsystem with `graphify query`/`explain` before reading — since the directive applies
-  to subagents, not only the main thread. Require each to
+  `graphify-out/graph.json` exists, the scout has no `Bash` and cannot run graphify, so the main
+  thread runs `graphify query`/`explain` for each subsystem and
+  pastes the scoped graphify result into each delegation prompt — node names with their `src=`
+  paths — which is how the graphify-first directive reaches subagents (`docs/agent-tooling.md`
+  rule 1). When there is no graph or the query returns nothing for a subsystem, write "no graph" in that delegation prompt
+  so the scout orients by direct reading and says so. Require each to
   return a **structured evidence list** — one record per integration point, never prose:
   `{ path, symbol, line, surprise }` (`line` = a number read this session; `surprise` = the
   gotcha, or `null`). Reject any return that summarises instead of citing — a conclusion you

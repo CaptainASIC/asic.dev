@@ -125,10 +125,12 @@ large PRP (subsystem scope, many §4 citations) fans out read-only subagents —
 `citation-scout`, one per cited file or gotcha cluster — each returning a **structured verdict**,
 never prose: `{ citation, status: holds | drifted, evidence }`. Naming that agent is what puts the
 fan-out on its own tier, and the stated shape is what tells a two-shape scout which to emit (`evidence` = the `path:line`
-that proves it, or the mismatch found). When `graphify-out/graph.json` exists, each
-subagent's prompt must instruct **graphify-first** (orient with `graphify query`/`explain`/
-`path` before reading the cited file) — the directive applies to subagents, not only the main
-thread (see `docs/agent-tooling.md`). This phase stays read-only — no file is touched.
+that proves it, or the mismatch found). When `graphify-out/graph.json` exists, the
+**graphify-first** directive still covers the fan-out, but the scout has no `Bash`: the main thread
+runs `graphify query`/`explain`/`path` per citation cluster and
+pastes the scoped graphify result into each delegation prompt, so the scout reads only what it
+points at (see `docs/agent-tooling.md` rule 1). When there is no graph or the query returns nothing for a cluster, write "no graph" in that delegation prompt
+so the scout orients by direct reading and says so. This phase stays read-only — no file is touched.
 Merge the verdicts into a drift table.
 
 Any `drifted` row — file gone, contract changed, gotcha invalidated → STOP. Present the
