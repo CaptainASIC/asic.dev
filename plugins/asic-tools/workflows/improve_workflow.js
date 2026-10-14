@@ -98,15 +98,17 @@ const CHECKS = [
 
 // Model/effort routing (PRP-014). Depth is NOT here — no number belongs in this block.
 // The three mechanical checks (walk a table, shell ruff/mypy and group output, detect
-// within-file import drift) drop to haiku/low; the three generative ones (propose a shared
+// within-file import drift) drop to haiku; the three generative ones (propose a shared
 // module, reason about kind-specific layout, judge naming against the standing rules) stay at
 // sonnet/medium. The split follows the auto-vs-propose line the CHECKS table already draws in
 // its own `safety` field, so it is inspectable rather than arbitrary.
 // The name `ROUTING` and the { model, effort } entry shape are what PRP-014's gates extract.
+// Haiku runs at medium, not low (PRP-022): Haiku 5.5 honours effort, and at low it skips searches
+// and stops early in long loops — in a whole-repo audit that is a silently missed finding.
 const ROUTING = {
-  'version-consolidation':    { model: 'haiku',  effort: 'low' },
-  'standards-surface':        { model: 'haiku',  effort: 'low' },
-  'import-hygiene':           { model: 'haiku',  effort: 'low' },
+  'version-consolidation':    { model: 'haiku',  effort: 'medium' },
+  'standards-surface':        { model: 'haiku',  effort: 'medium' },
+  'import-hygiene':           { model: 'haiku',  effort: 'medium' },
   'scaffold-conformance':     { model: 'sonnet', effort: 'medium' },
   'shared-import-extraction': { model: 'sonnet', effort: 'medium' },
   'naming-conventions':       { model: 'sonnet', effort: 'medium' },
@@ -188,6 +190,10 @@ function checkPrompt(check) {
 phase('Audit')
 const active = enabledChecks(PROFILE)
 log(`Auditing ${active.length} check(s): ${active.map((c) => c.key).join(', ')}`)
+log('Routing (intended): ' +
+  active.map((c) => `${c.key} ${ROUTING[c.key].model}/${ROUTING[c.key].effort}`).join(', ') +
+  '. CLAUDE_CODE_SUBAGENT_MODEL_FORCE, CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL, a mod agent.spawn ' +
+  'hook or an availableModels allowlist can replace these; /workflows shows what each ran on.')
 
 const results = await parallel(active.map((check) => () =>
   agent(checkPrompt(check), {
