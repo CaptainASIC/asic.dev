@@ -26,6 +26,7 @@ from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
+from plugins_scan import scan_plugins
 from scanners import (
     CHARS_PER_TOKEN,
     Entry,
@@ -34,7 +35,6 @@ from scanners import (
     scan_mcp,
     scan_md_dir,
     scan_memory_files,
-    scan_plugins,
     scan_settings,
     scan_skills,
     short,
