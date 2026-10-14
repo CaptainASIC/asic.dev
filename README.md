@@ -15,6 +15,7 @@ Agent-harness tooling for Claude Code, shipped as a Claude Code plugin marketpla
 | [scaffold](#scaffold) | Standards-enforced Python project bootstrap — verified runnable, not a paper template |
 | [release](#release) | Multi-location version bump + changelog, derived from Conventional Commits |
 | [improve-repo](#improve-repo) | Repo-wide standards-conformance auditor: finds version/scaffold/import/naming drift, ships category-scoped fix PRs |
+| [diagnose](#diagnose) | Loop-first debugging: red-capable repro, ranked hypotheses, root-cause fix behind a regression test |
 | [sync-rules](#global-rules) | Deploy the bundled global engineering rules to `~/.claude/CLAUDE.md` on any machine |
 | [okf](#okf) | Open Knowledge Format: vendored spec, offline conformance validator, index generator |
 
@@ -488,6 +489,24 @@ body, while generative or contract-changing fixes go to a human checklist. Like 
 pushes.
 
 In Claude Code: `/asic-tools:improve-repo`.
+
+---
+
+## diagnose
+
+Loop-first debugging for application code. Before any fix, it builds one command that goes red on
+the reported bug — a failing test, a curl script, a fixture diff, a `git bisect run` harness — then
+minimises the repro, ranks 3–5 falsifiable hypotheses, and fixes at the root cause behind a
+regression test it watched fail first. A third failed fix stops for an architecture conversation;
+a fix bigger than the S sizing tier hands off to `prp-draft`. Secrets are redacted before any
+output is shown. Adapted (MIT) from [obra/superpowers](https://github.com/obra/superpowers)
+`systematic-debugging` and [mattpocock/skills](https://github.com/mattpocock/skills)
+`diagnosing-bugs`.
+
+For problems with Claude Code itself (hooks, settings, MCP servers), use the built-in `/debug`.
+
+In Claude Code: ask "debug this" / "why is this test failing" (triggers the `diagnose` skill), or
+`/asic-tools:diagnose`.
 
 ---
 
