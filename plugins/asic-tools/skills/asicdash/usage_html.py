@@ -7,6 +7,7 @@ Stdlib only.
 
 from __future__ import annotations
 
+import html
 import json
 
 # ---------------------------------------------------------------------------
@@ -98,6 +99,13 @@ USAGE_CSS = (
   border-top: 1px solid var(--border); font-size: 13px; }
 .u-m-row .val { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
 .u-m-row.na { color: var(--faint); }
+.u-cache { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: -4px 0 14px; }
+.u-cache-c { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.u-cache-c b { color: var(--text); font-size: 15px; }
+.u-top { width: 100%; border-collapse: collapse; font-size: 12px; margin: 4px 0 6px; }
+.u-top th, .u-top td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.u-top td:first-child { max-width: 420px; overflow-wrap: anywhere; }
+.u-top .num { text-align: right; font-variant-numeric: tabular-nums; }
 """
     # Cell-color rules LAST: `.u-{surface}-{level}` and `.u-cell` are equal-specificity, so
     # the later rule wins. Placed after the `.u-cell` empty background, the colors paint
@@ -287,6 +295,34 @@ USAGE_JS = """\
 """
 
 
+PERIODS = (("Today", "today"), ("Last 7 days", "d7"), ("Last 30 days", "d30"), ("All-time", "all"))
+
+
+def _hit(p: dict) -> int:
+    denom = p.get("inp", 0) + p.get("c_create", 0) + p.get("c_read", 0)
+    return round(100 * p.get("c_read", 0) / denom) if denom else 0
+
+
+def _top_table(rows: list[dict]) -> str:
+    """Most expensive prompts. Every cell is escaped: previews are user text."""
+    title = (
+        '<div class="u-chart-title">Most expensive prompts (all tokens, subagents included)</div>'
+    )
+    if not rows:
+        return title + '<p class="u-tot-s">No prompts in the window.</p>'
+    body = "".join(
+        f"<tr><td>{html.escape(r['text'])}</td><td>{html.escape(r['project'])}</td>"
+        f'<td>{html.escape(r["ts"][:16])}</td><td class="num">{_fmt_tokens(r["total"])}</td>'
+        f'<td class="num">{r["hit"]}%</td></tr>'
+        for r in rows
+    )
+    return (
+        title + '<table class="u-top"><thead><tr><th>Prompt</th><th>Project</th><th>When</th>'
+        '<th class="num">Tokens</th><th class="num">Cache hit</th></tr></thead>'
+        f"<tbody>{body}</tbody></table>"
+    )
+
+
 def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
     """Render the Claude usage section for the asicdash HTML report.
 
@@ -311,12 +347,16 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
             f'<div class="u-tot-c"><div class="u-tot-l">{lbl}</div>'
             f'<div class="u-tot-v">{_fmt_tokens(p[k]["out"])} <span class="u-tot-u">out</span></div>'
             f'<div class="u-tot-s">{_fmt_tokens(p[k]["inp"])} in</div></div>'
-            for lbl, k in (
-                ("Today", "today"),
-                ("Last 7 days", "d7"),
-                ("Last 30 days", "d30"),
-                ("All-time", "all"),
-            )
+            for lbl, k in PERIODS
+        )
+        + "</div>"
+    )
+    cache_row = (
+        '<div class="u-cache">'
+        + "".join(
+            f'<div class="u-cache-c">{lbl}: <b>{_hit(p[k])}%</b> cache hit · '
+            f"{_fmt_tokens(p[k].get('c_read', 0))} read</div>"
+            for lbl, k in PERIODS
         )
         + "</div>"
     )
@@ -334,17 +374,21 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
     scale = '<span class="u-cell"></span>' + "".join(
         f'<span class="u-cell u-terminal-{i}"></span>' for i in range(1, 5)
     )
+    # CRITICAL: usage now carries user text (previews); escaping "</" keeps "</script>" from
+    # closing the payload's <script>. "<\\/" is valid JSON for "</".
+    payload = json.dumps(usage).replace("</", "<\\/")
     html_out = (
         f'<details class="sec" open><summary>{chevron_icon}Claude usage'
         f'<span class="meta">{meta}</span></summary>'
-        f'<div class="u-wrap">{tot}{legend}'
+        f'<div class="u-wrap">{tot}{cache_row}{legend}'
         '<div class="u-months" id="u-months"></div>'
         f'<div class="u-hm">{dows}<div class="u-grid" id="u-grid"></div></div>'
         '<div class="u-tip" id="u-tip"></div>'
         '<div class="u-foot"><span>cell color = dominant surface · hover for breakdown'
         " · click for detail"
         f'</span><span class="u-scale">less {scale} more</span></div>'
-        '<div class="u-chart-title">Output tokens per week, last 12 weeks</div>'
+        + _top_table(t.get("top_prompts", []))
+        + '<div class="u-chart-title">Output tokens per week, last 12 weeks</div>'
         '<div class="u-chart" id="u-chart"></div>'
         '<div class="u-blabels" id="u-blabels"></div>'
         "</div></details>"
@@ -352,6 +396,6 @@ def usage_fragment(usage: dict, chevron_icon: str) -> tuple[str, str, str]:
         '<div class="u-modal"><div class="u-m-head"><span id="u-m-date"></span>'
         '<button id="u-m-close" type="button" aria-label="Close">Close</button></div>'
         '<p class="u-m-sub" id="u-m-sub"></p><div id="u-m-rows"></div></div></div>'
-        f'<script type="application/json" id="u-data">{json.dumps(usage)}</script>'
+        f'<script type="application/json" id="u-data">{payload}</script>'
     )
     return USAGE_CSS, html_out, USAGE_JS

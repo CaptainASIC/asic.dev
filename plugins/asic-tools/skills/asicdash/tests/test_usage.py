@@ -134,3 +134,46 @@ def test_preview_masks_tokens_tags_and_slash() -> None:
     long = " ".join(["word"] * 75)  # 374 chars, no token run
     cut = preview(long)
     assert len(cut) == 100 and cut.endswith("…")
+
+
+# --- usage_html fragment -------------------------------------------------------------------------
+
+from usage_html import usage_fragment
+
+
+def _payload(top: list[dict]) -> dict:
+    zero = {"out": 0, "inp": 0, "c_read": 0, "c_create": 0}
+    return {
+        "today": "2026-10-13",
+        "days": {},
+        "totals": {
+            **zero,
+            "active_days": 0,
+            "sessions": 0,
+            "periods": {k: dict(zero) for k in ("today", "d7", "d30", "all")},
+            "top_prompts": top,
+        },
+    }
+
+
+def test_fragment_escapes_and_panels() -> None:
+    row = {
+        "text": "a</script><b>",
+        "ts": "2026-10-13T12:00",
+        "project": "demo",
+        "session": "s1",
+        "total": 10,
+        "out": 5,
+        "hit": 0,
+    }
+    _, html_out, _ = usage_fragment(_payload([row]), "X")
+    assert "&lt;/script&gt;" in html_out
+    assert "cache hit" in html_out and "Most expensive prompts" in html_out
+    data = html_out.split('id="u-data">', 1)[1].rsplit("</script>", 1)[0]
+    assert "</" not in data
+    assert json.loads(data)["totals"]["top_prompts"][0]["text"] == "a</script><b>"
+
+
+def test_fragment_empty_prompts() -> None:
+    _, html_out, _ = usage_fragment(_payload([]), "X")
+    assert "No prompts in the window." in html_out
