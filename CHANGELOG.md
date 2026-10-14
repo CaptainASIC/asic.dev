@@ -71,6 +71,13 @@ All notable changes to this project are documented here. Format follows
 - **Test seams in the PRP template.** §7.0 lists the public boundaries tests may target, agreed
   in the interview; an optional Hypothesis property gate applies only when the project already
   depends on Hypothesis.
+- **`diagnose` skill — loop-first debugging.** Builds a red-capable reproduction before any
+  fix, minimises it, ranks falsifiable hypotheses, and fixes at the root cause behind a
+  regression test it watched fail first; three failed fixes stop for an architecture
+  conversation, and a fix above the S sizing tier hands off to `prp-draft`. Claude Code harness
+  problems are routed to the built-in `/debug` — which is also why the skill is not named
+  `debug`. Adapted (MIT) from obra/superpowers `systematic-debugging` and mattpocock/skills
+  `diagnosing-bugs`, pinned in `NOTICE.md`; no upstream script is shipped.
 
 ### Removed
 - **BREAKING: the `diagram` skill is gone; archify is the diagram tool.** `/asic-tools:diagram`,
