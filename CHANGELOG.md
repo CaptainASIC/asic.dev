@@ -47,6 +47,10 @@ All notable changes to this project are documented here. Format follows
   proposed code — empty or broad excepts, log-and-continue, unrequested fallbacks.
 - `idea-refine` and `prp-draft` state that their output is always a repo file under `PRPs/`,
   never a docs-connector document or an Artifact.
+- **The dev toolchain is locked.** `uv sync` installs the exact ruff and pytest the repo is checked
+  with (a `[dependency-groups]` table — still no `[project]`, so no second version location); the
+  tree is clean under ruff 0.17's expanded default rule set. Project `CLAUDE.md` records the repo's
+  deliberate exemptions from the global rules.
 
 ### Added
 - **`/sync-rules` merges guardrail settings.** A bundled `rules/settings.fragment.json` —
@@ -87,6 +91,16 @@ All notable changes to this project are documented here. Format follows
   problems are routed to the built-in `/debug` — which is also why the skill is not named
   `debug`. Adapted (MIT) from obra/superpowers `systematic-debugging` and mattpocock/skills
   `diagnosing-bugs`, pinned in `NOTICE.md`; no upstream script is shipped.
+- **Skill-triggering evals.** `plugins/asic-tools/evals/` is a seven-case `claude plugin eval`
+  suite — five prompts that should fire a PRP-lifecycle skill or `improve-repo`, two that must not
+  (a code-PR review, a local simplify). Free graders only; run locally, cost-capped.
+- **CI.** `.github/workflows/ci.yml` runs lint, format, pytest, the git-guard tests, the static
+  eval harness and `claude plugin validate --strict` on every push to `main` and every PR — no
+  secrets, no model calls.
+- **Release preflight.** `release` validates plugin repos strictly before surveying, proves the
+  manifest and marketplace entry agree with `claude plugin tag --dry-run` after committing, and
+  bumps uv projects through `uv version`.
+- **`run_evals.py --skip-snyk`** runs every group except the real Snyk upload.
 
 ### Removed
 - **BREAKING: the `diagram` skill is gone; archify is the diagram tool.** `/asic-tools:diagram`,

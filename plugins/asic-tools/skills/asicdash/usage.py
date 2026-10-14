@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Claude usage collector + HTML fragment for the asicdash report.
 
 Aggregates per-day activity from local Claude Code session transcripts

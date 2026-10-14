@@ -4,7 +4,9 @@
 Stdlib-only (this repo is a plugin marketplace, not a Python package — its Python
 ships as standalone python3 scripts, so the evals match that shape). Run with:
 
-    python3 evals/run_evals.py
+    uv run python evals/run_evals.py [--skip-snyk]
+
+--skip-snyk records group (c) as skipped instead of uploading the fixture to Snyk.
 
 Proves four properties of the hardened PRP loop:
   (a) retrieval routing picks the right source       -> test_retrieval_routing
@@ -145,6 +147,7 @@ def test_snyk_gate() -> None:
                 str(FIXTURES),
                 "--severity-threshold=high",
             ],
+            check=False,
             capture_output=True,
             text=True,
             timeout=300,
@@ -181,6 +184,7 @@ def _run_datasentry(script: Path, payload: dict) -> dict:
     with tempfile.TemporaryDirectory() as home:
         proc = subprocess.run(
             ["python3", str(script)],
+            check=False,
             input=json.dumps(payload),
             capture_output=True,
             text=True,
@@ -228,12 +232,21 @@ def test_datasentry_redaction() -> None:
 
 
 def main() -> int:
+    # Reason: group (c) uploads the seeded fixture to Snyk whenever a token is findable; local
+    # gates and CI must be able to run the other groups without that side effect.
+    skip_snyk = "--skip-snyk" in sys.argv[1:]
     for fn in (
         test_retrieval_routing,
         test_prp_gate_invariants,
         test_snyk_gate,
         test_datasentry_redaction,
     ):
+        if skip_snyk and fn is test_snyk_gate:
+            skip(
+                "c1 seeded high finding blocks (snyk exit 1 at --severity-threshold=high)",
+                "--skip-snyk given",
+            )
+            continue
         try:
             fn()
         except Exception as exc:  # noqa: BLE001 — one eval crashing must not hide the rest

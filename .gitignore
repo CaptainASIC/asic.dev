@@ -7,3 +7,4 @@ __pycache__/
 .serena/
 PRPs/
 graphify-out/
+plugins/asic-tools/evals/results/

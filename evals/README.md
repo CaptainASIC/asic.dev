@@ -1,13 +1,16 @@
 # evals/ — Dev Toolbox hardening harness
 
-Stdlib-only eval harness. This repo is a plugin marketplace, not a Python package (the
-`pyproject.toml` carries only ruff config, no `[project]` table), and its Python ships as
-standalone `python3` scripts (`asicdash.py`, `datasentry.py`). The evals match that shape — no
-pytest, no dependency install. Run:
+Stdlib-only eval harness for the PRP loop's static invariants. Its Python matches the plugin's own
+shape — standalone `python3` scripts, no imports beyond the standard library. Run it through the
+repo's locked toolchain (`uv sync` once):
 
 ```bash
-python3 evals/run_evals.py
+uv run python evals/run_evals.py              # all groups; (c) uploads the fixture to Snyk if a token is found
+uv run python evals/run_evals.py --skip-snyk  # local gates and CI: (c) recorded as skipped
 ```
+
+Skill-triggering behaviour is measured separately by the `claude plugin eval` suite in
+`plugins/asic-tools/evals/` (see the repo README, Development).
 
 Exit 0 = all non-skipped checks pass; non-zero = a failure to inspect.
 

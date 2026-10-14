@@ -4,3 +4,14 @@ target-version = "py312"
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.ruff.lint.per-file-ignores]
+# Reason: the seeded Snyk fixture must stay byte-identical (evals/README.md); its noqa comments
+# name bandit rules ruff does not enable.
+"evals/fixtures/*" = ["RUF100"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.0",
+]
