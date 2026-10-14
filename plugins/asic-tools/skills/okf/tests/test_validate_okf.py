@@ -16,6 +16,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 CONFORMANT = FIXTURES / "conformant"
@@ -30,6 +32,12 @@ def run_validator(bundle: Path, *args: str) -> subprocess.CompletedProcess[str]:
         text=True,
         check=False,
     )
+
+
+def _concept(tmp_path: Path, frontmatter: str, body: str = "Body.") -> Path:
+    """Write a one-concept bundle and return its root."""
+    (tmp_path / "c.md").write_text(f"---\n{frontmatter}\n---\n\n{body}\n", encoding="utf-8")
+    return tmp_path
 
 
 def run_index(directory: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -50,6 +58,7 @@ def test_conformant_bundle_exits_zero() -> None:
     result = run_validator(CONFORMANT)
     assert result.returncode == 0, result.stderr
     assert "CONFORMANT" in result.stderr
+    assert "OKF v0.2" in result.stderr
 
 
 def test_root_index_may_carry_frontmatter() -> None:
@@ -152,11 +161,111 @@ def test_unparseable_line_rejected_not_skipped() -> None:
     assert "cannot parse" in result.stderr
 
 
-def test_block_sequence_in_extra_field_is_loud_fail() -> None:
-    """Failure: a block sequence in an extra field is a limitation (3), not NON-CONFORMANT (1)."""
-    result = run_validator(BAD / "block_seq_extra")
-    assert result.returncode == 3
-    assert "cannot parse" in result.stderr
+def test_block_sequence_in_extra_field_is_parsed(tmp_path: Path) -> None:
+    """Expected: a block sequence under an extra key is parsed, not a limitation (v0.2 nesting)."""
+    result = run_validator(_concept(tmp_path, "type: Playbook\ntags:\n  - alpha"))
+    assert result.returncode == 0, result.stderr
+    assert "LIMIT" not in result.stderr
+
+
+def test_v02_attested_computation_conformant(tmp_path: Path) -> None:
+    """Expected: the spec's own §10.2 example (nested maps, flow-map lists) validates clean."""
+    shutil.copy(CONFORMANT / "computations" / "revenue.md", tmp_path / "revenue.md")
+    result = run_validator(tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "LIMIT" not in result.stderr
+    assert "timestamp" not in result.stderr
+
+
+def test_upstream_verified_block_list_parsed(tmp_path: Path) -> None:
+    """Expected: a `verified:` list of flow maps and a multi-key `not:` block both parse."""
+    frontmatter = (
+        "type: Metric\n"
+        "verified:\n"
+        "  - { by: human:x, at: 2026-07-01T09:00:00Z }\n"
+        "not:\n"
+        '  - term: "a"\n'
+        '    why: "b"'
+    )
+    result = run_validator(_concept(tmp_path, frontmatter))
+    assert result.returncode == 0, result.stderr
+
+
+def test_compact_sequence_at_column_zero_parsed(tmp_path: Path) -> None:
+    """Edge: YAML's compact `- item` lines at column 0 under an empty value are the key's block."""
+    result = run_validator(_concept(tmp_path, "type: X\ntags:\n- a\n- b"))
+    assert result.returncode == 0, result.stderr
+
+
+def test_nested_type_does_not_satisfy_required_type(tmp_path: Path) -> None:
+    """Failure: a nested `  type:` never satisfies the required top-level `type`."""
+    result = run_validator(_concept(tmp_path, "meta:\n  type: Metric"))
+    assert result.returncode == 1, result.stderr
+    assert "no non-empty `type`" in result.stderr
+
+
+def test_comment_only_type_rejected(tmp_path: Path) -> None:
+    """Failure: `type: # todo` is a YAML comment, i.e. an empty type."""
+    result = run_validator(_concept(tmp_path, "type: # todo"))
+    assert result.returncode == 1, result.stderr
+    assert "no non-empty `type`" in result.stderr
+
+
+def test_inline_comment_stripped_from_type(tmp_path: Path) -> None:
+    """Edge: a trailing inline comment is not part of the `type` value."""
+    result = run_validator(_concept(tmp_path, "type: Metric  # a note"))
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("frontmatter", ["type: |\ntitle: x", "type: >-\ntitle: x"])
+def test_block_scalar_type_without_content_rejected(tmp_path: Path, frontmatter: str) -> None:
+    """Failure: a block-scalar indicator with no indented content line is an empty `type`."""
+    result = run_validator(_concept(tmp_path, frontmatter))
+    assert result.returncode == 1, result.stderr
+    assert "no non-empty `type`" in result.stderr
+
+
+def test_legacy_v01_fields_warn_not_fail() -> None:
+    """Edge: v0.1 `timestamp` and a `# Citations` body list warn (§13.1), never fail."""
+    result = run_validator(CONFORMANT)
+    assert result.returncode == 0, result.stderr
+    assert "legacy v0.1 `timestamp`" in result.stderr
+    assert "legacy v0.1 `# Citations`" in result.stderr
+
+
+def test_soft_lifecycle_values_warn_not_fail(tmp_path: Path) -> None:
+    """Edge: an unknown `status` and an offset-less `stale_after` warn, never fail."""
+    result = run_validator(_concept(tmp_path, "type: X\nstatus: retired\nstale_after: 2026-09-23"))
+    assert result.returncode == 0, result.stderr
+    assert "§5.4" in result.stderr
+    assert "§5.5" in result.stderr
+
+
+def test_spec_inline_comment_examples_do_not_warn(tmp_path: Path) -> None:
+    """Edge: the spec's own commented `status` / `stale_after` examples draw no soft warning."""
+    frontmatter = (
+        "type: X\n"
+        "status: stable        # draft | stable | deprecated\n"
+        "stale_after: 2026-09-23T00:00:00Z   # c"
+    )
+    result = run_validator(_concept(tmp_path, frontmatter))
+    assert result.returncode == 0, result.stderr
+    assert "§5.4" not in result.stderr
+    assert "§5.5" not in result.stderr
+
+
+def test_tab_indentation_is_indeterminate(tmp_path: Path) -> None:
+    """Failure: tab indentation is reported as a limitation (exit 3), never guessed at."""
+    result = run_validator(_concept(tmp_path, "type: X\ntags:\n\t- a"))
+    assert result.returncode == 3, result.stderr
+    assert "tab" in result.stderr
+
+
+def test_indented_line_before_any_key_is_indeterminate(tmp_path: Path) -> None:
+    """Failure: an indented line with no preceding key is a limitation (exit 3)."""
+    result = run_validator(_concept(tmp_path, "  stray: 1\ntype: X"))
+    assert result.returncode == 3, result.stderr
+    assert "before any key" in result.stderr
 
 
 def test_missing_type_behind_block_sequence_rejected() -> None:
@@ -257,6 +366,15 @@ def test_index_lists_subdirectories() -> None:
     result = run_index(CONFORMANT)
     assert result.returncode == 0, result.stderr
     assert "* [tables](tables/) -" in result.stdout
+
+
+def test_index_drops_block_scalar_description(tmp_path: Path) -> None:
+    """Edge: a folded `description: >` never prints its bare indicator into the §8 entry."""
+    _concept(tmp_path, "type: X\ndescription: >\n  folded text")
+    result = run_index(tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "* [c](c.md) -" in result.stdout
+    assert "- >" not in result.stdout
 
 
 def test_generated_body_has_no_frontmatter() -> None:

@@ -1,25 +1,29 @@
 # Attribution
 
-`references/okf-0.1.md` is the **Open Knowledge Format (OKF) v0.1 — Draft** specification, vendored
-verbatim from
-[GoogleCloudPlatform/knowledge-catalog](https://github.com/GoogleCloudPlatform/knowledge-catalog),
-file `okf/SPEC.md`, pinned at commit **`ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a`** (2026-06-12),
-fetched 2026-07-10 and verified byte-identical with `cmp` (15,046 bytes).
+`references/okf-0.2.md` is the **Open Knowledge Format (OKF) — Version 0.2** specification,
+vendored verbatim from
+[GoogleCloudPlatform/open-knowledge-format](https://github.com/GoogleCloudPlatform/open-knowledge-format),
+file `SPEC.md`, pinned at commit **`ad30107c31c06aec8a7d5636e0d1058118604e6f`** (2026-08-21),
+fetched 2026-10-13. 37,748 bytes, SHA-256
+`26aa5da029278939f914e578107242d9607d4f2dc5fe153272b82f9ed1030101`.
 
-Upstream is licensed **Apache License 2.0** (`okf/LICENSE.md`). The specification text is
-**unmodified** — nothing was adapted, reformatted, or rewritten. Only this skill's tooling
-(`scripts/`, `tests/`) is original work.
+Upstream is licensed **Apache License 2.0** (`LICENSE.md`). The specification text is
+**unmodified**. The test fixture `tests/fixtures/conformant/computations/revenue.md` is the §10.2
+example from the same file, copied verbatim. Everything else in `scripts/` and `tests/` is original
+work.
+
+v0.1 bundles are read under v0.2's own §13 fallbacks; no v0.1 copy is kept.
 
 ## Staleness
 
-OKF v0.1 is a **Draft**. Upstream will move, and the failure is quiet: this skill would keep
-validating against a specification the world has moved past. There is deliberately **no network
-check** in the validator — it stays offline and deterministic.
+Upstream will move, and the failure is quiet: this skill would keep validating against a
+specification the world has moved past. There is deliberately **no network check** in the
+validator. It stays offline and deterministic.
 
 Re-check upstream before relying on a conformance result for a new bundle:
 
-    curl -sL "https://raw.githubusercontent.com/GoogleCloudPlatform/knowledge-catalog/main/okf/SPEC.md" \
-      | cmp - references/okf-0.1.md && echo "still current" || echo "UPSTREAM MOVED"
+    curl -sL "https://raw.githubusercontent.com/GoogleCloudPlatform/open-knowledge-format/main/SPEC.md" \
+      | cmp - references/okf-0.2.md && echo "still current" || echo "UPSTREAM MOVED"
 
 ## Apache License 2.0 — NOTICE
 

@@ -7,6 +7,15 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Changed
+- **`okf` targets OKF v0.2.** The spec is re-vendored from its new home,
+  `GoogleCloudPlatform/open-knowledge-format`, pinned at `ad30107` (v0.1 copy removed). The
+  validator now parses v0.2's nested frontmatter (`sources`, `verified`, `executor`, …), which it
+  previously reported as indeterminate for every real v0.2 bundle. A nested `type`, or a
+  comment-only `type: # todo`, still fails. v0.1 bundles stay conformant, with migration warnings
+  for `timestamp` and `# Citations`.
+- **graphify guards are upstream's.** `/sync-rules` registers `graphify hook-guard search|read`
+  (graphify ≥0.9.88: capped, project-scoped, staleness-aware) in place of the two hand-made
+  user-scope scripts, which it retires.
 - **BREAKING: the global rules ship as a core plus path-scoped files.** `~/.claude/CLAUDE.md` now
   holds only the language-agnostic core (~177 lines, down from 471); Python, Pydantic,
   configuration, testing, structure and DB/API rules move verbatim to `~/.claude/rules/asic-*.md`
@@ -80,6 +89,13 @@ All notable changes to this project are documented here. Format follows
   workflow / network" triggers, so keeping both left the choice to chance. `sync-rules` now checks
   archify's version and offers the install or upgrade, running it only on an explicit yes. Existing
   `.drawio` files still open in draw.io; dev-mode installs should `rm ~/.claude/skills/diagram`.
+
+### Fixed
+- **`sync-rules` no longer fights `graphify install` over `~/.claude/CLAUDE.md`.** The
+  `# graphify` skill-registration section is graphify's. sync-rules now composes the bundled rules
+  with that section preserved at EOF, so both tools are no-ops against each other. Previously,
+  running `graphify install` ≥0.9 before a sync could delete everything after a mid-file
+  `# graphify` heading.
 
 ## [1.0.0] - 2026-09-04
 

@@ -3,7 +3,8 @@
 Additive and idempotent: dicts merge recursively, lists gain only the fragment items they lack (in
 the target's order, new items appended), absent scalars are added. A scalar the target already sets
 to a different value is a CONFLICT and is left alone unless ``--prefer-fragment`` is passed. Nothing
-the fragment does not mention is touched, and nothing is ever removed.
+the fragment does not mention is touched, and nothing is removed except hook entries the fragment's
+``$retire`` list names (``hooks.PreToolUse`` only).
 
 Dry-run by default: prints a STATUS line, any conflicts, and a unified diff. ``--write`` applies the
 merge atomically and keeps the previous file at ``<target>.sync-rules.bak``.
@@ -82,6 +83,60 @@ def _take(target: Any, fragment: Any, prefer_fragment: bool, union: bool = False
     return fragment
 
 
+def retire_substrings(spec: Any) -> list[str]:
+    """Validate the fragment's ``$retire`` value and return its ``hooks.PreToolUse`` substrings.
+
+    Raises:
+        ValueError: If ``spec`` names any other path or is not a list of non-empty strings.
+    """
+    if not isinstance(spec, dict) or set(spec) != {"hooks.PreToolUse"}:
+        raise ValueError('fragment "$retire" may only name "hooks.PreToolUse"')
+    subs = spec["hooks.PreToolUse"]
+    if not isinstance(subs, list) or not all(isinstance(s, str) and s for s in subs):
+        raise ValueError('fragment "$retire" value must be a list of non-empty strings')
+    return subs
+
+
+def retire(target: dict[str, Any], substrings: list[str]) -> tuple[dict[str, Any], list[str]]:
+    """Drop PreToolUse hook entries whose ``command`` contains a retired substring.
+
+    Args:
+        target: Current settings; never mutated.
+        substrings: Command substrings to retire.
+
+    Returns:
+        The settings with matching entries removed, and the removed commands in order. A group
+        emptied by the removal is dropped; groups that were already empty are left alone.
+
+    Reason: the merge is additive by design (PRP-019 rejected a generic "make target equal
+    fragment" mode). This is the one bounded exception, so a replaced hook does not run beside
+    its successor; it touches ``hooks.PreToolUse`` and nothing else.
+    """
+    hooks = target.get("hooks")
+    groups = hooks.get("PreToolUse") if isinstance(hooks, dict) else None
+    if not isinstance(groups, list) or not substrings:
+        return target, []
+    removed: list[str] = []
+    kept_groups: list[Any] = []
+    for group in groups:
+        entries = group.get("hooks") if isinstance(group, dict) else None
+        if not isinstance(entries, list) or not entries:
+            kept_groups.append(group)
+            continue
+        kept = []
+        for entry in entries:
+            command = entry.get("command") if isinstance(entry, dict) else None
+            if isinstance(command, str) and any(s in command for s in substrings):
+                removed.append(command)
+            else:
+                kept.append(entry)
+        if kept:
+            kept_groups.append({**group, "hooks": kept} if len(kept) < len(entries) else group)
+    if not removed:
+        return target, []
+    return {**target, "hooks": {**hooks, "PreToolUse": kept_groups}}, removed
+
+
 def load_object(path: Path) -> dict[str, Any]:
     """Read a JSON object from ``path``; an absent file reads as ``{}``.
 
@@ -134,12 +189,15 @@ def main(argv: list[str] | None = None) -> int:
         if not args.fragment.is_file():
             raise ValueError(f"{args.fragment}: fragment not found")
         fragment = load_object(args.fragment)
+        spec = fragment.pop("$retire", None)
+        substrings = retire_substrings(spec) if spec is not None else []
         current = load_object(args.target)
     except (OSError, ValueError, TypeError) as exc:  # JSONDecodeError is a ValueError
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
     conflicts: list[str] = []
-    merged = merge(current, fragment, (), conflicts, args.prefer_fragment)
+    retired_target, retired = retire(current, substrings)
+    merged = merge(retired_target, fragment, (), conflicts, args.prefer_fragment)
     before, after = render(current), render(merged)
     status = (
         "conflict"
@@ -147,6 +205,8 @@ def main(argv: list[str] | None = None) -> int:
         else ("current" if before == after else "pending")
     )
     print(f"STATUS: {status}")
+    for command in retired:
+        print(f"RETIRED: {command}")
     for line in conflicts:
         print(f"CONFLICT: {line}")
     diff = difflib.unified_diff(
