@@ -36,7 +36,10 @@ characterise behaviour, do not sweep, do not build a picture of how something wo
    on what is actually being solved before anything else.
 2. **Sharpen** with 3–5 questions, no more (`AskUserQuestion` in Claude Code). Do not proceed
    until *who it is for* and *what success looks like* are answered. Cover: who specifically,
-   what success looks like, real constraints (time/tech/resources), what's been tried, why now.
+   what success looks like, real constraints (time/tech/resources), what's been tried, why now —
+   and **how it gets made**: which platform, language and library choices the user wants to own,
+   which they hand to you, and what already exists to build on. A choice you make for them is
+   your call, recorded as one, never presented as something they agreed to.
 3. **Generate 5–8 variations** — quality over quantity. Pick the lenses that fit; do not run
    all mechanically:
    - **Inversion** — what if we did the opposite?
@@ -69,9 +72,31 @@ After the user reacts to Phase 1 (what resonates, what they push back on):
 
 ## Phase 3 — Sharpen & Ship
 
-Produce the one-pager. Confirm the direction with the user, then write it to
-`PRPs/ideas/<idea-slug>.md` (create `PRPs/ideas/` if absent — the only file this skill
-writes). Co-located with `PRPs/` so the idea → PRP chain lives in one tree.
+Produce the one-pager, then run the **builder check** below. Confirm the direction with the
+user, then write it to `PRPs/ideas/<idea-slug>.md` (create `PRPs/ideas/` if absent — the only
+file this skill writes). Co-located with `PRPs/` so the idea → PRP chain lives in one tree.
+The one-pager is always this repo file — never a Claude Docs document or an Artifact, even when
+a connected docs tool or skill calls itself the default for documents.
+
+**Builder check.** Before confirming, dispatch one fresh subagent — Agent tool,
+`subagent_type: general-purpose`, `model: sonnet`, `effort: medium` — with the draft one-pager
+inline (it is not saved yet) and this brief:
+
+> You are a talented engineer handed this one-pager and asked to plan the build. You cannot talk
+> to its author. Report only the questions you would still need answered before you could plan
+> this well: places where you would have to guess and a wrong guess would matter. For each, give
+> the question and why the answer changes the plan, ranked by importance. Skip anything the
+> one-pager leaves to the builder, anything you could reasonably decide yourself, and wording
+> nitpicks. If nothing important is left, say "nothing important left".
+
+Sort what comes back into three piles. **Answered already** by the conversation or the repo: put
+the answer in the one-pager. **Minor** — a sensible builder could settle it without changing what
+gets built: settle it yourself and list it under **Drafter's Calls**. **Theirs** — only the user
+can answer, and the answer changes what gets built: ask in one message, most important first.
+That is the only round of questions the check produces. A return that is neither a ranked
+question list nor "nothing important left" is re-run once; if the re-run also fails, tell the
+user "builder check failed" and do not list it as run. (Adapted from obra/superpowers
+`skills/brainstorming`, MIT.)
 
 ```markdown
 # <Idea Name>
@@ -96,6 +121,9 @@ writes). Co-located with `PRPs/` so the idea → PRP chain lives in one tree.
 
 ## Open Questions
 <what must be answered before building>
+
+## Drafter's Calls
+- <decision> — <why> (settled by the skill, not confirmed by the user)
 ```
 
 The **Not Doing** list is the most valuable section — focus is saying no to good ideas. Make
@@ -123,6 +151,7 @@ straight onto the canonical PRP template:
 | **Not Doing (and Why)** | §1 **Strict non-goals**, §11 anti-patterns |
 | Key Assumptions to Validate | §4.4 GOTCHA candidates / `SPECULATIVE — verify` markers |
 | Open Questions | `prp-draft` Phase 4 interview inputs |
+| Drafter's Calls | `prp-draft` Phase 4 — each confirmed or overturned by the user |
 
 `idea-refine` settles *what to build and why*; `prp-draft` then does the verified-context
 research `idea-refine` deliberately skips. Keep the seam clean — do not start codebase
@@ -147,4 +176,6 @@ Before reporting done:
 - [ ] Hidden assumptions listed with validation strategies
 - [ ] A Not-Doing list makes trade-offs explicit
 - [ ] Output is a concrete one-pager at `PRPs/ideas/<slug>.md`, user confirmed before save
+- [ ] Builder check returned a valid result (ranked questions or "nothing important left");
+  "theirs" questions asked in one round; Drafter's Calls listed — or "builder check failed" told
 - [ ] prp-draft hand-off offered, not forced

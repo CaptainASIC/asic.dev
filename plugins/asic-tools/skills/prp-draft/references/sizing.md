@@ -101,7 +101,7 @@ tier. Those lenses compare proposals against the repo files a PRP cites; zero ci
 Style lenses are orthogonal to this table: 3 when `citedFileCount > 0`, else 0, at every tier.
 
 **Large-workflow advisory.** An L or XL review schedules up to `rounds × (lenses + 2) + 1` agents —
-each round's lenses plus adjudicate and apply, then one final verify: 31 with today's eight lenses.
+each round's lenses plus adjudicate and apply, then one final verify: 34 with today's nine lenses.
 Claude Code's `Large workflow` warning fires above 25 agents or a projected 1.5M tokens, so it is
 expected at L/XL and is not a fault. A size guideline chosen in `/config` replaces the 25 with its
 own count (`medium` → 10, which an M review also exceeds); with ultracode on, the warning does not

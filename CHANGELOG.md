@@ -34,6 +34,10 @@ All notable changes to this project are documented here. Format follows
   graphify result into each delegation.
 - Corrected the "not routable from a plugin" notes: skill frontmatter can set `model`/`effort` for
   the current turn only, which is why the drafting and implementing skills leave both unset.
+- `prp-review`'s `silent-failure` lens also flags error handling that hides failure in a PRP's
+  proposed code — empty or broad excepts, log-and-continue, unrequested fallbacks.
+- `idea-refine` and `prp-draft` state that their output is always a repo file under `PRPs/`,
+  never a docs-connector document or an Artifact.
 
 ### Added
 - **`/sync-rules` merges guardrail settings.** A bundled `rules/settings.fragment.json` —
@@ -55,6 +59,18 @@ All notable changes to this project are documented here. Format follows
   plugin `SessionStart` hook prints it back after compaction. Passed checks are
   reported with their actual output, §9 levels run in quiet form, the run notifies at the plan
   pause and at the end, and the final report offers an optional `/code-review ultra`.
+
+- **Builder check before hand-off.** `idea-refine` and `prp-draft` each dispatch one fresh
+  subagent that reads the design as its builder and lists what it would still have to guess.
+  Only the questions that change what gets built reach you, in one round; every call the skill
+  made on its own is listed as its call. Both skills now ask which platform, language and
+  library choices you want to own. Adapted from obra/superpowers (MIT).
+- **`type-design` review lens.** `prp-review` runs six logic lenses: the new one tests proposed
+  data types for invariants enforced at construction and illegal states, and returns nothing on
+  a PRP that introduces no types. Adapted from pr-review-toolkit (Apache-2.0).
+- **Test seams in the PRP template.** §7.0 lists the public boundaries tests may target, agreed
+  in the interview; an optional Hypothesis property gate applies only when the project already
+  depends on Hypothesis.
 
 ### Removed
 - **BREAKING: the `diagram` skill is gone; archify is the diagram tool.** `/asic-tools:diagram`,

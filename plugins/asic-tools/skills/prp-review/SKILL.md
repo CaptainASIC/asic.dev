@@ -1,6 +1,6 @@
 ---
 name: prp-review
-description: Adversarial review gate for a drafted PRP — fans out tier-sized distinct-lens reviewers (five on logic, three on style/convention drift against the real target repo, gated on citations) via a Workflow, adjudicates their findings to drop false positives, applies blocker/major fixes to the PRP in place, and re-reviews up to the tier's round cap before appending a review-log. Use when the user says "review this PRP", "harden the PRP", "adversarial review", "stress-test PRP-NNN", or invokes /prp-review — after prp-draft and before prp-implement. Sits between prp-draft and prp-implement in the pipeline.
+description: Adversarial review gate for a drafted PRP — fans out tier-sized distinct-lens reviewers (six on logic, three on style/convention drift against the real target repo, gated on citations) via a Workflow, adjudicates their findings to drop false positives, applies blocker/major fixes to the PRP in place, and re-reviews up to the tier's round cap before appending a review-log. Use when the user says "review this PRP", "harden the PRP", "adversarial review", "stress-test PRP-NNN", or invokes /prp-review — after prp-draft and before prp-implement. Sits between prp-draft and prp-implement in the pipeline.
 ---
 
 # prp-review
@@ -49,9 +49,11 @@ no skill invokes it — including this one.
   "topTierModel": "${user_config.top_tier_model}" }` — the verdict computed in Phase 0, plus the
   user's `top_tier_model` setting passed through verbatim (the workflow honours only `mythos`).
 
-The script fans out <n> lenses in parallel. The five logic lenses always run
+The script fans out <n> lenses in parallel. The six logic lenses always run
 (requirements-coverage, architecture-soundness, over-build, edge-cases & verifiability,
-silent-failure). The three style lenses (naming, structure, conventions — each reading the cited
+silent-failure — including errors swallowed by proposed code — and type-design, which returns
+nothing when the PRP introduces no types). The three style lenses (naming, structure,
+conventions — each reading the cited
 repo files) run only when `citedFileCount > 0`, since a PRP citing no repo files gives them
 nothing to compare against. It adjudicates, applies blocker/major fixes to the PRP in place, and
 repeats up to the tier's round cap, exiting early when a round yields no blocker/major findings.
