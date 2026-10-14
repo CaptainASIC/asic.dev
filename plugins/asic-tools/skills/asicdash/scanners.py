@@ -1,7 +1,8 @@
 """asicdash scanners: every filesystem probe, and the shapes they return.
 
 Split out of asicdash.py (PRP-018) once that module passed the 500-line cap. Holds `Entry`,
-the small helpers, and the eight `scan_*` functions.
+the small helpers, and the non-plugin `scan_*` functions (plugin scanning lives in
+plugins_scan.py, PRP-027).
 
 **Dependency direction is one-way: this module never imports asicdash.py.** Every helper a
 scanner touches lives here, including the ones asicdash.py also uses -- it imports them back.
@@ -20,9 +21,11 @@ import shlex
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 HOME = Path.home()
 CHARS_PER_TOKEN = 4  # crude but stable estimate for always-loaded cost
+TOKEN_RUN = re.compile(r"[A-Za-z0-9_-]{24,}")
 
 
 @dataclass
@@ -30,7 +33,9 @@ class Entry:
     """One discovered config item."""
 
     tool: str  # claude
-    kind: str  # skill | agent | command | rule | hook | hook-script | plugin | memory | mcp | workflow | permissions | env | routine
+    # kind: skill | agent | command | rule | hook | hook-script | plugin | memory | mcp | workflow |
+    # permissions | env | routine | mod | lsp | output-style | theme | monitor | bin | plugin-settings
+    kind: str
     name: str
     scope: str  # global | project | local | plugin:<name>
     source: str  # origin path, ~-shortened
@@ -132,6 +137,44 @@ def command_label(command: str) -> str:
     return " ".join(Path(p).name if "/" in p else p for p in parts[:3])
 
 
+def redact_url(value: str) -> str:
+    """Strip userinfo, query and fragment from a URL so a key inside it never reaches a report.
+
+    Args:
+        value: An MCP config's command, url, or transport type.
+
+    Returns:
+        `scheme://host[:port]/path`, with any 24+ character token run in the path masked as
+        `[…]`, suffixed " (redacted)" when anything was dropped or masked. Values that are not
+        URLs pass through unchanged.
+
+    Example:
+        >>> redact_url("https://api.example.com/mcp?apiKey=abc")
+        'https://api.example.com/mcp (redacted)'
+    """
+    if "://" not in value:
+        return value
+    try:
+        parts = urlsplit(value)
+        port = parts.port  # Reason: .port raises ValueError on an out-of-range port.
+    except ValueError:
+        return "<unparseable url>"
+    host = (parts.hostname or "") + (f":{port}" if port else "")
+    # Reason: hosted MCP URLs often carry the key in the path (`/s/<token>/mcp`). Mask any run
+    # of 24+ token characters, the same rule as prompt previews (§3.10).
+    path = TOKEN_RUN.sub("[…]", parts.path)
+    dropped = parts.query or parts.fragment or parts.username or parts.password
+    clean = urlunsplit((parts.scheme, host, path, "", ""))
+    return clean + (" (redacted)" if dropped or path != parts.path else "")
+
+
+def mcp_desc(cfg: object) -> str:
+    """Display text for one MCP server config: command, else url, else type. Always redacted."""
+    if not isinstance(cfg, dict):
+        return ""
+    return redact_url(str(cfg.get("command") or cfg.get("url") or cfg.get("type") or ""))
+
+
 def flatten_hooks(hooks_obj: dict) -> dict[str, list[str]]:
     """Flatten Claude's hooks structure into {command: [event[matcher], ...]}."""
     by_command: dict[str, list[str]] = {}
@@ -194,6 +237,14 @@ def scan_md_dir(root: Path, kind: str, scope: str, autoloaded: bool = False) -> 
             if bits:
                 joined = " · ".join(bits)
                 desc = f"{joined} — {desc}" if desc else joined
+        # Reason: a rule with `paths:` loads only when Claude touches a matching file (memory
+        # docs, path-specific rules), so it is not part of the always-loaded figure. The
+        # frontmatter reader keeps the key even when its value is a block list (value "").
+        conditional = kind == "rule" and "paths" in fm
+        if conditional:
+            desc = "conditional (paths) — loads when matching files are touched" + (
+                f"; {desc}" if desc else ""
+            )
         entries.append(
             Entry(
                 tool="claude",
@@ -204,7 +255,7 @@ def scan_md_dir(root: Path, kind: str, scope: str, autoloaded: bool = False) -> 
                 desc=desc,
                 # agents require frontmatter; commands and rules may be plain markdown
                 status=f"broken: {err}" if err and kind == "agent" else "ok",
-                tokens=est_tokens(f) if autoloaded else 0,
+                tokens=est_tokens(f) if autoloaded and not conditional else 0,
             )
         )
     return entries
@@ -299,100 +350,6 @@ def scan_settings(path: Path, scope: str, project: Path, registered: list[str]) 
     return entries
 
 
-def scan_plugins(paths: dict[str, Path], project: Path, registered: list[str]) -> list[Entry]:
-    entries: list[Entry] = []
-    data = load_json(paths["claude_installed_plugins"])
-    for full_name, installs in sorted((data.get("plugins") or {}).items()):
-        name = full_name.split("@")[0]
-        scope = f"plugin:{name}"
-        install = installs[0] if isinstance(installs, list) and installs else {}
-        root = Path(install.get("installPath", "/nonexistent"))
-        meta = load_json(root / ".claude-plugin" / "plugin.json")
-        entries.append(
-            Entry(
-                tool="claude",
-                kind="plugin",
-                name=full_name,
-                scope=install.get("scope", "user"),
-                source=short(root),
-                desc=meta.get("description", ""),
-                status="ok" if root.is_dir() else "broken: install path missing",
-            )
-        )
-        if not root.is_dir():
-            continue
-        entries += scan_skills(root / "skills", scope)
-        for e in scan_md_dir(root / "agents", "agent", scope):
-            entries.append(e)
-        for e in scan_md_dir(root / "commands", "command", scope):
-            entries.append(e)
-        entries += scan_workflows(root / "workflows", scope)
-        hooks_file = root / "hooks" / "hooks.json"
-        for cmd, events in sorted(flatten_hooks(load_json(hooks_file).get("hooks") or {}).items()):
-            registered.append(cmd.replace("${CLAUDE_PLUGIN_ROOT}", str(root)))
-            entries.append(
-                Entry(
-                    tool="claude",
-                    kind="hook",
-                    name=command_label(cmd),
-                    scope=scope,
-                    source=short(hooks_file),
-                    desc=f"{len(events)} event(s): " + ", ".join(events),
-                    status=command_status(cmd, project, plugin_root=root),
-                )
-            )
-    return entries
-
-
-# A plugin workflow's model/effort lives in a named ROUTING block (PRP-014). Read that block with
-# a regex over one agreed convention -- never a JS parser.
-# CRITICAL: the two shipped blocks use DIFFERENT key shapes. review_workflow.js writes bare
-# identifiers (`reviewLogic:`), improve_workflow.js writes quoted keys
-# (`'version-consolidation':`). The optional ["']? is what accepts both; a regex matching only one
-# reports 0 roles on a file that plainly has six, silently.
-ROUTING_BLOCK = re.compile(r"const\s+ROUTING\s*=\s*\{(.*?)\n\}", re.DOTALL)
-ROUTING_ROLE = re.compile(
-    r"""["']?(?P<role>[\w-]+)["']?\s*:\s*\{[^}]*?model:\s*['"](?P<model>[\w-]+)['"]"""
-    r"""(?:[^}]*?effort:\s*['"](?P<effort>[\w-]+)['"])?""",
-    re.DOTALL,
-)
-META_NAME = re.compile(r"name:\s*['\"]([\w-]+)['\"]")
-
-
-def scan_workflows(root: Path, scope: str) -> list[Entry]:
-    """Plugin workflows, with the model/effort each routing role sets.
-
-    Reports the role COUNT alongside the models so a block that parsed to nothing shows
-    `0 routing roles` next to a file that plainly has them -- a loud discrepancy, not a blank.
-    """
-    entries: list[Entry] = []
-    if not root.is_dir():
-        return entries
-    for f in sorted(root.glob("*.js")):
-        text = read_text(f)
-        block = ROUTING_BLOCK.search(text)
-        roles = ROUTING_ROLE.findall(block.group(1)) if block else []
-        name_m = META_NAME.search(text)
-        combos: dict[str, int] = {}
-        for _role, model, effort in roles:
-            key = f"{model}·{effort}" if effort else model
-            combos[key] = combos.get(key, 0) + 1
-        detail = ", ".join(f"{k} ×{v}" for k, v in sorted(combos.items()))
-        plural = "" if len(roles) == 1 else "s"
-        desc = f"{len(roles)} routing role{plural}" + (f": {detail}" if detail else "")
-        entries.append(
-            Entry(
-                tool="claude",
-                kind="workflow",
-                name=name_m.group(1) if name_m else f.stem,
-                scope=scope,
-                source=short(f),
-                desc=desc,
-            )
-        )
-    return entries
-
-
 def scan_hook_scripts(root: Path, registered: list[str]) -> list[Entry]:
     """Files in ~/.claude/hooks that nothing references: likely rot.
 
@@ -428,11 +385,6 @@ def scan_hook_scripts(root: Path, registered: list[str]) -> list[Entry]:
 
 def scan_mcp(paths: dict[str, Path], project: Path) -> list[Entry]:
     entries: list[Entry] = []
-
-    def mcp_desc(cfg: object) -> str:
-        if not isinstance(cfg, dict):
-            return ""
-        return str(cfg.get("command") or cfg.get("url") or cfg.get("type") or "")
 
     proj_mcp = load_json(paths["claude_proj_mcp"])
     for name, cfg in sorted((proj_mcp.get("mcpServers") or {}).items()):

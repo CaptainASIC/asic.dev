@@ -26,6 +26,10 @@ browser. Flags:
 - `--json` — machine-readable; use when you need to post-process, not for display
 - `--html PATH` — override the report path; `--no-open` to skip the browser
 
+The first run after a plugin install or update can take ~20 s: it measures each plugin's context
+cost with `claude plugin details` and caches the result per installed version. Later runs reuse
+the cache.
+
 Only use `--cli` when the user explicitly asks for the table/chat-only output.
 
 ## Present
@@ -34,7 +38,9 @@ Only use `--cli` when the user explicitly asks for the table/chat-only output.
    CLI mode: script output verbatim in a fenced code block. Do not reformat, reorder,
    or summarize the table.
 2. Below it, at most 3 bullets flagging anomalies only: broken/shadowed/unregistered items,
-   surprising hook registrations (commands firing on many events), or heavy always-loaded
-   context. If the SUMMARY section shows no problems, say so in one line.
+   mods (in-process hooks that can approve tool calls), monitors, broad allow rules that grant
+   arbitrary code execution, a `routing override` env var, unmeasured plugin cost, surprising
+   hook registrations, or heavy always-loaded context. If the SUMMARY section shows no
+   problems, say so in one line.
 
 No editorializing beyond anomalies. If the script errors, show the error verbatim.

@@ -15,7 +15,7 @@ from __future__ import annotations
 import html
 from collections import Counter
 
-from usage import usage_fragment
+from usage_html import usage_fragment
 
 # Display order and sentence-case labels for the four scope sections.
 SECTIONS = [
@@ -319,6 +319,7 @@ def _banners(attention: list[dict]) -> str:
 
 def _context_bar(summary: dict) -> str:
     always, desc = summary["always_loaded_tokens"], summary["desc_tokens"]
+    measured = summary.get("desc_tokens_measured", 0)
     total = always + desc
     if not total:
         return ""
@@ -332,7 +333,7 @@ def _context_bar(summary: dict) -> str:
         f' title="skill/agent/command descriptions: ~{desc} tok"></div></div>'
         f'<div class="legend"><span><span class="sw s1"></span>memory + rules ~{always}</span>'
         f'<span><span class="sw s2"></span>skill/agent descriptions ~{desc}'
-        " (system prompt)</span></div></div>"
+        f" (system prompt; ~{measured} measured)</span></div></div>"
     )
 
 

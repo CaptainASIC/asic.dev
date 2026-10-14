@@ -205,16 +205,26 @@ see by listing directories:
 
 - **Hook registrations** — commands firing invisibly on session events (flattened from
   `settings.json`, deduplicated, executable-existence checked)
-- **Plugin-injected surface** — skills, agents, commands, and hooks shipped by installed plugins
-- **Always-loaded context cost** — token estimates for `CLAUDE.md`, rules, memory, `AGENTS.md`
-  loaded into every session
+- **Plugin-injected surface** — every component type a plugin loads (skills, commands, agents,
+  workflows, hooks incl. inline manifest hooks, MCP and LSP servers, output styles, themes,
+  monitors, `bin/` executables, plugin settings) and **mods**, resolved under Claude Code's
+  replace/add/merge rules, with the marketplace entry as the manifest when a plugin has no
+  `plugin.json`
+- **Always-loaded context cost** — token estimates for `CLAUDE.md`, rules, memory and
+  `AGENTS.md`, plus each plugin's always-on and heaviest on-invoke cost as measured by
+  `claude plugin details` (cached per installed version)
 - **Rot and shadowing** — hook scripts on disk that nothing references, project entries shadowing
   global ones, broken frontmatter, missing executables
+- **Risky settings** — allow rules that grant arbitrary code execution (the categories
+  auto mode drops), and env vars that override model routing
+  (`CLAUDE_CODE_SUBAGENT_MODEL_FORCE`, `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL`), names only
 - **Claude Code usage** — per-day activity from `~/.claude/projects/**/*.jsonl` (every transcript
   there is a Claude Code session): GitHub-style contribution heatmap colored by launch surface
   (Terminal = CLI, Desktop = the Claude desktop app; claude.ai Chat leaves no local transcript and
   is labeled "no local data"), at-a-glance token totals for today / last 7 days / last 30 days /
-  all-time, hover tooltips, per-day breakdown modals, weekly stacked token chart
+  all-time, hover tooltips, per-day breakdown modals, weekly stacked token chart; each API
+  request counted once, subagent and workflow-agent transcripts included, a cache-hit row and the
+  ten most expensive prompts (previews masked)
 
 ### Usage
 
@@ -228,10 +238,10 @@ python3 "$DASH" --html report.html --no-open # explicit path, no browser launch
 python3 "$DASH" --project ~/Repositories/Airi
 ```
 
-The HTML report (`html_report.py` + `usage.py`, stdlib only like the scanner) is a single
-self-contained file: collapsible sections per scope, plugins folded to one block each with
-skill/agent chips, attention banners, the usage heatmap, a context-cost bar, and ASIC
-Light/Dark themes (follows the system scheme, toggle persisted in `localStorage`).
+The HTML report (`html_report.py` + `usage.py` + `usage_html.py`, stdlib only like the scanner) is a
+single self-contained file: collapsible sections per scope, plugins folded to one block each with
+skill/agent chips, attention banners, the usage heatmap, a context-cost bar, and ASIC Light/Dark
+themes (follows the system scheme, toggle persisted in `localStorage`).
 
 In Claude Code: ask "show my config dashboard" (triggers the `asicdash` skill).
 
@@ -242,25 +252,25 @@ In Claude Code: ask "show my config dashboard" (triggers the `asicdash` skill).
 | `~/.claude/{skills,agents,commands,rules}` | global | frontmatter parse |
 | `.claude/{skills,agents,commands,rules}` | project | frontmatter parse |
 | `settings.json` / `settings.local.json` (both scopes) | hooks, statusLine, permissions, env | JSON flatten + executable check |
-| `installed_plugins.json` → plugin contents | plugin | walk install path |
+| `installed_plugins.json` + marketplace entries → plugin contents | plugin | manifest-aware component resolution (plugins_scan.py) |
+| `CLAUDE_CODE_PLUGIN_DIRS`, `*/.claude/skills/<name>/.claude-plugin/` | plugin (from disk) | same resolution, no cost |
+| `claude plugin details <name>` | plugin | always-on + on-invoke tokens, cached |
 | `~/.claude/hooks/` | orphan detection | cross-ref vs registrations |
 | `CLAUDE.md`, `CLAUDE.local.md`, managed memory `MEMORY.md` | global + project | token estimate |
 | `.mcp.json`, `~/.claude.json` mcpServers | global + project | names + command |
 | `AGENTS.md` | project | token estimate |
 | plugin `workflows/*.js` | plugin | routing block: model + effort per role |
-| `~/.claude/projects/**/*.jsonl` session transcripts | usage (HTML report) | per-day token/session aggregation |
+| process env + settings `env` blocks | global + project | routing-override names |
+| `~/.claude/projects/*/*.jsonl` + `*/*/subagents/**/*.jsonl` | usage (HTML report) | per-request (deduped) token, cache and prompt aggregation |
 
 ### Known gaps, on purpose
-
-- **`output-styles/`, `monitors/`, `.lsp.json`, `bin/`** — zero occurrences across every
-  installed plugin, so a scanner for them would be code that never fires and a maintenance
-  cost across Claude Code layout changes. Revisit when one actually appears.
 
 - **Claude routines / scheduled cloud agents**: stored server-side, no local file. Reported as
   `n/a`; list with `/schedule` in Claude Code.
 - **claude.ai Chat usage**: web sessions leave no local transcript; the usage section labels
   Chat "no local data" rather than guessing.
-- Token counts are `bytes / 4` estimates, not tokenizer output.
+- Non-plugin token counts are `bytes / 4` estimates; plugin counts come from
+  `claude plugin details`, itself an estimate.
 
 ### Maintenance
 
