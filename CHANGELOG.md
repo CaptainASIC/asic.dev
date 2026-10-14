@@ -26,6 +26,14 @@ All notable changes to this project are documented here. Format follows
   branch deletes ask. An unparseable payload exits 2 and the hook sets `onFailure: "block"`, so a
   crash or timeout blocks instead of passing. Non-git commands no longer spawn python. **Breaking:**
   commands the guard used to allow are now denied or asked.
+- **Haiku seats re-tuned for Haiku 5.5.** `citation-scout` and improve-repo's three mechanical
+  checks run at `medium` effort; prp-review's style lenses stay at `low`. Haiku 5.5 is the first
+  Haiku that honours effort, and at `low` it stops early in long loops.
+- **`citation-scout` takes graphify orientation from its caller.** It never had `Bash`, so its
+  graphify-first mandate could not be followed; prp-draft and prp-implement now paste the scoped
+  graphify result into each delegation.
+- Corrected the "not routable from a plugin" notes: skill frontmatter can set `model`/`effort` for
+  the current turn only, which is why the drafting and implementing skills leave both unset.
 
 ### Added
 - **`/sync-rules` merges guardrail settings.** A bundled `rules/settings.fragment.json` —
@@ -33,6 +41,13 @@ All notable changes to this project are documented here. Format follows
   `git push`, and `autoMode.hard_deny` rules alongside `"$defaults"` — merges into
   `~/.claude/settings.json` through a stdlib script: dry-run diff first, additive only, conflicts
   reported rather than overwritten, previous file kept as `settings.json.sync-rules.bak`.
+- **Opt-in top-tier model.** A `top_tier_model` plugin setting (`/config`; `fable` default or
+  `mythos`) puts the prp-review adjudicator on `claude-mythos-5-1` for Cyber Verification Program
+  accounts. Only the exact value `mythos` changes routing; every other account runs exactly as
+  before. The prp-draft architecture panel stays on Fable — the Agent tool's per-call `model` does
+  not accept Mythos. Requires Claude Code 2.1.271+.
+- **Both workflows log their intended routing** before the first agent starts, naming the env vars,
+  mod hook and allowlist that can replace it, and pointing to `/workflows` for what actually ran.
 
 ### Removed
 - **BREAKING: the `diagram` skill is gone; archify is the diagram tool.** `/asic-tools:diagram`,

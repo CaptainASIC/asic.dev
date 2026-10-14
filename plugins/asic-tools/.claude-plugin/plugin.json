@@ -10,5 +10,14 @@
   },
   "repository": "https://github.com/CaptainASIC/asic.dev",
   "license": "MIT",
-  "keywords": ["config-audit", "prp", "skills"]
+  "keywords": ["config-audit", "prp", "skills"],
+  "userConfig": {
+    "top_tier_model": {
+      "type": "string",
+      "title": "Top-tier model",
+      "description": "Model for the prp-review adjudicator. mythos (claude-mythos-5-1) requires Cyber Verification Program access; without it, Claude Code runs the adjudicator on the session model with a warning. Leave fable otherwise.",
+      "options": ["fable", "mythos"],
+      "default": "fable"
+    }
+  }
 }

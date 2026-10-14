@@ -45,7 +45,9 @@ no skill invokes it — including this one.
   fan-out directly skips Phase 0's PRP resolution and sizing and Phase 2's review-log append.)
 - `args`: `{ "prpPath": "<resolved PRP path>", "sizing": { "tier": "S|M|L|XL", "tasks": <int>,
   "files": <int>, "citedFileCount": <int>, "rounds": <int>, "styleLenses": 0 | 3,
-  "note": "<escalation reason, or empty>" } }` — the verdict computed in Phase 0.
+  "note": "<escalation reason, or empty>" },
+  "topTierModel": "${user_config.top_tier_model}" }` — the verdict computed in Phase 0, plus the
+  user's `top_tier_model` setting passed through verbatim (the workflow honours only `mythos`).
 
 The script fans out <n> lenses in parallel. The five logic lenses always run
 (requirements-coverage, architecture-soundness, over-build, edge-cases & verifiability,

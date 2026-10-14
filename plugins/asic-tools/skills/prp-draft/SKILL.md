@@ -85,9 +85,12 @@ the verified `path:line` citation still comes from reading them.
   State the required return shape at this site — `{path, symbol, line, surprise}` per integration
   point. There is no `schema:` on a main-thread delegation, so that prose plus the rejection rule
   below *is* the shape mechanism, and the scout serves two shapes — it emits the one you name. When
-  `graphify-out/graph.json` exists, each subagent's prompt must instruct graphify-first too —
-  scope the subsystem with `graphify query`/`explain` before reading — since the directive applies
-  to subagents, not only the main thread. Require each to
+  `graphify-out/graph.json` exists, the scout has no `Bash` and cannot run graphify, so the main
+  thread runs `graphify query`/`explain` for each subsystem and
+  pastes the scoped graphify result into each delegation prompt — node names with their `src=`
+  paths — which is how the graphify-first directive reaches subagents (`docs/agent-tooling.md`
+  rule 1). When there is no graph or the query returns nothing for a subsystem, write "no graph" in that delegation prompt
+  so the scout orients by direct reading and says so. Require each to
   return a **structured evidence list** — one record per integration point, never prose:
   `{ path, symbol, line, surprise }` (`line` = a number read this session; `surprise` = the
   gotcha, or `null`). Reject any return that summarises instead of citing — a conclusion you
@@ -172,10 +175,10 @@ skip matters more with a panel than it would with one call.
 
 Read all three reference files now. Then:
 
-**This phase runs on the session model.** The main-thread draft is not routable from a plugin —
-whatever `/model` is set to is what writes the PRP. Opus is the recommendation; there is no
-mechanism here to enforce it, and a routing table pretending otherwise would be worse than this
-note.
+**This phase runs on the session model.** Skill frontmatter can set `model` and `effort`, but
+for the current turn only — the override reverts at the user's next prompt. Drafting spans the
+interview's turns, and pinning `effort` would override the user's own `/effort`, so this skill sets
+neither. Opus is the recommendation; whatever `/model` is set to is what writes the PRP.
 
 
 - Filename: `PRPs/PRP-NNN_TITLE_IN_SNAKE_CAPS.md`. Branch named in front matter:

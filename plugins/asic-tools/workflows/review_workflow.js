@@ -44,6 +44,13 @@ const ROUTING = {
   verify:      { model: 'opus',   effort: 'medium' },
 }
 
+// Opt-in top tier (PRP-022). prp-review passes the user's `top_tier_model` setting as
+// args.topTierModel. Only the exact string 'mythos' overrides; anything else — 'fable', a missing
+// key, or an un-substituted placeholder from a dev-mode install — keeps ROUTING's choice. Applied
+// at the call site, never inside ROUTING: asicdash parses quoted literals only (scanners.py:355).
+// The full ID, because Claude Code 2.1.296 has no `mythos` alias (unrecognized_model).
+const TOP_TIER_OVERRIDE = ARGS && ARGS.topTierModel === 'mythos' ? 'claude-mythos-5-1' : null
+
 // Eight distinct lenses: 5 logic, 3 style. Style lenses compare the PRP against real repo code.
 const LENSES = [
   { key: 'requirements', kind: 'logic',
@@ -279,6 +286,16 @@ const ACTIVE_LENSES = LENSES.filter((l) => l.kind === 'logic' || STYLE_LENSES > 
 // fields, so a correct tier carrying a wrong round count would otherwise produce a silently
 // shallow review whose audit trail reads correct.
 log(`Sizing: tier ${SIZING.tier || 'none (defaults)'} \u2192 ${MAX_ROUNDS} round(s), ${ACTIVE_LENSES.length} lens(es)`)
+log('Routing (intended): ' +
+  `logic ${ROUTING.reviewLogic.model}/${ROUTING.reviewLogic.effort}, ` +
+  `style ${ROUTING.reviewStyle.model}/${ROUTING.reviewStyle.effort}, ` +
+  `adjudicate ${TOP_TIER_OVERRIDE || ROUTING.adjudicate.model}/${ROUTING.adjudicate.effort}, ` +
+  `apply ${ROUTING.apply.model}/${ROUTING.apply.effort}, ` +
+  `verify ${ROUTING.verify.model}/${ROUTING.verify.effort}. ` +
+  'CLAUDE_CODE_SUBAGENT_MODEL_FORCE, CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL, a mod agent.spawn ' +
+  'hook or an availableModels allowlist can replace these; /workflows shows what each ran on.' +
+  (TOP_TIER_OVERRIDE ? ' Mythos needs Cyber Verification Program access; without it, ' +
+    'Claude Code runs adjudicate on the session model with a warning.' : ''))
 
 const reviewLog = []
 let residual = []
@@ -303,6 +320,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
   const adj = await agent(adjudicatePrompt(raw), {
     label: 'adjudicate', phase: 'Adjudicate', schema: ADJUDICATION_SCHEMA,
     ...ROUTING.adjudicate,
+    ...(TOP_TIER_OVERRIDE ? { model: TOP_TIER_OVERRIDE } : {}),
   })
   const valid = dedupe((adj && adj.findings ? adj.findings : []).filter((f) => f.valid))
   const blockers = valid.filter((f) => f.severity === 'blocker' || f.severity === 'major')

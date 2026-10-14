@@ -113,10 +113,19 @@ review-log append (Phase 2); for the audit, the repo profile (Phase 1) that reso
 reference-spec paths the audit agents read.
 
 **Routing.** Delegated work is tiered rather than inheriting whatever model the session is on:
-the volume stages (review lenses, repo-audit checks, citation scouting) run on cheaper tiers at
-low effort, while adjudication and architecture selection take the strongest tier available.
-Main-thread work — drafting, planning, the implementation loop — follows the session model and is
-not routable from a plugin.
+the volume stages (review lenses, repo-audit checks, citation scouting) run on cheaper tiers,
+while adjudication and architecture selection take the strongest tier available. Main-thread
+work — drafting, planning, the implementation loop — follows the session model: a skill can set
+`model`/`effort` for the current turn only, and these phases span several turns.
+
+**Top-tier model (opt-in).** `/config` → `top_tier_model` picks the model for the prp-review
+adjudicator: `fable` (default) or `mythos`, which runs `claude-mythos-5-1` and needs Cyber
+Verification Program access. An account without it that selects `mythos` runs the adjudicator on
+the session model with a Claude Code warning, not on Mythos. The prp-draft architecture panel stays
+on Fable: the Agent tool's per-call `model` accepts only `sonnet`, `opus`, `haiku` and `fable`. The plugin
+requires Claude Code 2.1.271 or later (the setting's picker). If `/model` shows "Requires usage
+credits" on the Fable or Mythos row, those seats bill usage credits; Claude Code documents its
+consent prompt for the main session, not for subagents.
 
 ### Global rules
 
