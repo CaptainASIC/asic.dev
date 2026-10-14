@@ -277,6 +277,13 @@ flagged as questions, not silently planned in.
    unmet/abandoned ids. The Phase B step 6 Snyk gate must have passed — no **blocking**
    high/critical per its scope rule; pre-existing debt in untouched files does not block, and is
    reported rather than fixed. A blocked gate means Phase C was never entered.
+1b. **Converge pass — intent, not gates.** Read `${CLAUDE_SKILL_DIR}/references/converge.md`
+   and run its fresh-context reviewer over the diff from the run-state `Base commit:`. Wait for
+   the verdict. A confirmed `unmet`, `partial` or `contradicts` row is fixed under surgical
+   scope; the fix re-enters B4 (§9 levels), B5 (commit), B6 (Snyk, scope rule unchanged) and a
+   full step 1 gate reconciliation, then the pass is re-run once; a gap that survives the re-run
+   is a Stop condition. `unrequested` and confirmed `manual` rows are reported, never a stop.
+   Never stamp step 2 while the pass is pending or a confirmed gap stands.
 2. **PRP front matter**: `Status: Implemented (YYYY-MM-DD)`, add `Branch:` if absent.
 3. **Apply §10 verbatim**: PLANNING.md merge, TASKS.md completion entry (dated, plus the
    collected Discovered During Work items), CHANGELOG entry if mandated, serena memory
@@ -353,7 +360,8 @@ flagged as questions, not silently planned in.
 Stale PRP (A3), unmet dependency (A2), scope wall (B3), unrecoverable validation failure
 (B4), **security gate block (B6: a high/critical Snyk finding in a file this PRP touched or in
 its dataflow, or Snyk unauthenticated/unavailable — fail-closed)**, unmet or abandoned gate at
-close-out (C1). Stopping with a precise state report is success; powering through the contract is
+close-out (C1), **a confirmed gap surviving the converge re-run, or a converge reviewer that changed
+the tree (C1b)**. Stopping with a precise state report is success; powering through the contract is
 the failure mode. The stop-state report names `PRPs/.work/prp-implement-active.md` and, when one
 was seeded, the surviving `PRPs/.work/PRP-NNN-scratchpad.md` — both intentionally retained as
 resumable working memory, unstaged so they never enter a commit; only a successful Phase C
