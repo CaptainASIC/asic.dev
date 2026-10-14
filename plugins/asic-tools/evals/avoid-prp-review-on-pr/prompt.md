@@ -1,7 +1,7 @@
 ---
 description: prp-review must not fire on a code PR review
 tags: [avoid, prp-lifecycle]
-max_turns: 4
+max_turns: 8
 timeout_seconds: 180
 allowed_tools: [Read, Glob, Grep, Skill]
 ---

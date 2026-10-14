@@ -1,7 +1,7 @@
 ---
 description: prp-review fires on an adversarial PRP review request
 tags: [trigger, prp-lifecycle]
-max_turns: 4
+max_turns: 8
 timeout_seconds: 180
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
