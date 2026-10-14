@@ -132,6 +132,11 @@ Once Phase 4's design decisions are settled, delegate §3's architecture selecti
 calls to the `architecture-judge` agent — naming that shipped agent is what puts these calls on
 Fable; a prose instruction to "use Fable" resolves to the session model and nothing reports it.
 
+**Top-tier model.** The user's `top_tier_model` setting reads `${user_config.top_tier_model}`. When
+that value is exactly `mythos`, pass `model: mythos` on each of the three calls — a per-invocation
+model outranks the agent's `model: fable` frontmatter. For any other value, including the literal
+placeholder a dev-mode install shows, pass no `model`, and the frontmatter's Fable runs.
+
 Each call carries a distinct **angle**, and the angle clause is the *only* thing that differs
 between them: **MVP-first** (the smallest design satisfying §2.3), **risk-first** (what fails
 latest and most quietly, and what design avoids it), **constraint-first** (what the codebase's

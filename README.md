@@ -118,6 +118,14 @@ low effort, while adjudication and architecture selection take the strongest tie
 Main-thread work — drafting, planning, the implementation loop — follows the session model and is
 not routable from a plugin.
 
+**Top-tier model (opt-in).** `/config` → `top_tier_model` picks the model for the two judgement
+seats: `fable` (default) or `mythos`, which needs Cyber Verification Program access. An account
+without it that selects `mythos` runs these seats on the session model with a Claude Code warning,
+not on Mythos. The plugin
+requires Claude Code 2.1.271 or later (the setting's picker). If `/model` shows "Requires usage
+credits" on the Fable or Mythos row, those seats bill usage credits; Claude Code documents its
+consent prompt for the main session, not for subagents.
+
 ### Global rules
 
 The engineering rule set the skills assume ships inside the plugin in two parts:
