@@ -15,7 +15,7 @@ from __future__ import annotations
 import html
 from collections import Counter
 
-from usage import usage_fragment
+from usage_html import usage_fragment
 
 # Display order and sentence-case labels for the four scope sections.
 SECTIONS = [
