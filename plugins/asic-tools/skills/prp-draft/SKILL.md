@@ -180,10 +180,10 @@ skip matters more with a panel than it would with one call.
 
 Read all three reference files now. Then:
 
-**This phase runs on the session model.** The main-thread draft is not routable from a plugin —
-whatever `/model` is set to is what writes the PRP. Opus is the recommendation; there is no
-mechanism here to enforce it, and a routing table pretending otherwise would be worse than this
-note.
+**This phase runs on the session model.** Skill frontmatter can set `model` and `effort`, but
+for the current turn only — the override reverts at the user's next prompt. Drafting spans the
+interview's turns, and pinning `effort` would override the user's own `/effort`, so this skill sets
+neither. Opus is the recommendation; whatever `/model` is set to is what writes the PRP.
 
 
 - Filename: `PRPs/PRP-NNN_TITLE_IN_SNAKE_CAPS.md`. Branch named in front matter:

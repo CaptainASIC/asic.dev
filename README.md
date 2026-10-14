@@ -113,10 +113,10 @@ review-log append (Phase 2); for the audit, the repo profile (Phase 1) that reso
 reference-spec paths the audit agents read.
 
 **Routing.** Delegated work is tiered rather than inheriting whatever model the session is on:
-the volume stages (review lenses, repo-audit checks, citation scouting) run on cheaper tiers at
-low effort, while adjudication and architecture selection take the strongest tier available.
-Main-thread work — drafting, planning, the implementation loop — follows the session model and is
-not routable from a plugin.
+the volume stages (review lenses, repo-audit checks, citation scouting) run on cheaper tiers,
+while adjudication and architecture selection take the strongest tier available. Main-thread
+work — drafting, planning, the implementation loop — follows the session model: a skill can set
+`model`/`effort` for the current turn only, and these phases span several turns.
 
 **Top-tier model (opt-in).** `/config` → `top_tier_model` picks the model for the two judgement
 seats: `fable` (default) or `mythos`, which needs Cyber Verification Program access. An account

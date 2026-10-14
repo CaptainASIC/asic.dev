@@ -11,8 +11,9 @@ phases, hard pause between them — plan first, execute only on the user's go.
 
 ## Phase A — Review & Plan (ends with a PAUSE)
 
-**Phase A's plan and Phase B's task loop run on the session model.** Neither is routable from a
-plugin — whatever `/model` is set to is what plans and what writes the code. Opus is the
+**Phase A's plan and Phase B's task loop run on the session model.** Skill frontmatter can set
+`model`/`effort` for the current turn only, and the plan → PAUSE → execute handoff spans turns, so
+this skill sets neither; whatever `/model` is set to is what plans and writes the code. Opus is the
 recommendation. Only the delegated fan-outs below carry a tier of their own.
 
 ### A1. Locate & load
