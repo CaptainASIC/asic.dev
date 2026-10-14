@@ -1,5 +1,5 @@
 {
-  "description": "Captain ASIC hard-rule enforcement: deny AI-attributed commits, pushes in any form, and hook bypass; ask before destructive git and before committing to main; restate rule precedence each turn.",
+  "description": "Captain ASIC hard-rule enforcement: deny AI-attributed commits, pushes in any form, and hook bypass; ask before destructive git and before committing to main; restate rule precedence each turn; re-inject prp-implement run state after compaction.",
   "hooks": {
     "PreToolUse": [
       {
@@ -20,6 +20,18 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/precedence-inject.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"${CLAUDE_PROJECT_DIR}/PRPs/.work/prp-implement-active.md\" 2>/dev/null || true",
             "timeout": 5
           }
         ]

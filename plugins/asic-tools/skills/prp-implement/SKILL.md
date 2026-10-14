@@ -1,12 +1,6 @@
 ---
 name: prp-implement
 description: Implement a Product Requirements Prompt (PRP) in two phases matching the author's workflow — first "review the PRP and plan" (drift-checked implementation plan, then PAUSE for approval), then "execute the plan" (task-by-task with per-task verification, leveled validation, and the full §10 close-out ritual). Use when the user says "implement the PRP", "execute PRP-NNN", "review the PRP and plan for implementation", "run this PRP", or invokes /prp-implement.
-hooks:
-  SessionStart:
-    - matcher: compact
-      hooks:
-        - type: command
-          command: cat "${CLAUDE_PROJECT_DIR}/PRPs/.work/prp-implement-active.md" 2>/dev/null || true
 ---
 
 # prp-implement

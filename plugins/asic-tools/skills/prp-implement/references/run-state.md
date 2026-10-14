@@ -2,7 +2,8 @@
 
 One small file per active `prp-implement` run, at every tier. It holds the two things that must
 survive context compaction: the fork point the converge pass diffs against (Phase C step 1b), and
-a factual summary the skill's `SessionStart` (matcher `compact`) hook prints back into context.
+a factual summary the plugin's `SessionStart` (matcher `compact`) hook in `hooks/hooks.json`
+prints back into context.
 
 ## Lifecycle
 

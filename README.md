@@ -405,7 +405,7 @@ the PRP's goal, desired behaviour and acceptance checklist against the branch di
 requirements the code misses, since passing gates only prove what the PRP chose to test.
 Confirmed gaps are fixed and re-checked once; a gap that survives stops the run. Every run keeps
 a small state file (`PRPs/.work/prp-implement-active.md`) with its base commit and current task,
-and a hook declared by the skill prints it back after context compaction, so a long run keeps
+and a plugin hook prints it back after context compaction, so a long run keeps
 its place. Passed checks are reported with their actual output, the run notifies you at the plan
 pause and at the end, and the final report offers an optional `/code-review ultra` before merge.
 

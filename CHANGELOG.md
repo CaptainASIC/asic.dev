@@ -52,7 +52,7 @@ All notable changes to this project are documented here. Format follows
   reviewer compares the branch diff with the PRP's goal, desired behaviour and acceptance
   checklist; confirmed gaps are fixed and re-checked once, and one that survives stops the run.
   Every run keeps `PRPs/.work/prp-implement-active.md` (base commit, current task), and a
-  `SessionStart` hook declared by the skill prints it back after compaction. Passed checks are
+  plugin `SessionStart` hook prints it back after compaction. Passed checks are
   reported with their actual output, §9 levels run in quiet form, the run notifies at the plan
   pause and at the end, and the final report offers an optional `/code-review ultra`.
 
