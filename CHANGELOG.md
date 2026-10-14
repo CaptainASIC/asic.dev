@@ -48,6 +48,13 @@ All notable changes to this project are documented here. Format follows
   not accept Mythos. Requires Claude Code 2.1.271+.
 - **Both workflows log their intended routing** before the first agent starts, naming the env vars,
   mod hook and allowlist that can replace it, and pointing to `/workflows` for what actually ran.
+- **`prp-implement` checks intent before it calls a PRP done.** A fresh-context converge
+  reviewer compares the branch diff with the PRP's goal, desired behaviour and acceptance
+  checklist; confirmed gaps are fixed and re-checked once, and one that survives stops the run.
+  Every run keeps `PRPs/.work/prp-implement-active.md` (base commit, current task), and a
+  plugin `SessionStart` hook prints it back after compaction. Passed checks are
+  reported with their actual output, §9 levels run in quiet form, the run notifies at the plan
+  pause and at the end, and the final report offers an optional `/code-review ultra`.
 
 ### Removed
 - **BREAKING: the `diagram` skill is gone; archify is the diagram tool.** `/asic-tools:diagram`,

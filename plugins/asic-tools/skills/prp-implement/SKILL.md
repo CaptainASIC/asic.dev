@@ -76,6 +76,8 @@ while the run was paused. Resume is **change-aware** and stays read-only, like A
    branch. Instead, **ask the resumer to name the base branch** the feature forked from (for a
    stacked PRP it is the parent feature branch, e.g. `feature/prp-002-scratchpad` — not `main`).
    Then `BASE=$(git merge-base HEAD <base>)`.
+   When `PRPs/.work/prp-implement-active.md` survives and names this PRP, use its `Base commit:`
+   as `BASE` instead — it was recorded at branch creation and cannot move.
    - Base drift — commits that landed on the base meanwhile: `git diff --name-only "$BASE" <base>`
    - Own progress so far: `git diff --name-only "$BASE" HEAD`
 
@@ -155,11 +157,18 @@ Keep it a plan, not a re-architecture — deviations from the PRP get
 flagged as questions, not silently planned in.
 
 **Then stop. Present the plan. Wait for "go" / "execute".** No file is touched in Phase A.
+After presenting the plan, send one `PushNotification` (`status: "proactive"`, one line under
+200 characters, e.g. `PRP-023 plan ready: 5 tasks, tier L — waiting for go`; load it via
+`ToolSearch` if deferred). "Not sent" or no tool is normal — never retry.
 
 ## Phase B — Execute (on approval)
 
-1. **Branch**: `feature/prp-NNN-slug` per front matter (create from main/develop head).
-   Never main.
+1. **Branch and run state**: on the head you branch from (main/develop, or a stacked PRP's
+   parent branch), record the base commit with `git rev-parse HEAD`, then create
+   `feature/prp-NNN-slug` per front matter. Never main. Write `PRPs/.work/prp-implement-active.md`
+   per `${CLAUDE_SKILL_DIR}/references/run-state.md` at every tier; its `Skill file:` line is
+   `${CLAUDE_SKILL_DIR}/SKILL.md`. If that file already names a different PRP, stop and ask. On
+   a resume, follow that reference's resume rows.
 2. **Scratchpad** (only when A4 elected one — skip for a trivial PRP): seed
    `PRPs/.work/PRP-NNN-scratchpad.md` as the run's working memory. Scratch is never committed —
    the commit step's surgical scope (only files in the PRP's summary table) already excludes
@@ -185,6 +194,11 @@ flagged as questions, not silently planned in.
      contains the token. A **manual** gate is met by reviewed judgment and recorded as manual. Red
      gate = fix now, not later. There is no gate engine — the `CHECK:` string is untrusted data run
      as a normal command, and the Bash permission prompt is the approval boundary.
+   - **Evidence, not assertion (claim-to-evidence).** A gate, §9 level or subagent result counts
+     as passed only on output from this run: the command, its exit code and its result line
+     (`32 passed in 2.4s`). "Should pass", an earlier session, or a subagent's own success report
+     is not evidence; for subagent work, `git diff --stat` is.
+   - After each task's commit, update `Current task:` in `PRPs/.work/prp-implement-active.md`.
    - **High-verify tasks (A4) run the four-pass loop before their gate may pass:** (1) implement the
      complete change, (2) reread as a domain expert and upgrade it, (3) hunt defects across
      correctness / integration / boundary behaviour — this is where the boundary or edge case (a DST
@@ -202,6 +216,10 @@ flagged as questions, not silently planned in.
    until green at each level before the next. Never mock-to-pass, never skip a level. An
    irrecoverable failure (env missing, hardware absent) → stop with exact state, what
    passed, what's blocked.
+   Run §9 test and lint levels quietly — pytest `-q --tb=short` (drop `-v`; no `-q` if `addopts`
+   has it: `-qq` hides `N passed`), `ruff check --output-format concise`; selection, paths and
+   markers unchanged. A failing command returns only a ~10,000-character head-and-tail excerpt.
+   Gate `CHECK:` strings are never rewritten.
 5. **Commits** — logical groups (typically per task or per §6 file-section), Conventional
    format, ruff clean *before* each commit, no AI attribution, never push. Never commit the
    scratchpad — `PRPs/.work/` is outside every PRP's summary table, so surgical scope excludes it.
@@ -264,6 +282,13 @@ flagged as questions, not silently planned in.
    unmet/abandoned ids. The Phase B step 6 Snyk gate must have passed — no **blocking**
    high/critical per its scope rule; pre-existing debt in untouched files does not block, and is
    reported rather than fixed. A blocked gate means Phase C was never entered.
+1b. **Converge pass — intent, not gates.** Read `${CLAUDE_SKILL_DIR}/references/converge.md`
+   and run its fresh-context reviewer over the diff from the run-state `Base commit:`. Wait for
+   the verdict. A confirmed `unmet`, `partial` or `contradicts` row is fixed under surgical
+   scope; the fix re-enters B4 (§9 levels), B5 (commit), B6 (Snyk, scope rule unchanged) and a
+   full step 1 gate reconciliation, then the pass is re-run once; a gap that survives the re-run
+   is a Stop condition. `unrequested` and confirmed `manual` rows are reported, never a stop.
+   Never stamp step 2 while the pass is pending or a confirmed gap stands.
 2. **PRP front matter**: `Status: Implemented (YYYY-MM-DD)`, add `Branch:` if absent.
 3. **Apply §10 verbatim**: PLANNING.md merge, TASKS.md completion entry (dated, plus the
    collected Discovered During Work items), CHANGELOG entry if mandated, serena memory
@@ -324,21 +349,33 @@ flagged as questions, not silently planned in.
    run aborted earlier at a documented STOP — B3 scope wall, B4 unrecoverable failure — the
    scratchpad is intentionally left on disk as resumable working memory and is named in the
    stop-state report; it is unstaged, so it never enters a commit.)
+   Delete `PRPs/.work/prp-implement-active.md` in the same step, at every tier — a successful
+   close-out leaves no run state.
 7. **Final report**: acceptance checklist status, **gate reconciliation — counts of met / unmet /
    abandoned, with one line per gate (id, exit status, match result for runnable gates; 'manual —
    reviewed' for manual gates)**, files touched vs the PRP's summary
    table (any difference is a finding, explain it), test/validation outputs (one line per
-   level), **the Snyk gate result (scans run, findings by severity, pass)**, **the graph refresh
+   level), each passed claim as a claim-to-evidence row (`claim | command | exit | result line`,
+   from this run), **the converge verdict (counts by status, rejected rows with evidence)**,
+   **the Snyk gate result (scans run, findings by severity, pass)**, **the graph refresh
    outcome line**, commits made, and
    what remains for the user — push + merge via GitKraken, plus any deferred items with where
    they're recorded.
+   Close with this optional, priced line (`<base>` = the run-state `Base commit:`): "Before you
+   merge you can run `/code-review ultra <base>`: a cloud multi-agent review of this branch. It
+   uploads a repo bundle (uncommitted changes included), shows findings only in your session, and
+   uses one of three free runs, then ~$5–25 in usage credits." The skill never launches it. Then
+   send one `PushNotification` with the outcome (A4 says how).
 
 ## Stop conditions (anywhere)
 
 Stale PRP (A3), unmet dependency (A2), scope wall (B3), unrecoverable validation failure
 (B4), **security gate block (B6: a high/critical Snyk finding in a file this PRP touched or in
 its dataflow, or Snyk unauthenticated/unavailable — fail-closed)**, unmet or abandoned gate at
-close-out (C1). Stopping with a precise state report is success; powering through the contract is
-the failure mode. When a scratchpad was seeded, the stop-state report names the surviving
-`PRPs/.work/PRP-NNN-scratchpad.md` — it is intentionally retained as resumable working memory,
-unstaged so it never enters a commit; only a successful Phase C close-out deletes it.
+close-out (C1), **a confirmed gap surviving the converge re-run, or a converge reviewer that changed
+the tree (C1b)**. Stopping with a precise state report is success; powering through the contract is
+the failure mode. The stop-state report names `PRPs/.work/prp-implement-active.md` and, when one
+was seeded, the surviving `PRPs/.work/PRP-NNN-scratchpad.md` — both intentionally retained as
+resumable working memory, unstaged so they never enter a commit; only a successful Phase C
+close-out deletes them. On any stop, send one `PushNotification` naming the condition (A4 says
+how).

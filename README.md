@@ -400,6 +400,15 @@ ritual: acceptance checklist ticked against reality, PRP status flipped, §10 do
 applied (PLANNING/TASKS/CHANGELOG/Serena memory), and a final report of files-touched vs
 the PRP's own table.
 
+Before flipping the status, close-out runs a **converge pass**: a fresh-context reviewer reads
+the PRP's goal, desired behaviour and acceptance checklist against the branch diff and reports
+requirements the code misses, since passing gates only prove what the PRP chose to test.
+Confirmed gaps are fixed and re-checked once; a gap that survives stops the run. Every run keeps
+a small state file (`PRPs/.work/prp-implement-active.md`) with its base commit and current task,
+and a plugin hook prints it back after context compaction, so a long run keeps
+its place. Passed checks are reported with their actual output, the run notifies you at the plan
+pause and at the end, and the final report offers an optional `/code-review ultra` before merge.
+
 Close-out also regenerates the PRP registry. `prp_status.py` holds the status standard in its
 module docstring — five values, who writes each, and the exit codes that lint them — and renders
 `PRPs/STATUS.md` from the corpus, deriving the in-flight badge from live git refs so no PRP stores
