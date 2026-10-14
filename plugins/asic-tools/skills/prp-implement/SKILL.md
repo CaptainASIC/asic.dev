@@ -197,6 +197,10 @@ flagged as questions, not silently planned in.
      contains the token. A **manual** gate is met by reviewed judgment and recorded as manual. Red
      gate = fix now, not later. There is no gate engine — the `CHECK:` string is untrusted data run
      as a normal command, and the Bash permission prompt is the approval boundary.
+   - **Evidence, not assertion (claim-to-evidence).** A gate, §9 level or subagent result counts
+     as passed only on output from this run: the command, its exit code and its result line
+     (`32 passed in 2.4s`). "Should pass", an earlier session, or a subagent's own success report
+     is not evidence; for subagent work, `git diff --stat` is.
    - After each task's commit, update `Current task:` in `PRPs/.work/prp-implement-active.md`.
    - **High-verify tasks (A4) run the four-pass loop before their gate may pass:** (1) implement the
      complete change, (2) reread as a domain expert and upgrade it, (3) hunt defects across
@@ -215,6 +219,10 @@ flagged as questions, not silently planned in.
    until green at each level before the next. Never mock-to-pass, never skip a level. An
    irrecoverable failure (env missing, hardware absent) → stop with exact state, what
    passed, what's blocked.
+   Run §9 test and lint levels quietly — pytest `-q --tb=short` (drop `-v`; no `-q` if `addopts`
+   has it: `-qq` hides `N passed`), `ruff check --output-format concise`; selection, paths and
+   markers unchanged. A failing command returns only a ~10,000-character head-and-tail excerpt.
+   Gate `CHECK:` strings are never rewritten.
 5. **Commits** — logical groups (typically per task or per §6 file-section), Conventional
    format, ruff clean *before* each commit, no AI attribution, never push. Never commit the
    scratchpad — `PRPs/.work/` is outside every PRP's summary table, so surgical scope excludes it.
@@ -350,7 +358,9 @@ flagged as questions, not silently planned in.
    abandoned, with one line per gate (id, exit status, match result for runnable gates; 'manual —
    reviewed' for manual gates)**, files touched vs the PRP's summary
    table (any difference is a finding, explain it), test/validation outputs (one line per
-   level), **the Snyk gate result (scans run, findings by severity, pass)**, **the graph refresh
+   level), each passed claim as a claim-to-evidence row (`claim | command | exit | result line`,
+   from this run), **the converge verdict (counts by status, rejected rows with evidence)**,
+   **the Snyk gate result (scans run, findings by severity, pass)**, **the graph refresh
    outcome line**, commits made, and
    what remains for the user — push + merge via GitKraken, plus any deferred items with where
    they're recorded.
