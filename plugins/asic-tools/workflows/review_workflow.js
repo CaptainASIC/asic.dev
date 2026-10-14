@@ -51,7 +51,10 @@ const ROUTING = {
 // The full ID, because Claude Code 2.1.296 has no `mythos` alias (unrecognized_model).
 const TOP_TIER_OVERRIDE = ARGS && ARGS.topTierModel === 'mythos' ? 'claude-mythos-5-1' : null
 
-// Eight distinct lenses: 5 logic, 3 style. Style lenses compare the PRP against real repo code.
+// Nine distinct lenses: 6 logic, 3 style. Style lenses compare the PRP against real repo code.
+// The silent-failure error-handling checklist and the type-design lens adapt the
+// silent-failure-hunter and type-design-analyzer rubrics from claude-plugins-official
+// pr-review-toolkit (Apache-2.0); the wording here is our own.
 const LENSES = [
   { key: 'requirements', kind: 'logic',
     focus: 'Does the PRP fully cover its stated goal (§1) and desired behaviour (§2.3)? Find ' +
@@ -74,7 +77,22 @@ const LENSES = [
            'parsing, encoding, time/timezone/DST, concurrency, auth/expiry — plus rarely-run ' +
            'paths, off-by-one at edges, and wrong-but-plausible output. Flag any such surface ' +
            'that no §5 VERIFY or §9 acceptance criterion would catch. A loud failure the build ' +
-           'or tests catch is out of scope for this lens.' },
+           'or tests catch is out of scope for this lens. In the proposed code (§6) and gates, ' +
+           'also flag error handling that hides failure: an empty catch/except, a broad except ' +
+           '(bare or Exception) where the specific errors are known, log-and-continue on an ' +
+           'error the caller needed, a default or None returned on failure with no signal, a ' +
+           'fallback the spec did not ask for (above all to a mock or stub outside tests), ' +
+           'optional chaining that silently skips a required step, and retries that exhaust ' +
+           'without surfacing. Name the unexpected errors each such handler would swallow.' },
+  { key: 'type-design', kind: 'logic',
+    focus: 'Where the PRP introduces or changes data types (§5.1 models, schemas, dataclasses, ' +
+           'TS types, JSON shapes), test each against its invariants. Are they enforced at ' +
+           'construction (validators, constructors) rather than by documentation or by callers? ' +
+           'Can an invalid instance be created, or a field mutated past its rules? Are illegal ' +
+           'states representable (flags that cannot both be true, an optional field that is ' +
+           'required in practice)? Does each type carry one responsibility? Weigh every ' +
+           'suggestion against its complexity cost: a simpler type with fewer guarantees can be ' +
+           'the right call. If the PRP introduces no types, return an empty findings array.' },
   { key: 'naming', kind: 'style',
     focus: 'Do the PRP\'s proposed names (files, symbols, identifiers) match the conventions ' +
            'in the repo files it cites? Read those files; flag naming drift.' },
@@ -278,7 +296,7 @@ function dedupe(valid) {
   return [...byGroup.values()]
 }
 
-// The five logic lenses always run; the three style lenses need cited repo files to compare
+// The six logic lenses always run; the three style lenses need cited repo files to compare
 // against, so citedFileCount === 0 drops them (PRP-013 §3.2). Definitions above are untouched.
 const ACTIVE_LENSES = LENSES.filter((l) => l.kind === 'logic' || STYLE_LENSES > 0)
 
