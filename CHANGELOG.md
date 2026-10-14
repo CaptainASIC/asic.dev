@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-14
+
 ### Changed
 - **`okf` targets OKF v0.2.** The spec is re-vendored from its new home,
   `GoogleCloudPlatform/open-knowledge-format`, pinned at `ad30107` (v0.1 copy removed). The
