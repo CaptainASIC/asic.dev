@@ -20,9 +20,10 @@ red on this bug, do not propose a fix and do not read code to build a theory.
 
 ## Scope — route first
 
-- **Claude Code itself** misbehaving (hooks, settings, MCP servers, permissions): stop and point
-  the user at the built-in `/debug`, which turns on session debug logging. This skill debugs the
-  user's code, not the harness.
+- **Claude Code itself** misbehaving (hooks, settings, MCP servers, permissions): stop before
+  running any command. Reply that this skill debugs the user's code, not the harness, and point
+  the user at the built-in `/debug`, which turns on session debug logging. Do not investigate the
+  harness here, even when you could.
 - **The fix turns out to be PRP-sized:** Phase 6 hands off.
 - Anything else broken, throwing, failing, flaky or slow: proceed.
 
@@ -88,8 +89,10 @@ Write 3–5 ranked hypotheses before testing any. Each states its prediction:
 
 > If <X> is the cause, then <changing Y> makes the bug disappear / <changing Z> makes it worse.
 
-No prediction, no hypothesis — sharpen it or discard it. Show the ranked list to the user; they
-often re-rank it instantly. Do not block on an answer.
+No prediction, no hypothesis — sharpen it or discard it. Write the ranked list in your reply
+before the first probe runs, even when one cause looks obvious: the obvious one is the one most
+worth falsifying, and an unlisted runner-up is never tested. The user often re-ranks it
+instantly. Do not block on an answer.
 
 ## Phase 5 — Instrument
 
@@ -130,7 +133,8 @@ crossed and replacing sleeps with condition-based waits.
 - [ ] A grep for your debug prefix returns nothing
 - [ ] `git diff` shows only the fix and the regression test — no untagged probe residue
 - [ ] Scratchpad harnesses stayed out of the repo
-- [ ] Report: root cause, the hypothesis that held, and the evidence (command + redacted output)
+- [ ] Report: root cause, the ranked list with the hypothesis that held, and the evidence
+      (command + redacted output)
 
 Commit only when the user asks: Conventional Commits, the confirmed hypothesis in the body, no AI
 attribution. Never push.
