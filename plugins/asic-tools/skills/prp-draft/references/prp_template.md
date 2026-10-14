@@ -155,6 +155,17 @@ unless a task says otherwise.]
 
 [One subsection per test file. Test intentions, not full code:]
 
+### 7.0 Test seams (agree before writing tests)
+[The public boundaries the tests observe behaviour at — never internals. One line per seam:
+what testing there catches and what it misses. Proposed in the prp-draft Phase 4 interview;
+the implementer writes tests only at listed seams. Adapted from mattpocock/skills `tdd` (MIT).]
+- `module.public_function()` — catches [..]; misses [..]
+
+[Optional property gate: when a task's correctness is a stateable invariant (round-trip,
+idempotence, ordering, conservation) AND the project's lockfile already contains Hypothesis,
+name the property here and make a Hypothesis test that task's runnable gate. Never add
+Hypothesis as a dependency for this alone — decision ladder rung 4.]
+
 ### 7.1 tests/path/test_feature.py
 - `test_happy_path_condition` → [input ⇒ expected]
 - `test_edge_case_condition` → [boundary ⇒ expected]
