@@ -7,8 +7,8 @@ bar: typed, docstringed, tested (expected/edge/failure), green under ruff + mypy
 
 ## api — FastAPI service
 
-**Runtime deps:** `fastapi>=0.115`, `uvicorn[standard]>=0.30`
-**With database:** `sqlalchemy>=2.0` (or `sqlmodel`), `asyncpg`, `redis>=5.0`; add
+**Runtime deps (`uv add`):** `fastapi`, `uvicorn[standard]`; **dev deps (`uv add --dev`):** `httpx` (TestClient needs it)
+**With database (`uv add`):** `sqlalchemy` (or `sqlmodel`), `asyncpg`, `redis`; add
 `DATABASE_URL=postgresql+asyncpg://...` and `REDIS_URL=redis://localhost:6379` to
 `.env.example` and `Settings`.
 
@@ -221,7 +221,8 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 ```
 
-**pyproject addition:**
+**pyproject addition** — installed as a console command only because the base template declares
+`[build-system]`; Phase 3 runs `uv run {{name}} --version` to prove it:
 
 ```toml
 [project.scripts]
