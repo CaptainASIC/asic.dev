@@ -133,3 +133,53 @@ def test_paths_rule_is_conditional(tmp_path: Path) -> None:
     for name in ("py", "inline"):
         assert e[name].tokens == 0 and e[name].desc.startswith("conditional (paths)")
     assert e["core"].tokens > 0
+
+
+# --- attention and token buckets (asicdash.py) --------------------------------------------------
+
+from asicdash import attention_of, build_report
+from scanners import Entry
+
+
+def _e(kind: str, name: str, desc: str = "", scope: str = "global", tokens: int = 0) -> Entry:
+    return Entry("claude", kind, name, scope, "src", desc=desc, tokens=tokens)
+
+
+def test_attention_flags_new_kinds() -> None:
+    entries = [
+        _e("mod", "m.ts"),
+        _e("monitor", "watch"),
+        _e("plugin-settings", "agent", desc="agent: x — main thread"),
+        _e("permissions", "1 broad allow rule(s)", desc="broad allow: Bash(python3 *)"),
+        _e("env", "routing override: CLAUDE_CODE_SUBAGENT_MODEL_FORCE", desc="one model"),
+        _e("env", "routing override: CLAUDE_CODE_SUBAGENT_MODEL_FORCE", desc="one model"),
+        _e("plugin", "a@m", desc="cost n/a (claude CLI not on PATH) — A"),
+        _e("plugin", "b@m", desc="cost n/a (claude CLI not on PATH) — B"),
+    ]
+    flagged = attention_of(entries)
+    kinds = [e.kind for e, _ in flagged]
+    for kind in ("mod", "monitor", "plugin-settings", "permissions"):
+        assert kinds.count(kind) == 1
+    assert kinds.count("env") == 1
+    cost = [reason for e, reason in flagged if e.kind == "plugin"]
+    assert len(cost) == 1 and "2 plugin(s)" in cost[0] and "claude CLI not on PATH" in cost[0]
+
+
+def test_attention_ignores_benign() -> None:
+    entries = [
+        _e("plugin", "dev (from disk)", desc="cost n/a (not an installed plugin) — x"),
+        _e("env", "3 var(s)", desc="A, B, C"),
+        _e("permissions", "2 allow rule(s)", desc="Read, Bash(git status *)"),
+    ]
+    assert attention_of(entries) == []
+
+
+def test_desc_tokens_not_double_counted() -> None:
+    entries = [
+        _e("plugin", "p@m", desc="~100 tok always-on — d", tokens=100),
+        _e("skill", "ps", desc="x" * 40, scope="plugin:p"),
+        _e("skill", "gs", desc="y" * 40),
+    ]
+    s = build_report(entries, Path("."))["summary"]
+    assert s["always_loaded_tokens"] == 0
+    assert s["desc_tokens"] == 110 and s["desc_tokens_measured"] == 100

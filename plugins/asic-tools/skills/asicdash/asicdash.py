@@ -39,6 +39,7 @@ from scanners import (
     scan_skills,
     short,
 )
+from settings_risk import scan_process_env, scan_settings_risk
 
 HOME = Path.home()
 
@@ -117,6 +118,8 @@ def collect(project: Path) -> list[Entry]:
     entries += scan_md_dir(paths["claude_proj_rules"], "rule", "project", autoloaded=True)
     entries += scan_settings(paths["claude_proj_settings"], "project", project, registered)
     entries += scan_settings(paths["claude_proj_settings_local"], "local", project, registered)
+    entries += scan_settings_risk(paths)
+    entries += scan_process_env()
     entries += scan_memory_files(paths)
     entries += scan_plugins(paths, project, registered)
     entries += scan_hook_scripts(paths["claude_global_hook_scripts"], registered)
@@ -193,6 +196,49 @@ def render(entries: list[Entry], project: Path, color: bool) -> None:
     summarize(entries, project, color)
 
 
+MOD_REASON = (
+    "mod: in-process, unsandboxed hooks — its tool.check can approve calls over ask rules, "
+    "non-managed PreToolUse blocks and the auto-mode classifier, and over deny rules outside "
+    "Team/Enterprise or managed settings"
+)
+BROAD_REASON = (
+    "grants arbitrary code execution — runs without a prompt in Manual/acceptEdits mode "
+    "(auto mode drops it)"
+)
+
+
+def _risk_flags(entries: list[Entry]) -> list[tuple[Entry, str]]:
+    """PRP-027 flags. Every test is a position-0 anchor, never a substring search over prose."""
+    flagged: list[tuple[Entry, str]] = []
+    for e in entries:
+        if e.kind == "mod":
+            flagged.append((e, MOD_REASON))
+        elif e.kind == "monitor":
+            flagged.append((e, "runs a persistent background process every session"))
+        elif e.kind == "plugin-settings" and e.desc.startswith("agent: "):
+            flagged.append((e, "plugin sets the main-thread agent while enabled"))
+        elif e.kind == "permissions" and e.desc.startswith("broad allow: "):
+            flagged.append((e, BROAD_REASON))
+    seen: set[str] = set()
+    for e in entries:  # the same var may arrive from process env AND a settings file
+        if e.kind == "env" and e.name.startswith("routing override: ") and e.name not in seen:
+            seen.add(e.name)
+            flagged.append((e, e.desc))
+    unmeasured = [
+        e
+        for e in entries
+        if e.kind == "plugin"
+        and e.desc.startswith("cost n/a (")
+        and not e.desc.startswith("cost n/a (not an installed plugin)")
+    ]
+    if unmeasured:
+        reason = unmeasured[0].desc.removeprefix("cost n/a (").split(")", 1)[0]
+        flagged.append(
+            (unmeasured[0], f"context cost unmeasured for {len(unmeasured)} plugin(s): {reason}")
+        )
+    return flagged
+
+
 def attention_of(entries: list[Entry]) -> list[tuple[Entry, str]]:
     """Items worth flagging: busy hooks (even when nominally ok) plus outright problems."""
     flagged: list[tuple[Entry, str]] = []
@@ -217,6 +263,7 @@ def attention_of(entries: list[Entry]) -> list[tuple[Entry, str]]:
                     ),
                 )
             )
+    flagged += _risk_flags(entries)
     flagged += [
         (e, e.status)
         for e in entries
@@ -227,6 +274,9 @@ def attention_of(entries: list[Entry]) -> list[tuple[Entry, str]]:
 
 def build_report(entries: list[Entry], project: Path) -> dict:
     """Everything a renderer needs as plain data — shared by --json, --html, and SUMMARY."""
+    measured = sum(
+        e.tokens for e in entries if e.kind == "plugin" and not e.status.startswith("n/a")
+    )
     att = attention_of(entries)
     reasons = {id(e): reason for e, reason in att}
     counts = Counter(e.kind for e in entries if not e.status.startswith("n/a"))
@@ -235,12 +285,18 @@ def build_report(entries: list[Entry], project: Path) -> dict:
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "summary": {
             "counts": dict(sorted(counts.items())),
-            "always_loaded_tokens": sum(e.tokens for e in entries),
-            "desc_tokens": sum(
+            # CRITICAL: always_loaded_tokens MUST filter by kind. Plugin rows now carry tokens,
+            # and an unfiltered sum would count plugin cost twice, here and in desc_tokens.
+            "always_loaded_tokens": sum(e.tokens for e in entries if e.kind in ("memory", "rule")),
+            "desc_tokens": measured
+            + sum(
                 len(e.desc) // CHARS_PER_TOKEN
                 for e in entries
-                if e.kind in ("skill", "agent", "command") and e.status == "ok"
+                if e.kind in ("skill", "agent", "command")
+                and e.status == "ok"
+                and not e.scope.startswith("plugin:")
             ),
+            "desc_tokens_measured": measured,
             "problems": sum(
                 e.status.startswith(("broken", "shadowed", "unregistered")) for e in entries
             ),
@@ -263,8 +319,8 @@ def summarize(entries: list[Entry], project: Path, color: bool) -> None:
     print("  " + ", ".join(f"{k}: {v}" for k, v in s["counts"].items()))
     print(f"  always-loaded context: ~{s['always_loaded_tokens']} tokens (memory/rules files)")
     print(
-        f"  plus ~{s['desc_tokens']} tokens of skill/agent/command descriptions"
-        " in the system prompt"
+        f"  plus ~{s['desc_tokens']} tokens of skill/agent/command descriptions in the system prompt"
+        f" (~{s['desc_tokens_measured']} measured by claude plugin details)"
     )
     if s["attention"]:
         print(paint(f"  attention ({len(s['attention'])}):", "33", color))
