@@ -23,6 +23,7 @@ import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from plugin_cost import plugin_costs
 from plugin_manifest import (
     as_list,
     cache_key,
@@ -62,11 +63,6 @@ ROUTING_ROLE = re.compile(
     re.DOTALL,
 )
 META_NAME = re.compile(r"name:\s*['\"]([\w-]+)['\"]")
-
-
-def plugin_costs(keys: dict[str, str]) -> dict:
-    """Task 3 stub: no cost measurement yet (Task 4 replaces it with plugin_cost.plugin_costs)."""
-    return {}
 
 
 def _md_entries(paths: list[Path], kind: str, scope: str) -> list[Entry]:

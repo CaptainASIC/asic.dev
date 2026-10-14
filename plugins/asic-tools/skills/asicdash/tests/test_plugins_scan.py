@@ -371,3 +371,23 @@ def test_disabled_plugin_row_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
         assert not [e for e in entries if e.scope == scope]
         assert all(name not in keys for keys in measured)
     assert {e.kind for e in entries if e.scope == "plugin:p3"} >= {"mod", "skill"}
+
+
+def test_plugin_row_cost_prefix_and_tokens(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    root = make_plugin(tmp_path / "p", {"skills/a/SKILL.md": skill_md("a")})
+    cost = {
+        "always_on": 2427,
+        "components": [
+            {"component": "prp-implement", "always_on": 180, "on_invoke": 9300},
+            {"component": "improve-repo", "always_on": 270, "on_invoke": 5600},
+        ],
+    }
+    paths = _paths(tmp_path, claude_installed_plugins=_installed(tmp_path, {"p@m": root}))
+    monkeypatch.setattr(plugins_scan, "plugin_costs", lambda keys: {"p@m": (cost, "")})
+    row = next(e for e in scan_plugins(paths, tmp_path, []) if e.kind == "plugin")
+    assert row.desc.startswith("~2,427 tok always-on · heaviest on invoke: prp-implement ~9.3k")
+    assert row.tokens == 2427
+    failed = (None, "timed out after 30s")
+    monkeypatch.setattr(plugins_scan, "plugin_costs", lambda keys: {"p@m": failed})
+    row = next(e for e in scan_plugins(paths, tmp_path, []) if e.kind == "plugin")
+    assert row.desc.startswith("cost n/a (timed out after 30s) — ") and row.tokens == 0
