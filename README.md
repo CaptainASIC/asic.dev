@@ -289,7 +289,9 @@ simplest version that solves the real problem.
 2. **Evaluate & converge** — cluster to 2–3 distinct directions, stress-test on
    value/feasibility/differentiation, surface hidden assumptions
 3. **Sharpen & ship** — a one-pager: problem, recommended direction, assumptions-to-validate,
-   MVP scope, and an explicit **Not Doing** list
+   MVP scope, and an explicit **Not Doing** list. A **builder check** runs first: a fresh
+   subagent reads the draft as its builder; only questions that change what gets built reach
+   you, in one round, and every call the skill made on its own is listed as its call
 
 Writes exactly one file: `PRPs/ideas/<slug>.md` (creates `PRPs/ideas/` if missing), co-located
 with `PRPs/` so the idea → PRP chain stays in one tree. The one-pager's fields map straight onto
@@ -324,11 +326,14 @@ So this skill is ~20% template, ~80% enforced process:
    claims verified against installed versions; evidence required for every CRITICAL/GOTCHA
 3. **Refusal gate** — if context is insufficient, it stops and lists what's missing instead
    of drafting thin
-4. **Interview** — open design decisions become batched questions, recommendation first
+4. **Interview** — open design decisions become batched questions, recommendation first,
+   including which build choices you want to own and the test seams the tests will target
 5. **Draft** — canonical 12-section format (objective → problem → architecture decisions →
    verified context → blueprint → per-file instructions → tests → smoke → acceptance →
    doc updates → anti-patterns → future work)
-6. **Self-audit** — paths re-verified, commands copy-pasteable, git constraints embedded
+6. **Builder check + self-audit** — a fresh subagent reads the draft as its implementer and
+   lists what it would still have to guess (one follow-up question round at most); then paths
+   re-verified, commands copy-pasteable, git constraints embedded
 
 Writes exactly one file: `PRPs/PRP-NNN_TITLE.md` (creates `PRPs/` if missing). TASKS/PLANNING/
 memory updates are the *implementing* agent's job, spelled out in the PRP's §10.
@@ -348,8 +353,9 @@ naming, test minimums, git constraints) loaded only when drafting.
 ## prp-review
 
 Adversarial review gate between `prp-draft` and `prp-implement`. Given a drafted PRP, it runs a
-Workflow that fans out a tier-sized set of distinct-lens reviewers — five on logic (requirements coverage,
-architecture soundness, over-build, edge-cases & verifiability, silent-failure) and three on style/convention drift against
+Workflow that fans out a tier-sized set of distinct-lens reviewers — six on logic (requirements coverage,
+architecture soundness, over-build, edge-cases & verifiability, silent-failure including swallowed errors,
+type-design) and three on style/convention drift against
 the real target repo (naming, structure, error/test/docstring conventions; these three run only
 when the PRP cites repo files) — adjudicates their
 findings to drop false positives, applies the blocker/major fixes to the PRP in place, and
