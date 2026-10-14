@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Sync locked dev tools
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format
+        run: uv run ruff format --check .
+
+      - name: Unit tests
+        run: uv run pytest -q
+
+      - name: Hook tests
+        run: bash plugins/asic-tools/hooks/tests/test_git_guard.sh
+
+      - name: Static evals
+        run: uv run python evals/run_evals.py --skip-snyk
+
+      - name: Install Claude Code (pinned)
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash -s 2.1.296
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Validate plugin and marketplace
+        run: |
+          claude plugin validate --strict plugins/asic-tools
+          claude plugin validate --strict .
