@@ -51,6 +51,11 @@ All notable changes to this project are documented here. Format follows
   with (a `[dependency-groups]` table — still no `[project]`, so no second version location); the
   tree is clean under ruff 0.17's expanded default rule set. Project `CLAUDE.md` records the repo's
   deliberate exemptions from the global rules.
+- **scaffold dependencies come from `uv add`.** No hand-written pins: every floor is the release
+  current at generation time. Python is pinned to 3.12 (uv 0.13 defaults to 3.15). pytest uses
+  its native `[tool.pytest]` table with `strict = true` and an 80% coverage floor. pre-commit
+  revs are current (`ruff-check` hook id). Agent notes live in `AGENTS.md`, which `CLAUDE.md`
+  imports.
 
 ### Added
 - **`/sync-rules` merges guardrail settings.** A bundled `rules/settings.fragment.json` —
@@ -135,6 +140,10 @@ All notable changes to this project are documented here. Format follows
   transcript line per content block; asicdash counted each line, inflating top-level totals, and
   skipped every subagent and workflow-agent transcript. Expect lower top-level and higher subagent
   numbers: a correction, not a regression.
+- **scaffold projects now pass their own gate.** The base template declares a `uv_build` build
+  system; without it uv never installed the package, so tests could not import it and the `cli`
+  console script was never created. The pydantic mypy plugin fixes a `call-arg` error in the
+  template's own tests, and Phase 3 no longer runs `uv venv` over an existing environment.
 
 ## [1.0.0] - 2026-09-04
 

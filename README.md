@@ -447,13 +447,15 @@ In Claude Code: `/asic-tools:prp-implement PRP-040`.
 Bootstraps a new Python project to a strict standard: uv + ruff (line-length 100) + mypy +
 pytest with coverage, Pydantic v2 settings (`get_settings()` singleton), structured
 exceptions and logging, vertical-slice layout, and project docs that drive the agent
-workflow from day one (`PLANNING.md`, `TASKS.md`, `CHANGELOG.md`, `CLAUDE.md`, `PRPs/`).
+workflow from day one (`PLANNING.md`, `TASKS.md`, `CHANGELOG.md`, `AGENTS.md` imported by
+`CLAUDE.md`, `PRPs/`). Dependencies go in through `uv add`, so every floor is current.
 
 The defining constraint: **the scaffold must run before it's reported done** — `uv sync`,
-`uv run pytest`, `uv run ruff check .`, `uv run mypy src/` all green, with generated tests
-demonstrating the expected/edge/failure pattern against real code. Four kinds: `api`
-(FastAPI), `agent` (canonical `agent.py`/`tools.py`/`prompts.py` split), `cli` (argparse +
-entry point), `library`. Git ends on `feature/initial-scaffold`, never main.
+`uv run pytest` (80% coverage floor), `uv run ruff check .`, `uv run mypy src/` all green,
+with generated tests demonstrating the expected/edge/failure pattern against real code. Four
+kinds: `api` (FastAPI), `agent` (canonical `agent.py`/`tools.py`/`prompts.py` split), `cli`
+(argparse + console script, smoke-tested), `library`. Git ends on `feature/initial-scaffold`,
+never main.
 
 In Claude Code: `/asic-tools:scaffold`. Templates:
 [file_templates.md](plugins/asic-tools/skills/scaffold/references/file_templates.md),

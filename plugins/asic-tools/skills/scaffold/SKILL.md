@@ -36,9 +36,13 @@ Order matters — structure, then config, then code, then docs:
 1. `mkdir` tree per kind (see kind_variants). Create `PRPs/` (empty, with `.gitkeep`) —
    feature work in this stack is PRP-driven from day one.
 2. Write `pyproject.toml` from template: project metadata, `requires-python = ">=3.12"`,
-   runtime deps per kind, dev group (`pytest`, `pytest-cov`, `ruff`, `mypy`, `pre-commit`),
-   `[tool.ruff]` line-length 100 / py312 / double quotes, `[tool.mypy]` strict-leaning,
-   `[tool.pytest.ini_options]` with coverage defaults.
+   `[build-system]` on `uv_build` (`{{uv_build_req}}` from `uv --version`), `[tool.ruff]`
+   line-length 100 / py312 / double quotes, `[tool.mypy]` strict-leaning with the pydantic
+   plugin, `[tool.pytest]` strict with an 80% coverage floor. Then run the template's
+   Dependencies block — `uv python pin 3.12`, `uv add --no-sync` runtime deps per kind and the
+   dev toolchain. Never hand-write a dependency list. The build system is load-bearing: without
+   it uv never installs the package, so `[project.scripts]` is skipped and tests cannot
+   import `{{pkg}}`.
 3. Write `.gitignore`, `.env.example`, `.pre-commit-config.yaml`, `LICENSE`.
 4. Write core source from templates — every file fully typed, Google docstrings on every
    public symbol, `# Reason:` comments where logic is non-obvious:
@@ -52,21 +56,23 @@ Order matters — structure, then config, then code, then docs:
    against real generated code — `conftest.py` fixtures, descriptive names. These must
    pass; they are the proof the scaffold works, not decoration.
 6. Write docs from templates: `README.md`, `PLANNING.md`, `TASKS.md`, `CHANGELOG.md`
-   (`[Unreleased]` only), `CLAUDE.md` (5-line pointer: read PLANNING.md + TASKS.md first,
-   project conventions live there).
+   (`[Unreleased]` only), `AGENTS.md` (5-line agent notes for every coding agent), and
+   `CLAUDE.md` (`@AGENTS.md` import plus the Claude Code commands).
 
 Substitute every `{{placeholder}}` — grep for `{{` afterward; any survivor is a defect.
 
 ## Phase 3 — Verify (hard gate)
 
 ```bash
-cd <target> && uv venv && uv sync
+cd <target> && uv sync
 uv run ruff check . && uv run ruff format --check .
 uv run mypy src/
 uv run pytest -v
+uv run <name> --version          # cli kind only — proves the console script installed
 ```
 
-All four green or you fix and re-run — never report a failing scaffold as done. Then:
+All green or you fix and re-run — never report a failing scaffold as done. No `uv venv`: the
+`uv add` calls already created `.venv`, and `uv venv` exits 2 on an existing one. Then:
 
 ```bash
 git init -b main
@@ -81,4 +87,5 @@ Do not push; do not create a GitHub repo unless asked.
 
 Path, tree summary (one line per top-level entry), the four green check outputs (one line
 each), and next steps: create GitHub repo → `git remote add origin` → push branch + merge
-via GitKraken; start feature work with `/asic-tools:prp-draft`.
+via GitKraken; refresh hook revs with `uv run pre-commit autoupdate` (needs the git repo and
+GitHub access); start feature work with `/asic-tools:prp-draft`.

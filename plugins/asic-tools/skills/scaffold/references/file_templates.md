@@ -2,8 +2,9 @@
 
 Verbatim templates. Placeholders: `{{name}}` (kebab project name), `{{pkg}}` (snake_case
 package), `{{description}}`, `{{year}}`, `{{author}}` (default "Captain ASIC"),
-`{{date}}` (YYYY-MM-DD). Kind-specific deps/modules are listed in kind_variants.md and
-merged into these templates where marked `# KIND:`.
+`{{date}}` (YYYY-MM-DD), `{{uv_build_req}}` (`uv_build>=X.Y.Z,<X.(Y+1).0` from `uv --version`,
+the bound `uv init --package` writes). Kind-specific deps/modules are listed in kind_variants.md
+and merged into these templates where marked `# KIND:`.
 
 ---
 
@@ -18,21 +19,12 @@ authors = [{ name = "{{author}}" }]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.12"
-dependencies = [
-    "pydantic>=2.7",
-    "pydantic-settings>=2.2",
-    "python-dotenv>=1.0",
-    # KIND: merge kind-specific runtime deps here (see kind_variants.md)
-]
+# Filled by `uv add` (Dependencies below) — never hand-written.
+dependencies = []
 
-[dependency-groups]
-dev = [
-    "pytest>=8.0",
-    "pytest-cov>=5.0",
-    "ruff>=0.8",
-    "mypy>=1.10",
-    "pre-commit>=3.7",
-]
+[build-system]
+requires = ["{{uv_build_req}}"]
+build-backend = "uv_build"
 
 [tool.ruff]
 line-length = 100
@@ -46,15 +38,28 @@ quote-style = "double"
 
 [tool.mypy]
 python_version = "3.12"
+plugins = ["pydantic.mypy"]
 disallow_untyped_defs = true
 warn_return_any = true
 warn_unused_ignores = true
 no_implicit_optional = true
 
-[tool.pytest.ini_options]
+[tool.pytest]
 testpaths = ["src"]            # central layout: ["tests"]
-addopts = "--cov=src/{{pkg}} --cov-report=term-missing"
+addopts = ["--cov=src/{{pkg}}", "--cov-report=term-missing", "--cov-fail-under=80"]
+strict = true
 ```
+
+## Dependencies — `uv add`, never hand-written
+
+```bash
+uv python pin 3.12                                # writes .python-version
+uv add --no-sync pydantic pydantic-settings python-dotenv   # KIND: append kind runtime deps
+uv add --no-sync --dev pytest pytest-cov ruff mypy pre-commit
+```
+
+Each floor becomes the release current at generation time and `uv.lock` is written.
+`--no-sync` is required: the package does not exist yet, and a syncing `uv add` builds it.
 
 ---
 
@@ -93,13 +98,13 @@ DEBUG=false
 ```yaml
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.0
+    rev: v0.17.0
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -280,7 +285,7 @@ def test_settings_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_settings_invalid_type_rejected() -> None:
     """Failure: non-boolean DEBUG value raises ValidationError."""
     with pytest.raises(ValidationError):
-        Settings(debug="not-a-bool", _env_file=None)  # type: ignore[arg-type]
+        Settings(debug="not-a-bool", _env_file=None)
 ```
 
 `test_exceptions.py`:
@@ -303,6 +308,40 @@ def test_family_catchable() -> None:
     """Edge: specific errors are caught via the base class."""
     with pytest.raises({{PkgPascal}}Error):
         raise ConfigurationError("x", "y")
+```
+
+`test_logging_utils.py`:
+
+```python
+"""Logging setup: expected use, edge case, failure case."""
+
+import logging
+from typing import Any
+
+import pytest
+
+from {{pkg}}.logging_utils import configure_logging, get_logger
+
+
+def test_configure_logging_levels(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Expected: INFO by default, DEBUG when asked; the standard format applies."""
+    calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(logging, "basicConfig", lambda **kw: calls.append(kw))
+    configure_logging()
+    configure_logging(debug=True)
+    assert [c["level"] for c in calls] == [logging.INFO, logging.DEBUG]
+    assert "%(name)s" in calls[0]["format"]
+
+
+def test_get_logger_returns_named_logger() -> None:
+    """Edge: the logger carries the exact module name passed in."""
+    assert get_logger("{{pkg}}.x").name == "{{pkg}}.x"
+
+
+def test_configure_logging_rejects_positional_debug() -> None:
+    """Failure: debug is keyword-only, so a positional flag raises TypeError."""
+    with pytest.raises(TypeError):
+        configure_logging(True)  # type: ignore[call-arg]
 ```
 
 Central layout instead: identical files under `tests/` mirroring `src/{{pkg}}/`, and
@@ -428,7 +467,9 @@ All notable changes to this project are documented here. Format follows
 
 ---
 
-## CLAUDE.md
+## AGENTS.md
+
+Canonical agent notes for every coding agent; Claude Code loads them via CLAUDE.md's import.
 
 ```markdown
 # {{name}} — agent notes
@@ -436,8 +477,18 @@ All notable changes to this project are documented here. Format follows
 1. Read PLANNING.md (architecture, conventions, constraints) before any task.
 2. Check TASKS.md before starting; add missing tasks with today's date.
 3. All commands run through uv: `uv run pytest`, `uv run ruff check .`, `uv add <pkg>`.
-4. Feature work is PRP-driven — see PRPs/ and /asic-tools:prp-draft.
+4. Feature work is PRP-driven — drafted in PRPs/.
 5. Git: feature branches only, ruff clean before commit, no AI attribution, never push.
+```
+
+## CLAUDE.md
+
+```markdown
+@AGENTS.md
+
+## Claude Code
+
+Draft PRPs with `/asic-tools:prp-draft`; implement them with `/asic-tools:prp-implement`.
 ```
 
 ---
