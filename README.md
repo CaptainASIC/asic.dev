@@ -462,8 +462,11 @@ CHANGELOG entry that matches the file's existing style, and commits on `release/
 
 Deliberately stops there: pushing, merging, tagging, and the GitHub release are the
 user's actions — the skill emits the post-merge checklist and a ready-to-paste release
-body. It also re-greps the old version string after updating to catch locations the
-survey missed, and refuses to proceed if existing version locations already disagree.
+body. It also re-greps the old version string after updating to catch locations the survey missed,
+and refuses to proceed if existing version locations already disagree. For a Claude Code plugin repo
+it first runs `claude plugin validate --strict`, and after the release commit
+`claude plugin tag --dry-run` to prove the manifest and marketplace entry agree — a check, not a
+tag.
 
 In Claude Code: `/asic-tools:release`.
 
@@ -545,6 +548,64 @@ python3 "$S/scripts/okf_index.py" ./my-bundle/tables --write
 
 `okf_index.py --write` preserves frontmatter already present, so regenerating the bundle-root
 `index.md` never destroys its `okf_version` declaration (§11).
+
+---
+
+## Development
+
+```bash
+uv sync                                   # locked ruff + pytest on Python 3.12 (.python-version)
+uv run ruff check . && uv run ruff format --check .
+uv run pytest -q                          # okf + prp_status suites
+bash plugins/asic-tools/hooks/tests/test_git_guard.sh
+uv run python evals/run_evals.py --skip-snyk
+claude plugin validate --strict plugins/asic-tools && claude plugin validate --strict .
+```
+
+CI (`.github/workflows/ci.yml`) runs exactly these on every push to `main` and every pull request —
+no secrets, no model calls, read-only token.
+
+**Skill trigger evals.** `plugins/asic-tools/evals/` holds a `claude plugin eval` suite: five
+prompts that should fire `idea-refine`, `prp-draft`, `prp-review`, `prp-implement` and
+`improve-repo`, and two that must not (a code-PR review, a local simplify). Each run calls the
+model on your account, so it stays local and capped:
+
+```bash
+claude plugin eval plugins/asic-tools --ablation none --no-publish --max-cost-usd 5
+```
+
+Target `plugins/asic-tools`, not the repo root. A low score is a description that does not trigger
+on natural phrasing — fix the description, re-run.
+
+---
+
+## Automation
+
+Nothing here pushes. Prefer local runs; cloud runs do not carry your local hooks.
+
+**Desktop scheduled tasks** (local — [docs](https://code.claude.com/docs/en/desktop-scheduled-tasks),
+Desktop ≥ 1.1.5368). They fire only while the app is open and the machine awake; a missed slot
+gets one catch-up run. After creating each, click **Run now** once and "always allow" its tools so
+later runs don't stall. Suggested tasks, all with this repo as the folder:
+
+| Task | Schedule | Worktree | Prompt |
+|---|---|---|---|
+| `graph-refresh` | Daily | off (it updates this checkout's `graphify-out/`) | `Run graphify update . and report the node count.` |
+| `static-evals` | Daily | on | `Run uv run python evals/run_evals.py --skip-snyk and report any FAIL lines.` |
+| `standards-audit` | Weekly | on | `Run /asic-tools:improve-repo on this repo. Stop after the Phase 3 report — do not pick categories, create branches, or commit.` |
+
+**Cloud routines** ([docs](https://code.claude.com/docs/en/routines), research preview). A routine
+runs on a fresh clone, pushes to `claude/`-prefixed branches as your GitHub user unless its prompt
+says otherwise, and includes every connector with write access by default. Your `~/.claude` hooks —
+including `asic-tools`' git-guard — are not part of that clone, so nothing enforces "never push"
+there. Use routines only for report-only prompts ("do not commit, do not push, post a summary"),
+remove connectors the prompt does not need, and protect `main` with GitHub branch protection.
+
+**Parallel `prp-implement` runs** ([docs](https://code.claude.com/docs/en/cross-session-messaging),
+CC ≥ 2.1.224). Sessions working the same repo in separate worktrees can message each other — ask
+one to tell the other what landed before it rebases. `/peers` lists reachable sessions;
+`crossSessionInbound` (`accept` / `hold` / `refuse`) controls what a session accepts. A message
+never counts as your approval.
 
 ## License
 
