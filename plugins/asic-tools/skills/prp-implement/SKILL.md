@@ -163,6 +163,9 @@ Keep it a plan, not a re-architecture — deviations from the PRP get
 flagged as questions, not silently planned in.
 
 **Then stop. Present the plan. Wait for "go" / "execute".** No file is touched in Phase A.
+After presenting the plan, send one `PushNotification` (`status: "proactive"`, one line under
+200 characters, e.g. `PRP-023 plan ready: 5 tasks, tier L — waiting for go`; load it via
+`ToolSearch` if deferred). "Not sent" or no tool is normal — never retry.
 
 ## Phase B — Execute (on approval)
 
@@ -364,6 +367,11 @@ flagged as questions, not silently planned in.
    outcome line**, commits made, and
    what remains for the user — push + merge via GitKraken, plus any deferred items with where
    they're recorded.
+   Close with this optional, priced line (`<base>` = the run-state `Base commit:`): "Before you
+   merge you can run `/code-review ultra <base>`: a cloud multi-agent review of this branch. It
+   uploads a repo bundle (uncommitted changes included), shows findings only in your session, and
+   uses one of three free runs, then ~$5–25 in usage credits." The skill never launches it. Then
+   send one `PushNotification` with the outcome (A4 says how).
 
 ## Stop conditions (anywhere)
 
@@ -375,4 +383,5 @@ the tree (C1b)**. Stopping with a precise state report is success; powering thro
 the failure mode. The stop-state report names `PRPs/.work/prp-implement-active.md` and, when one
 was seeded, the surviving `PRPs/.work/PRP-NNN-scratchpad.md` — both intentionally retained as
 resumable working memory, unstaged so they never enter a commit; only a successful Phase C
-close-out deletes them.
+close-out deletes them. On any stop, send one `PushNotification` naming the condition (A4 says
+how).
