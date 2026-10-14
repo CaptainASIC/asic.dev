@@ -101,6 +101,18 @@ All notable changes to this project are documented here. Format follows
   manifest and marketplace entry agree with `claude plugin tag --dry-run` after committing, and
   bumps uv projects through `uv version`.
 - **`run_evals.py --skip-snyk`** runs every group except the real Snyk upload.
+- **asicdash sees every plugin surface.** Plugin scanning resolves each component key the way
+  Claude Code does (replace / add / merge with the default location) and reads the marketplace
+  entry as the manifest when a plugin ships no `plugin.json`. Newly reported: inline manifest
+  hooks, MCP and LSP servers, output styles, themes, monitors, `bin/` executables, plugin
+  settings, and **mods**, which always raise attention because their `tool.check` can approve a
+  call over rules. Plugins loaded from `CLAUDE_CODE_PLUGIN_DIRS` or a skills folder are scanned too.
+- **Plugin context cost is measured, not estimated.** Each plugin row carries the always-on and
+  heaviest on-invoke tokens from `claude plugin details`, cached per installed version. The first
+  run after an update takes ~20 s.
+- **Risky settings are flagged:** allow rules that grant arbitrary code execution (the categories
+  auto mode drops) and env vars that override model routing, by name only.
+- **Usage gains a cache-hit row and the ten most expensive prompts**, with previews masked.
 
 ### Removed
 - **BREAKING: the `diagram` skill is gone; archify is the diagram tool.** `/asic-tools:diagram`,
@@ -117,6 +129,12 @@ All notable changes to this project are documented here. Format follows
   with that section preserved at EOF, so both tools are no-ops against each other. Previously,
   running `graphify install` ≥0.9 before a sync could delete everything after a mid-file
   `# graphify` heading.
+- **asicdash no longer prints an MCP server URL's query string.** A server configured by URL with
+  its API key in the query had that key written into the HTML, CLI and JSON reports.
+- **Usage counts each API request once and includes subagent work.** Claude Code writes one
+  transcript line per content block; asicdash counted each line, inflating top-level totals, and
+  skipped every subagent and workflow-agent transcript. Expect lower top-level and higher subagent
+  numbers: a correction, not a regression.
 
 ## [1.0.0] - 2026-09-04
 
