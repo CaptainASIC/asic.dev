@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """HTML report renderer for asicdash.
 
 Turns the report dict from asicdash.build_report() into one self-contained
@@ -232,10 +231,13 @@ def _plugin_block(plugin: dict, children: list[dict]) -> str:
     rows = [e for e in children if e["kind"] not in CHIP_KINDS]
     if _flagged(plugin):
         rows.insert(0, plugin)
+    title = _esc(plugin["name"] + " — " + plugin["desc"])
     parts = [
-        f'<details class="plg"{open_attr}><summary>{_ICON_CHEVRON}'
-        f'<span title="{_esc(plugin["name"] + " — " + plugin["desc"])}">{_esc(short_name)}</span>'
-        f'<span class="meta">{meta}{note}</span></summary>'
+        (
+            f'<details class="plg"{open_attr}><summary>{_ICON_CHEVRON}'
+            f'<span title="{title}">{_esc(short_name)}</span>'
+            f'<span class="meta">{meta}{note}</span></summary>'
+        )
     ]
     if chips:
         parts.append('<div class="chips">' + "".join(_chip(e) for e in chips) + "</div>")

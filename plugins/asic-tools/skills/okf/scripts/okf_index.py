@@ -18,7 +18,7 @@ from pathlib import Path
 
 # Reason: reuse the validator's parser so the generator and the checker agree on the subset.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from validate_okf import (  # noqa: E402
+from validate_okf import (
     RESERVED,
     FrontmatterError,
     SubsetError,
