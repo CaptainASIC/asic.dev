@@ -20,9 +20,11 @@ import shlex
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 HOME = Path.home()
 CHARS_PER_TOKEN = 4  # crude but stable estimate for always-loaded cost
+TOKEN_RUN = re.compile(r"[A-Za-z0-9_-]{24,}")
 
 
 @dataclass
@@ -130,6 +132,44 @@ def command_label(command: str) -> str:
     if not parts:
         return command[:48]
     return " ".join(Path(p).name if "/" in p else p for p in parts[:3])
+
+
+def redact_url(value: str) -> str:
+    """Strip userinfo, query and fragment from a URL so a key inside it never reaches a report.
+
+    Args:
+        value: An MCP config's command, url, or transport type.
+
+    Returns:
+        `scheme://host[:port]/path`, with any 24+ character token run in the path masked as
+        `[…]`, suffixed " (redacted)" when anything was dropped or masked. Values that are not
+        URLs pass through unchanged.
+
+    Example:
+        >>> redact_url("https://api.example.com/mcp?apiKey=abc")
+        'https://api.example.com/mcp (redacted)'
+    """
+    if "://" not in value:
+        return value
+    try:
+        parts = urlsplit(value)
+        port = parts.port  # Reason: .port raises ValueError on an out-of-range port.
+    except ValueError:
+        return "<unparseable url>"
+    host = (parts.hostname or "") + (f":{port}" if port else "")
+    # Reason: hosted MCP URLs often carry the key in the path (`/s/<token>/mcp`). Mask any run
+    # of 24+ token characters, the same rule as prompt previews (§3.10).
+    path = TOKEN_RUN.sub("[…]", parts.path)
+    dropped = parts.query or parts.fragment or parts.username or parts.password
+    clean = urlunsplit((parts.scheme, host, path, "", ""))
+    return clean + (" (redacted)" if dropped or path != parts.path else "")
+
+
+def mcp_desc(cfg: object) -> str:
+    """Display text for one MCP server config: command, else url, else type. Always redacted."""
+    if not isinstance(cfg, dict):
+        return ""
+    return redact_url(str(cfg.get("command") or cfg.get("url") or cfg.get("type") or ""))
 
 
 def flatten_hooks(hooks_obj: dict) -> dict[str, list[str]]:
@@ -428,11 +468,6 @@ def scan_hook_scripts(root: Path, registered: list[str]) -> list[Entry]:
 
 def scan_mcp(paths: dict[str, Path], project: Path) -> list[Entry]:
     entries: list[Entry] = []
-
-    def mcp_desc(cfg: object) -> str:
-        if not isinstance(cfg, dict):
-            return ""
-        return str(cfg.get("command") or cfg.get("url") or cfg.get("type") or "")
 
     proj_mcp = load_json(paths["claude_proj_mcp"])
     for name, cfg in sorted((proj_mcp.get("mcpServers") or {}).items()):
