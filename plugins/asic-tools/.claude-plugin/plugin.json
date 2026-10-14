@@ -15,7 +15,7 @@
     "top_tier_model": {
       "type": "string",
       "title": "Top-tier model",
-      "description": "Model for the two judgement seats (prp-draft architecture panel, prp-review adjudicator). mythos requires Cyber Verification Program access; without it, Claude Code runs these seats on the session model with a warning. Leave fable otherwise.",
+      "description": "Model for the prp-review adjudicator. mythos (claude-mythos-5-1) requires Cyber Verification Program access; without it, Claude Code runs the adjudicator on the session model with a warning. Leave fable otherwise.",
       "options": ["fable", "mythos"],
       "default": "fable"
     }

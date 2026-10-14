@@ -48,7 +48,8 @@ const ROUTING = {
 // args.topTierModel. Only the exact string 'mythos' overrides; anything else — 'fable', a missing
 // key, or an un-substituted placeholder from a dev-mode install — keeps ROUTING's choice. Applied
 // at the call site, never inside ROUTING: asicdash parses quoted literals only (scanners.py:355).
-const TOP_TIER_OVERRIDE = ARGS && ARGS.topTierModel === 'mythos' ? 'mythos' : null
+// The full ID, because Claude Code 2.1.296 has no `mythos` alias (unrecognized_model).
+const TOP_TIER_OVERRIDE = ARGS && ARGS.topTierModel === 'mythos' ? 'claude-mythos-5-1' : null
 
 // Eight distinct lenses: 5 logic, 3 style. Style lenses compare the PRP against real repo code.
 const LENSES = [
@@ -293,7 +294,7 @@ log('Routing (intended): ' +
   `verify ${ROUTING.verify.model}/${ROUTING.verify.effort}. ` +
   'CLAUDE_CODE_SUBAGENT_MODEL_FORCE, CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL, a mod agent.spawn ' +
   'hook or an availableModels allowlist can replace these; /workflows shows what each ran on.' +
-  (TOP_TIER_OVERRIDE ? ' adjudicate mythos needs Cyber Verification Program access; without it, ' +
+  (TOP_TIER_OVERRIDE ? ' Mythos needs Cyber Verification Program access; without it, ' +
     'Claude Code runs adjudicate on the session model with a warning.' : ''))
 
 const reviewLog = []
