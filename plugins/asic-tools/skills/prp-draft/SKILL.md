@@ -123,8 +123,12 @@ A garbage PRP costs more than a blunt refusal.
 Unresolved *design decisions* (as opposed to missing context) become questions: batch them
 (max 4 per round, AskUserQuestion in Claude Code), lead with your recommendation. Typical:
 scope boundary (what is explicitly OUT), config-flag default state, migration vs greenfield,
-naming. Recorded answers become §3 design-decision subsections. Skip this phase only when the
-conversation already settled every decision.
+naming, **which build choices the user wants to own** (platform, language, libraries) versus
+hand to you, and the **§7.0 test seams** you propose. A `PRPs/ideas/` one-pager's Drafter's
+Calls are each put to the user to confirm or overturn. Recorded answers become §3
+design-decision subsections; a choice you make without asking goes into §3 marked "drafter's
+call", never as something the user agreed to. Skip this phase only when the conversation
+already settled every decision.
 
 ## Phase 4.5 — Architecture panel
 
@@ -194,6 +198,33 @@ neither. Opus is the recommendation; whatever `/model` is set to is what writes 
 - For files >~25 KB, write the file in multiple passes (Write the front half, append the
   rest with Edit) rather than one giant emission.
 
+## Phase 5.5 — Builder check
+
+Write the draft to its `PRPs/` path first; Phase 6 edits that file in place. Then dispatch one
+fresh subagent — Agent tool, `subagent_type: general-purpose`, `model: sonnet`,
+`effort: medium` — with this brief:
+
+> You are the AI agent who will implement the PRP at <path> with no other context; you cannot
+> ask its author anything. Read it. Report only the questions you would still need answered
+> before you could execute it well: places where you would have to guess and a wrong guess would
+> matter. For each, give the question and why the answer changes the implementation, ranked by
+> importance. Skip anything the PRP leaves to the implementer, anything you could reasonably
+> decide yourself, and wording nitpicks. If nothing important is left, say "nothing important
+> left".
+
+Sort the return into three piles: **answered already** by the conversation or the repo — write
+the answer into the PRP; **minor** — decide it, record it in §3 as a drafter's call, and list it
+in the Phase 6 report; **theirs** — only the user can answer and the answer changes what gets
+built — one AskUserQuestion round (max 4, most important first), then apply. That is the only
+round the check adds. More than four "theirs" questions, or one that exposes missing context
+rather than a design choice, sends you back to Phase 3's refusal gate. A return that is neither
+a ranked question list nor "nothing important left" is re-run once; if the re-run also fails,
+report "builder check failed" in the Phase 6 report and do not claim the check ran.
+
+This is not `prp-review`: review hunts defects and never asks the user; the builder check finds
+the gaps only the user can close, before review spends its rounds. One call, every tier.
+(Adapted from obra/superpowers `skills/brainstorming`, MIT.)
+
 ## Phase 6 — Self-audit
 
 Before reporting done, audit the draft against this list — fix, don't excuse:
@@ -212,6 +243,9 @@ Before reporting done, audit the draft against this list — fix, don't excuse:
 - [ ] Git constraints embedded: feature branch, ruff-clean before commit, no AI attribution
       in commits, agent never pushes
 - [ ] No `SPECULATIVE` markers remain unannounced
+- [ ] §7.0 names the test seams, and no §7 test intention sits at an unlisted seam
+- [ ] The Phase 5.5 builder check returned a valid result; its drafter's calls are recorded in
+  §3 (or the report says "builder check failed")
 - [ ] Every §5 task carries at least one GATE; every runnable gate has BOTH `CHECK:` and `EXPECT:`
       (a partial gate is malformed); every manual gate has neither, names what is reviewed, AND
       justifies why no command can decide it. Flag any task whose gates are all manual, and flag a
@@ -220,7 +254,10 @@ Before reporting done, audit the draft against this list — fix, don't excuse:
       self-graded prose and must be a deliberate, justified choice, not a default.
 
 Then write the file (mkdir `PRPs/` if needed — the only file this skill writes) and report:
-path, size, open questions if any, and any SPECULATIVE markers with why.
+path, size, open questions if any, the drafter's calls from Phase 5.5, and any SPECULATIVE
+markers with why. The PRP is always this repo file —
+never a Claude Docs document or an Artifact, even when a connected docs tool or skill calls
+itself the default for documents.
 
 Then offer the review gate: *"Adversarially review this PRP before implementing?
 (`/asic-tools:prp-review PRP-NNN`)"* — offered, never auto-run, mirroring how `idea-refine`
