@@ -237,6 +237,14 @@ def scan_md_dir(root: Path, kind: str, scope: str, autoloaded: bool = False) -> 
             if bits:
                 joined = " · ".join(bits)
                 desc = f"{joined} — {desc}" if desc else joined
+        # Reason: a rule with `paths:` loads only when Claude touches a matching file (memory
+        # docs, path-specific rules), so it is not part of the always-loaded figure. The
+        # frontmatter reader keeps the key even when its value is a block list (value "").
+        conditional = kind == "rule" and "paths" in fm
+        if conditional:
+            desc = "conditional (paths) — loads when matching files are touched" + (
+                f"; {desc}" if desc else ""
+            )
         entries.append(
             Entry(
                 tool="claude",
@@ -247,7 +255,7 @@ def scan_md_dir(root: Path, kind: str, scope: str, autoloaded: bool = False) -> 
                 desc=desc,
                 # agents require frontmatter; commands and rules may be plain markdown
                 status=f"broken: {err}" if err and kind == "agent" else "ok",
-                tokens=est_tokens(f) if autoloaded else 0,
+                tokens=est_tokens(f) if autoloaded and not conditional else 0,
             )
         )
     return entries
