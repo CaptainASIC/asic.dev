@@ -6,6 +6,7 @@ rows (e.g. asic.dev: plugin.json + marketplace entries; Airi: pyproject + Xcode 
 | Marker | Version location(s) | Key / pattern |
 |---|---|---|
 | `pyproject.toml` | `pyproject.toml` | `[project] version = "X.Y.Z"` |
+| `uv.lock` | repo root | the project's own `[[package]]` `version` — rewritten by `uv version` / `uv lock`, never by hand |
 | `src/<pkg>/__init__.py` | same | `__version__ = "X.Y.Z"` — keep in lockstep with pyproject |
 | `.claude-plugin/plugin.json` | each plugin dir | `"version": "X.Y.Z"` — gates `claude plugin update` |
 | `.claude-plugin/marketplace.json` | repo root | per-plugin `"version"` if declared in entries |

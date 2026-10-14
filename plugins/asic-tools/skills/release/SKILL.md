@@ -26,6 +26,11 @@ Reference file: `references/version_locations.md` — per-ecosystem version-stri
 4. **Read CHANGELOG.md** (if present) and note its exact format — heading style, grouping
    names, date format, link conventions. The new entry must be indistinguishable in style
    from the existing entries. No CHANGELOG → create one in Keep a Changelog format.
+5. **Plugin preflight (Claude Code plugin repos only).** When the repo holds a
+   `.claude-plugin/plugin.json` (at the root or under `plugins/*/`), run
+   `claude plugin validate --strict <plugin-dir>` for each plugin, and
+   `claude plugin validate --strict .` when `.claude-plugin/marketplace.json` exists. Any failure:
+   STOP and report it — a release that fails validation ships a plugin the runtime will not load.
 
 ## Phase 2 — Decide the bump
 
@@ -41,6 +46,10 @@ marketing-driven bumps both override mechanics).
    the repo uses develop). Never work on main.
 2. Update every version location found in Phase 1. Re-grep the old version string
    afterward to catch locations the table missed; add misses to the report.
+   uv projects (a `pyproject.toml` with a `[project]` table): cross-check the bump with
+   `uv version --bump <major|minor|patch> --dry-run` — its `old => new` line must name the version
+   Phase 2 settled on — then apply it with the same command without `--dry-run`. uv rewrites
+   `pyproject.toml` and re-locks `uv.lock` in one step; never hand-edit either.
 3. CHANGELOG entry: new version heading + date, changes grouped per the file's existing
    convention (typically Added / Changed / Fixed), one line per meaningful change written
    from the commit subjects — reworded for a reader, not pasted raw. "Other" bucket items
@@ -49,6 +58,11 @@ marketing-driven bumps both override mechanics).
    `uv run pytest` or ecosystem equivalent) — a release commit that breaks CI is a
    failure of this skill.
 5. Commit: `chore(release): vX.Y.Z` — Conventional, no AI attribution, not pushed.
+6. **Tag consistency check (plugin repos only).** On the clean tree after the commit, run
+   `claude plugin tag --dry-run <plugin-dir>` (dry run only — it creates no tag and pushes nothing).
+   Exit 0 with `Dry run — would create tag` means `plugin.json` and the marketplace entry agree;
+   `Version mismatch` or `Uncommitted changes` means fix and re-run. Ignore the tag name it prints
+   (`<name>--vX.Y.Z`): Phase 4's `vX.Y.Z` tag stays the user's action.
 
 ## Phase 4 — Report + post-merge checklist
 
