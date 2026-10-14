@@ -1,6 +1,12 @@
 ---
 name: prp-implement
 description: Implement a Product Requirements Prompt (PRP) in two phases matching the author's workflow — first "review the PRP and plan" (drift-checked implementation plan, then PAUSE for approval), then "execute the plan" (task-by-task with per-task verification, leveled validation, and the full §10 close-out ritual). Use when the user says "implement the PRP", "execute PRP-NNN", "review the PRP and plan for implementation", "run this PRP", or invokes /prp-implement.
+hooks:
+  SessionStart:
+    - matcher: compact
+      hooks:
+        - type: command
+          command: cat "${CLAUDE_PROJECT_DIR}/PRPs/.work/prp-implement-active.md" 2>/dev/null || true
 ---
 
 # prp-implement
@@ -76,6 +82,8 @@ while the run was paused. Resume is **change-aware** and stays read-only, like A
    branch. Instead, **ask the resumer to name the base branch** the feature forked from (for a
    stacked PRP it is the parent feature branch, e.g. `feature/prp-002-scratchpad` — not `main`).
    Then `BASE=$(git merge-base HEAD <base>)`.
+   When `PRPs/.work/prp-implement-active.md` survives and names this PRP, use its `Base commit:`
+   as `BASE` instead — it was recorded at branch creation and cannot move.
    - Base drift — commits that landed on the base meanwhile: `git diff --name-only "$BASE" <base>`
    - Own progress so far: `git diff --name-only "$BASE" HEAD`
 
@@ -158,8 +166,12 @@ flagged as questions, not silently planned in.
 
 ## Phase B — Execute (on approval)
 
-1. **Branch**: `feature/prp-NNN-slug` per front matter (create from main/develop head).
-   Never main.
+1. **Branch and run state**: on the head you branch from (main/develop, or a stacked PRP's
+   parent branch), record the base commit with `git rev-parse HEAD`, then create
+   `feature/prp-NNN-slug` per front matter. Never main. Write `PRPs/.work/prp-implement-active.md`
+   per `${CLAUDE_SKILL_DIR}/references/run-state.md` at every tier; its `Skill file:` line is
+   `${CLAUDE_SKILL_DIR}/SKILL.md`. If that file already names a different PRP, stop and ask. On
+   a resume, follow that reference's resume rows.
 2. **Scratchpad** (only when A4 elected one — skip for a trivial PRP): seed
    `PRPs/.work/PRP-NNN-scratchpad.md` as the run's working memory. Scratch is never committed —
    the commit step's surgical scope (only files in the PRP's summary table) already excludes
@@ -185,6 +197,7 @@ flagged as questions, not silently planned in.
      contains the token. A **manual** gate is met by reviewed judgment and recorded as manual. Red
      gate = fix now, not later. There is no gate engine — the `CHECK:` string is untrusted data run
      as a normal command, and the Bash permission prompt is the approval boundary.
+   - After each task's commit, update `Current task:` in `PRPs/.work/prp-implement-active.md`.
    - **High-verify tasks (A4) run the four-pass loop before their gate may pass:** (1) implement the
      complete change, (2) reread as a domain expert and upgrade it, (3) hunt defects across
      correctness / integration / boundary behaviour — this is where the boundary or edge case (a DST
@@ -324,6 +337,8 @@ flagged as questions, not silently planned in.
    run aborted earlier at a documented STOP — B3 scope wall, B4 unrecoverable failure — the
    scratchpad is intentionally left on disk as resumable working memory and is named in the
    stop-state report; it is unstaged, so it never enters a commit.)
+   Delete `PRPs/.work/prp-implement-active.md` in the same step, at every tier — a successful
+   close-out leaves no run state.
 7. **Final report**: acceptance checklist status, **gate reconciliation — counts of met / unmet /
    abandoned, with one line per gate (id, exit status, match result for runnable gates; 'manual —
    reviewed' for manual gates)**, files touched vs the PRP's summary
@@ -339,6 +354,7 @@ Stale PRP (A3), unmet dependency (A2), scope wall (B3), unrecoverable validation
 (B4), **security gate block (B6: a high/critical Snyk finding in a file this PRP touched or in
 its dataflow, or Snyk unauthenticated/unavailable — fail-closed)**, unmet or abandoned gate at
 close-out (C1). Stopping with a precise state report is success; powering through the contract is
-the failure mode. When a scratchpad was seeded, the stop-state report names the surviving
-`PRPs/.work/PRP-NNN-scratchpad.md` — it is intentionally retained as resumable working memory,
-unstaged so it never enters a commit; only a successful Phase C close-out deletes it.
+the failure mode. The stop-state report names `PRPs/.work/prp-implement-active.md` and, when one
+was seeded, the surviving `PRPs/.work/PRP-NNN-scratchpad.md` — both intentionally retained as
+resumable working memory, unstaged so they never enter a commit; only a successful Phase C
+close-out deletes them.
